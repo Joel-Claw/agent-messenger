@@ -1,0 +1,122 @@
+# Build outputs
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.app
+*.ipa
+*.apk
+*.aab
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.so.*
+
+# Executables
+*.out
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+vendor/
+vendor/bundle
+Pods/
+.build/
+target/
+
+# Rust
+**/target/
+**/*.rs.bk
+Cargo.lock
+
+# Go
+*.test
+*.prof
+
+# Swift
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+*.xcworkspace/*
+!*.xcworkspace/contents.xcworkspacedata
+!*.xcworkspace/xcshareddata/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.xctimeline
+playground.xcworkspace
+
+# Android
+*.iml
+.gradle
+local.properties
+.idea/
+captures/
+.externalNativeBuild
+.cxx
+*.aab
+*.apk
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Secrets (NEVER COMMIT)
+*.pem
+*.key
+secrets/
+secrets.json
+credentials.json
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+
+# Documentation
+docs/_build/
+site/
