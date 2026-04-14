@@ -10,7 +10,8 @@ import (
 
 func main() {
 	// Initialize database
-	db, err := sql.Open("sqlite3", "./data/agent-messenger.db")
+	var err error
+	db, err = sql.Open("sqlite3", "./data/agent-messenger.db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -21,6 +22,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Initialize hub
+	hub = newHub()
+	go hub.run()
+
 	// Set up routes
 	http.HandleFunc("/agent/connect", handleAgentConnect)
 	http.HandleFunc("/client/connect", handleClientConnect)
@@ -29,27 +34,6 @@ func main() {
 	// Start server
 	log.Println("Agent Messenger starting on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func handleHealth(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
-}
-
-func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
-	// TODO: Upgrade to WebSocket
-	// TODO: Validate API key
-	// TODO: Register agent connection
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("Not implemented yet"))
-}
-
-func handleClientConnect(w http.ResponseWriter, r *http.Request) {
-	// TODO: Upgrade to WebSocket
-	// TODO: Validate JWT
-	// TODO: Register user connection
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("Not implemented yet"))
 }
 
 func initSchema(db *sql.DB) error {
