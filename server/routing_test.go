@@ -538,4 +538,153 @@ func TestStoreAndGetMessages(t *testing.T) {
 	if messages[0].Content != "test message" {
 		t.Fatalf("expected 'test message', got %s", messages[0].Content)
 	}
+	if messages[0].SenderType != "agent" || messages[0].SenderID != "agent_m" {
+		t.Fatalf("expected sender agent/agent_m, got %s/%s", messages[0].SenderType, messages[0].SenderID)
+	}
+}
+
+func TestGetMessagesPagination(t *testing.T) {
+	setupTestDB(t)
+
+	conv, err := CreateConversation("user_p", "agent_p")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Store 5 messages
+	for i := 0; i < 5; i++ {
+		msg := RoutedMessage{
+			Type:           "message",
+			ConversationID: conv.ID,
+			Content:        "msg " + string(rune('0'+i)),
+			SenderType:     "agent",
+			SenderID:       "agent_p",
+			RecipientID:    "user_p",
+		}
+		if err := storeMessage(msg); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(time.Millisecond) // ensure ordering
+	}
+
+	// Limit to 3
+	messages, err := getConversationMessages(conv.ID, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(messages) != 3 {
+		t.Fatalf("expected 3 messages with limit, got %d", len(messages))
+	}
+
+	// Default limit (0 -> 50)
+	all, err := getConversationMessages(conv.ID, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(all) != 5 {
+		t.Fatalf("expected 5 messages with default limit, got %d", len(all))
+	}
+
+	// Verify ordering (oldest first)
+	if all[0].Content != "msg 0" {
+		t.Fatalf("expected oldest first, got %s", all[0].Content)
+	}
+}
+
+func TestGetMessagesViaREST(t *testing.T) {
+	_, cleanup := setupTestServerForRouting(t)
+	defer cleanup()
+
+	token := registerUserAndGetToken(t, "rest-msgs@example.com", "password123")
+
+	// Create a conversation
+	form := url.Values{}
+	form.Set("agent_id", "rest-agent")
+	req := httptest.NewRequest(http.MethodPost, "/conversations/create", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	handleCreateConversation(w, req)
+
+	var createResp map[string]string
+	json.Unmarshal(w.Body.Bytes(), &createResp)
+	convID := createResp["conversation_id"]
+
+	// Store messages directly
+	for i := 0; i < 3; i++ {
+		msg := RoutedMessage{
+			Type:           "message",
+			ConversationID: convID,
+			Content:        "hello " + string(rune('A'+i)),
+			SenderType:     "client",
+			SenderID:       createResp["user_id"],
+			RecipientID:    "rest-agent",
+		}
+		if err := storeMessage(msg); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Fetch messages via REST
+	req2 := httptest.NewRequest(http.MethodGet, "/conversations/messages?conversation_id="+convID, nil)
+	req2.Header.Set("Authorization", "Bearer "+token)
+	w2 := httptest.NewRecorder()
+	handleGetMessages(w2, req2)
+
+	if w2.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w2.Code, w2.Body.String())
+	}
+
+	var messages []StoredMessage
+	json.Unmarshal(w2.Body.Bytes(), &messages)
+	if len(messages) != 3 {
+		t.Fatalf("expected 3 messages, got %d", len(messages))
+	}
+}
+
+func TestGetMessagesUnauthorizedUser(t *testing.T) {
+	setupTestDB(t)
+	hub = newHub()
+	go hub.run()
+
+	// User A creates a conversation
+	tokenA := registerUserAndGetToken(t, "user-a@example.com", "password123")
+	form := url.Values{}
+	form.Set("agent_id", "shared-agent")
+	req := httptest.NewRequest(http.MethodPost, "/conversations/create", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Bearer "+tokenA)
+	w := httptest.NewRecorder()
+	handleCreateConversation(w, req)
+
+	var createResp map[string]string
+	json.Unmarshal(w.Body.Bytes(), &createResp)
+	convID := createResp["conversation_id"]
+
+	// User B tries to read User A's messages
+	tokenB := registerUserAndGetToken(t, "user-b@example.com", "password456")
+	req2 := httptest.NewRequest(http.MethodGet, "/conversations/messages?conversation_id="+convID, nil)
+	req2.Header.Set("Authorization", "Bearer "+tokenB)
+	w2 := httptest.NewRecorder()
+	handleGetMessages(w2, req2)
+
+	if w2.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 for unauthorized user, got %d", w2.Code)
+	}
+}
+
+func TestGetMessagesNonexistentConversation(t *testing.T) {
+	setupTestDB(t)
+	hub = newHub()
+	go hub.run()
+
+	token := registerUserAndGetToken(t, "no-conv@example.com", "password123")
+	req := httptest.NewRequest(http.MethodGet, "/conversations/messages?conversation_id=conv_nonexistent", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	handleGetMessages(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", w.Code)
+	}
 }
