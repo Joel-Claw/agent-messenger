@@ -280,3 +280,138 @@ func generateID(prefix string) string {
 // DB is the global database reference (set in main)
 var db *sql.DB
 var hub *Hub
+
+// handleCreateConversation handles POST /conversations/create
+func handleCreateConversation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if len(token) > 7 && token[:7] == "Bearer " {
+		token = token[7:]
+	}
+	claims, err := ValidateJWT(token)
+	if err != nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	agentID := r.FormValue("agent_id")
+	if agentID == "" {
+		http.Error(w, "missing agent_id", http.StatusBadRequest)
+		return
+	}
+
+	conv, err := GetOrCreateConversation(claims.UserID, agentID)
+	if err != nil {
+		http.Error(w, "failed to create conversation", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"conversation_id": conv.ID,
+		"user_id":         conv.UserID,
+		"agent_id":        conv.AgentID,
+	})
+}
+
+// handleListConversations handles GET /conversations/list
+func handleListConversations(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if len(token) > 7 && token[:7] == "Bearer " {
+		token = token[7:]
+	}
+	claims, err := ValidateJWT(token)
+	if err != nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	rows, err := db.Query(
+		"SELECT id, user_id, agent_id, created_at FROM conversations WHERE user_id = ? ORDER BY created_at DESC",
+		claims.UserID,
+	)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	type ConvInfo struct {
+		ID        string `json:"id"`
+		UserID    string `json:"user_id"`
+		AgentID   string `json:"agent_id"`
+		CreatedAt string `json:"created_at"`
+	}
+
+	var conversations []ConvInfo
+	for rows.Next() {
+		var c ConvInfo
+		if err := rows.Scan(&c.ID, &c.UserID, &c.AgentID, &c.CreatedAt); err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		conversations = append(conversations, c)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if conversations == nil {
+		conversations = []ConvInfo{}
+	}
+	json.NewEncoder(w).Encode(conversations)
+}
+
+// handleGetMessages handles GET /conversations/messages
+func handleGetMessages(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if len(token) > 7 && token[:7] == "Bearer " {
+		token = token[7:]
+	}
+	claims, err := ValidateJWT(token)
+	if err != nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	convID := r.URL.Query().Get("conversation_id")
+	if convID == "" {
+		http.Error(w, "missing conversation_id", http.StatusBadRequest)
+		return
+	}
+
+	// Verify user is participant
+	conv, err := getConversation(convID)
+	if err != nil || conv == nil {
+		http.Error(w, "conversation not found", http.StatusNotFound)
+		return
+	}
+	if conv.UserID != claims.UserID {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	messages, err := getConversationMessages(convID, 50)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if messages == nil {
+		messages = []StoredMessage{}
+	}
+	json.NewEncoder(w).Encode(messages)
+}

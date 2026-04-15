@@ -136,8 +136,7 @@ func (c *Connection) readPump() {
 		}
 
 		log.Printf("Received from %s %s: %s", c.connType, c.id, string(message))
-		// TODO: Route message based on type (Task 3)
-		_ = message
+		routeMessage(c, message)
 	}
 }
 
