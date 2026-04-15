@@ -31,6 +31,11 @@ func main() {
 	http.HandleFunc("/client/connect", handleClientConnect)
 	http.HandleFunc("/health", handleHealth)
 
+	// Auth endpoints
+	http.HandleFunc("/auth/login", handleLogin)
+	http.HandleFunc("/auth/agent", handleRegisterAgent)
+	http.HandleFunc("/auth/user", handleRegisterUser)
+
 	// Start server
 	log.Println("Agent Messenger starting on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))

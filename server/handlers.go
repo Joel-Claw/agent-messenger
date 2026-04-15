@@ -3,9 +3,12 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 
+	"golang.org/x/crypto/bcrypt"
 )
 
 // IncomingMessage is the JSON structure for messages received over WebSocket
@@ -34,9 +37,11 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Validate API key (Task 2)
-	// For now, accept any non-empty key
-	_ = apiKey
+	// Validate API key against stored bcrypt hash
+	if err := ValidateAPIKey(agentID, apiKey); err != nil {
+		http.Error(w, "authentication failed: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
 
 	// Upgrade to WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -87,9 +92,15 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Validate JWT (Task 2)
-	// For now, accept any non-empty token
-	_ = token
+	// Validate JWT token
+	claims, err := ValidateJWT(token)
+	if err != nil {
+		http.Error(w, "authentication failed: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	// Use the user ID from the JWT claims (don't trust query param)
+	userID = claims.UserID
 
 	// Upgrade to WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -140,6 +151,130 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// handleLogin handles POST /auth/login - user login returning a JWT
+func handleLogin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	if email == "" || password == "" {
+		http.Error(w, "missing email or password", http.StatusBadRequest)
+		return
+	}
+
+	// Look up user by email
+	var userID, passwordHash string
+	err := db.QueryRow("SELECT id, password_hash FROM users WHERE email = ?", email).Scan(&userID, &passwordHash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "invalid credentials", http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	// Compare password
+	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password)); err != nil {
+		http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	// Generate JWT
+	token, err := GenerateJWT(userID, email)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"token":   token,
+		"user_id": userID,
+	})
+}
+
+// handleRegisterAgent handles POST /auth/agent - register a new agent with API key
+func handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	agentID := r.FormValue("agent_id")
+	name := r.FormValue("name")
+	apiKey := r.FormValue("api_key")
+	if agentID == "" || name == "" || apiKey == "" {
+		http.Error(w, "missing agent_id, name, or api_key", http.StatusBadRequest)
+		return
+	}
+
+	// Hash the API key for storage
+	hash, err := HashAPIKey(apiKey)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = db.Exec("INSERT OR IGNORE INTO agents (id, api_key_hash, name) VALUES (?, ?, ?)", agentID, hash, name)
+	if err != nil {
+		http.Error(w, "failed to register agent: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"agent_id": agentID,
+		"status":   "registered",
+	})
+}
+
+// handleRegisterUser handles POST /auth/user - register a new user account
+func handleRegisterUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	if email == "" || password == "" {
+		http.Error(w, "missing email or password", http.StatusBadRequest)
+		return
+	}
+
+	// Hash the password
+	hash, err := HashAPIKey(password) // bcrypt works for passwords too
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	// Generate a user ID from email
+	userID := generateID("user")
+
+	_, err = db.Exec("INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)", userID, email, hash)
+	if err != nil {
+		http.Error(w, "failed to register user: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"user_id": userID,
+		"email":   email,
+		"status":  "registered",
+	})
+}
+
+// generateID creates a simple unique ID with a prefix
+func generateID(prefix string) string {
+	return fmt.Sprintf("%s_%d", prefix, time.Now().UnixNano())
 }
 
 // DB is the global database reference (set in main)
