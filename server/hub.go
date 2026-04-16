@@ -4,8 +4,23 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
+)
+
+const (
+	// pongWait is the maximum time to wait for a pong response from the peer.
+	pongWait = 60 * time.Second
+
+	// pingPeriod is how often to send pings to the peer. Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
+
+	// maxMessageSize is the maximum size of a single WebSocket message.
+	maxMessageSize = 65536 // 64KB
+
+	// writeWait is the time allowed to write a message to the peer.
+	writeWait = 10 * time.Second
 )
 
 var upgrader = websocket.Upgrader{
@@ -22,16 +37,21 @@ type Connection struct {
 	id       string // agent_id or user_id
 	conn     *websocket.Conn
 	send     chan []byte
+	// connectedAt tracks when this connection was established
+	connectedAt time.Time
 }
 
 // Hub manages all active connections
 type Hub struct {
-	mu          sync.RWMutex
-	agents      map[string]*Connection // agent_id -> Connection
-	clients     map[string]*Connection // user_id -> Connection
-	register    chan *Connection
-	unregister  chan *Connection
-	broadcast   chan []byte
+	mu         sync.RWMutex
+	agents     map[string]*Connection // agent_id -> Connection
+	clients    map[string]*Connection // user_id -> Connection
+	register   chan *Connection
+	unregister chan *Connection
+	broadcast  chan []byte
+
+	// counters for metrics
+	messagesRouted int64
 }
 
 func newHub() *Hub {
@@ -52,12 +72,14 @@ func (h *Hub) run() {
 			if conn.connType == "agent" {
 				// Replace existing connection if any
 				if old, ok := h.agents[conn.id]; ok {
+					log.Printf("Agent %s reconnecting, closing old connection", conn.id)
 					close(old.send)
 				}
 				h.agents[conn.id] = conn
 				log.Printf("Agent connected: %s", conn.id)
 			} else {
 				if old, ok := h.clients[conn.id]; ok {
+					log.Printf("Client %s reconnecting, closing old connection", conn.id)
 					close(old.send)
 				}
 				h.clients[conn.id] = conn
@@ -68,13 +90,13 @@ func (h *Hub) run() {
 		case conn := <-h.unregister:
 			h.mu.Lock()
 			if conn.connType == "agent" {
-				if _, ok := h.agents[conn.id]; ok {
+				if existing, ok := h.agents[conn.id]; ok && existing == conn {
 					delete(h.agents, conn.id)
 					close(conn.send)
 					log.Printf("Agent disconnected: %s", conn.id)
 				}
 			} else {
-				if _, ok := h.clients[conn.id]; ok {
+				if existing, ok := h.clients[conn.id]; ok && existing == conn {
 					delete(h.clients, conn.id)
 					close(conn.send)
 					log.Printf("Client disconnected: %s", conn.id)
@@ -116,15 +138,37 @@ func (h *Hub) GetClient(userID string) *Connection {
 	return h.clients[userID]
 }
 
-// readPump reads messages from the WebSocket connection
+// AgentCount returns the number of connected agents
+func (h *Hub) AgentCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.agents)
+}
+
+// ClientCount returns the number of connected clients
+func (h *Hub) ClientCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.clients)
+}
+
+// readPump reads messages from the WebSocket connection.
+// It sets up a pong handler that resets the read deadline,
+// ensuring stale connections are detected and cleaned up.
 func (c *Connection) readPump() {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
 
-	c.conn.SetReadLimit(65536) // 64KB max message size
-	// TODO: Set read deadline for heartbeat
+	c.conn.SetReadLimit(maxMessageSize)
+	c.conn.SetReadDeadline(time.Now().Add(pongWait))
+
+	// Set pong handler: when we receive a pong, reset the read deadline
+	c.conn.SetPongHandler(func(appData string) error {
+		c.conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
 
 	for {
 		_, message, err := c.conn.ReadMessage()
@@ -135,28 +179,47 @@ func (c *Connection) readPump() {
 			break
 		}
 
+		c.hub.mu.Lock()
+		c.hub.messagesRouted++
+		c.hub.mu.Unlock()
+
 		log.Printf("Received from %s %s: %s", c.connType, c.id, string(message))
 		routeMessage(c, message)
 	}
 }
 
-// writePump writes messages to the WebSocket connection
+// writePump writes messages to the WebSocket connection.
+// It sends pings on a ticker to keep the connection alive.
+// If a write fails or the send channel is closed, the connection is cleaned up.
 func (c *Connection) writePump() {
+	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		ticker.Stop()
 		c.conn.Close()
 	}()
 
 	for {
-		message, ok := <-c.send
-		if !ok {
-			// Channel closed, close connection
-			c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-			return
-		}
+		select {
+		case message, ok := <-c.send:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if !ok {
+				// Channel closed by hub (unregister or replace), close connection
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
 
-		if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
-			log.Printf("Error writing to %s %s: %v", c.connType, c.id, err)
-			return
+			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
+				log.Printf("Error writing to %s %s: %v", c.connType, c.id, err)
+				return
+			}
+
+		case <-ticker.C:
+			// Send ping to keep connection alive
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				log.Printf("Error sending ping to %s %s: %v", c.connType, c.id, err)
+				return
+			}
 		}
 	}
 }

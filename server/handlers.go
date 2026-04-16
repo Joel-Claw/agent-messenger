@@ -52,11 +52,12 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 
 	// Create connection
 	c := &Connection{
-		hub:      hub,
-		connType: "agent",
-		id:       agentID,
-		conn:     conn,
-		send:     make(chan []byte, 256),
+		hub:         hub,
+		connType:    "agent",
+		id:          agentID,
+		conn:        conn,
+		send:        make(chan []byte, 256),
+		connectedAt: time.Now(),
 	}
 
 	// Register with hub
@@ -111,11 +112,12 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 
 	// Create connection
 	c := &Connection{
-		hub:      hub,
-		connType: "client",
-		id:       userID,
-		conn:     conn,
-		send:     make(chan []byte, 256),
+		hub:         hub,
+		connType:    "client",
+		id:          userID,
+		conn:        conn,
+		send:        make(chan []byte, 256),
+		connectedAt: time.Now(),
 	}
 
 	// Register with hub
@@ -141,13 +143,15 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	hub.mu.RLock()
 	agentCount := len(hub.agents)
 	clientCount := len(hub.clients)
+	messagesRouted := hub.messagesRouted
 	hub.mu.RUnlock()
 
 	response := map[string]interface{}{
-		"status":        "ok",
-		"agents":        agentCount,
-		"clients":       clientCount,
-		"connections":   agentCount + clientCount,
+		"status":          "ok",
+		"agents":          agentCount,
+		"clients":         clientCount,
+		"connections":     agentCount + clientCount,
+		"messages_routed": messagesRouted,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
