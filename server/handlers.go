@@ -39,6 +39,7 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 
 	// Validate API key against stored bcrypt hash
 	if err := ValidateAPIKey(agentID, apiKey); err != nil {
+		if ServerMetrics != nil { ServerMetrics.ErrorsTotal.Add(1) }
 		writeJSONError(w, http.StatusUnauthorized, "authentication failed: "+err.Error())
 		return
 	}
@@ -96,6 +97,7 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	// Validate JWT token
 	claims, err := ValidateJWT(token)
 	if err != nil {
+		if ServerMetrics != nil { ServerMetrics.ErrorsTotal.Add(1) }
 		writeJSONError(w, http.StatusUnauthorized, "authentication failed: "+err.Error())
 		return
 	}
@@ -140,21 +142,21 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
-	hub.mu.RLock()
-	agentCount := len(hub.agents)
-	clientCount := len(hub.clients)
-	messagesRouted := hub.messagesRouted
-	hub.mu.RUnlock()
-
-	response := map[string]interface{}{
-		"status":          "ok",
-		"agents":          agentCount,
-		"clients":         clientCount,
-		"connections":     agentCount + clientCount,
-		"messages_routed": messagesRouted,
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
 	}
+
+	var snapshot map[string]interface{}
+	if ServerMetrics != nil {
+		snapshot = ServerMetrics.Snapshot()
+	} else {
+		snapshot = make(map[string]interface{})
+	}
+	snapshot["status"] = "ok"
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(snapshot)
 }
 
 // handleLogin handles POST /auth/login - user login returning a JWT

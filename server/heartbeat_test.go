@@ -58,6 +58,7 @@ func TestReadDeadlineExpired(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	conn := &Connection{
 		hub:         hub,
@@ -92,6 +93,7 @@ func TestConnectionReplacement(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	// First connection
 	conn1 := &Connection{
@@ -137,6 +139,7 @@ func TestClientReconnection(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	// First client connection
 	conn1 := &Connection{
@@ -177,6 +180,7 @@ func TestUnregisterIdempotent(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	conn := &Connection{
 		hub:         hub,
@@ -203,6 +207,7 @@ func TestUnregisterOnlyMatchingConnection(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	conn1 := &Connection{
 		hub:         hub,
@@ -267,6 +272,7 @@ func TestConnectedAtTimestamp(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	before := time.Now()
 	conn := &Connection{
@@ -294,6 +300,7 @@ func TestMessagesRoutedCounter(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	conn := &Connection{
 		hub:         hub,
@@ -323,6 +330,7 @@ func TestHealthEndpointWithMetrics(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
@@ -338,11 +346,11 @@ func TestHealthEndpointWithMetrics(t *testing.T) {
 	if resp["status"] != "ok" {
 		t.Fatalf("expected status ok, got %v", resp["status"])
 	}
-	if _, ok := resp["messages_routed"]; !ok {
-		t.Fatal("expected messages_routed in health response")
+	if _, ok := resp["messages_in"]; !ok {
+		t.Fatal("expected messages_in in health response")
 	}
-	if _, ok := resp["connections"]; !ok {
-		t.Fatal("expected connections in health response")
+	if _, ok := resp["agents_connected"]; !ok {
+		t.Fatal("expected agents_connected in health response")
 	}
 }
 
@@ -380,6 +388,7 @@ func TestMultipleDisconnectsSameID(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	for i := 0; i < 5; i++ {
 		conn := &Connection{
@@ -408,6 +417,7 @@ func TestClientDisconnectCleansUpRouting(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	conv, err := CreateConversation("dc-user", "dc-agent")
 	if err != nil {
@@ -470,6 +480,7 @@ func TestConcurrentRegisterUnregister(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	done := make(chan struct{})
 
@@ -506,6 +517,7 @@ func TestAgentAndClientCountMethods(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+	ServerMetrics = NewMetrics(hub)
 
 	if hub.AgentCount() != 0 || hub.ClientCount() != 0 {
 		t.Fatal("counts should start at 0")
@@ -597,10 +609,12 @@ func TestRegisterAndConnectAgentWithHeartbeat(t *testing.T) {
 
 	var health map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&health)
-	if int(health["agents"].(float64)) < 1 {
-		t.Fatalf("expected at least 1 agent in health, got %v", health["agents"])
+	agents, _ := health["agents_connected"].(float64)
+	if int(agents) < 1 {
+		t.Fatalf("expected at least 1 agent in health, got %v", health["agents_connected"])
 	}
-	if int(health["clients"].(float64)) < 1 {
-		t.Fatalf("expected at least 1 client in health, got %v", health["clients"])
+	clients, _ := health["clients_connected"].(float64)
+	if int(clients) < 1 {
+		t.Fatalf("expected at least 1 client in health, got %v", health["clients_connected"])
 	}
 }

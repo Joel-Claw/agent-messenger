@@ -37,6 +37,8 @@ func setupTestServer(t *testing.T) *httptest.Server {
 	hub = newHub()
 	go hub.run()
 
+	ServerMetrics = NewMetrics(hub)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/agent/connect", handleAgentConnect)
 	mux.HandleFunc("/client/connect", handleClientConnect)

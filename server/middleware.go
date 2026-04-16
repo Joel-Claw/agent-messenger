@@ -88,6 +88,8 @@ var messageRateLimiter = NewRateLimiter(60, time.Minute)
 // If rate limited, it sends an error to the connection and returns false.
 func checkRateLimit(conn *Connection) bool {
 	if !messageRateLimiter.Allow(conn.id) {
+		if ServerMetrics != nil { ServerMetrics.RateLimited.Add(1) }
+		if ServerMetrics != nil { ServerMetrics.ErrorsTotal.Add(1) }
 		sendError(conn, "rate limit exceeded: too many messages")
 		return false
 	}

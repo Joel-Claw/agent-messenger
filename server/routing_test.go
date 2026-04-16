@@ -20,6 +20,8 @@ func setupTestServerForRouting(t *testing.T) (*httptest.Server, func()) {
 	hub = newHub()
 	go hub.run()
 
+	ServerMetrics = NewMetrics(hub)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/agent/connect", handleAgentConnect)
 	mux.HandleFunc("/client/connect", handleClientConnect)

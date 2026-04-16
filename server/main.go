@@ -26,10 +26,14 @@ func main() {
 	hub = newHub()
 	go hub.run()
 
+	// Initialize metrics
+	ServerMetrics = NewMetrics(hub)
+
 	// Set up routes
 	http.HandleFunc("/agent/connect", handleAgentConnect)
 	http.HandleFunc("/client/connect", handleClientConnect)
 	http.HandleFunc("/health", handleHealth)
+	http.HandleFunc("/metrics", handleMetrics)
 
 	// Auth endpoints
 	http.HandleFunc("/auth/login", handleLogin)

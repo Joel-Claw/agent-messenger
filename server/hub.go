@@ -49,6 +49,7 @@ type Hub struct {
 	register   chan *Connection
 	unregister chan *Connection
 	broadcast  chan []byte
+	done       chan struct{}
 
 	// counters for metrics
 	messagesRouted int64
@@ -61,12 +62,16 @@ func newHub() *Hub {
 		register:   make(chan *Connection),
 		unregister: make(chan *Connection),
 		broadcast:  make(chan []byte),
+		done:       make(chan struct{}),
 	}
 }
 
 func (h *Hub) run() {
 	for {
 		select {
+		case <-h.done:
+			return
+
 		case conn := <-h.register:
 			h.mu.Lock()
 			if conn.connType == "agent" {
@@ -77,6 +82,7 @@ func (h *Hub) run() {
 				}
 				h.agents[conn.id] = conn
 				log.Printf("Agent connected: %s", conn.id)
+				if ServerMetrics != nil { ServerMetrics.ConnectionsTotal.Add(1) }
 			} else {
 				if old, ok := h.clients[conn.id]; ok {
 					log.Printf("Client %s reconnecting, closing old connection", conn.id)
@@ -84,6 +90,7 @@ func (h *Hub) run() {
 				}
 				h.clients[conn.id] = conn
 				log.Printf("Client connected: %s", conn.id)
+				if ServerMetrics != nil { ServerMetrics.ConnectionsTotal.Add(1) }
 			}
 			h.mu.Unlock()
 
@@ -122,6 +129,11 @@ func (h *Hub) run() {
 			h.mu.RUnlock()
 		}
 	}
+}
+
+// Stop signals the hub to stop running.
+func (h *Hub) Stop() {
+	close(h.done)
 }
 
 // GetAgent returns a connection for a given agent ID
@@ -181,6 +193,7 @@ func (c *Connection) readPump() {
 
 		c.hub.mu.Lock()
 		c.hub.messagesRouted++
+		if ServerMetrics != nil { ServerMetrics.MessagesIn.Add(1) }
 		c.hub.mu.Unlock()
 
 		log.Printf("Received from %s %s: %s", c.connType, c.id, string(message))
@@ -208,6 +221,7 @@ func (c *Connection) writePump() {
 				return
 			}
 
+			if ServerMetrics != nil { ServerMetrics.MessagesOut.Add(1) }
 			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
 				log.Printf("Error writing to %s %s: %v", c.connType, c.id, err)
 				return
