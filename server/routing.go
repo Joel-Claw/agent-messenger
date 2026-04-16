@@ -28,6 +28,11 @@ type RoutedMessage struct {
 
 // routeMessage handles incoming messages and routes them to the correct recipient
 func routeMessage(sender *Connection, raw []byte) {
+	// Rate limit check
+	if !checkRateLimit(sender) {
+		return
+	}
+
 	var msg IncomingMessage
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		log.Printf("Invalid message from %s %s: %v", sender.connType, sender.id, err)

@@ -27,19 +27,19 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 	// Extract agent_id from query params
 	agentID := r.URL.Query().Get("agent_id")
 	if agentID == "" {
-		http.Error(w, "missing agent_id parameter", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "missing agent_id parameter")
 		return
 	}
 
 	apiKey := r.URL.Query().Get("api_key")
 	if apiKey == "" {
-		http.Error(w, "missing api_key parameter", http.StatusUnauthorized)
+		writeJSONError(w, http.StatusUnauthorized, "missing api_key parameter")
 		return
 	}
 
 	// Validate API key against stored bcrypt hash
 	if err := ValidateAPIKey(agentID, apiKey); err != nil {
-		http.Error(w, "authentication failed: "+err.Error(), http.StatusUnauthorized)
+		writeJSONError(w, http.StatusUnauthorized, "authentication failed: "+err.Error())
 		return
 	}
 
@@ -83,20 +83,20 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	// Extract user_id from query params
 	userID := r.URL.Query().Get("user_id")
 	if userID == "" {
-		http.Error(w, "missing user_id parameter", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "missing user_id parameter")
 		return
 	}
 
 	token := r.URL.Query().Get("token")
 	if token == "" {
-		http.Error(w, "missing token parameter", http.StatusUnauthorized)
+		writeJSONError(w, http.StatusUnauthorized, "missing token parameter")
 		return
 	}
 
 	// Validate JWT token
 	claims, err := ValidateJWT(token)
 	if err != nil {
-		http.Error(w, "authentication failed: "+err.Error(), http.StatusUnauthorized)
+		writeJSONError(w, http.StatusUnauthorized, "authentication failed: "+err.Error())
 		return
 	}
 
@@ -160,14 +160,14 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 // handleLogin handles POST /auth/login - user login returning a JWT
 func handleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	if email == "" || password == "" {
-		http.Error(w, "missing email or password", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "missing email or password")
 		return
 	}
 
@@ -176,23 +176,23 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	err := db.QueryRow("SELECT id, password_hash FROM users WHERE email = ?", email).Scan(&userID, &passwordHash)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			http.Error(w, "invalid credentials", http.StatusUnauthorized)
+			writeJSONError(w, http.StatusUnauthorized, "invalid credentials")
 			return
 		}
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
 	// Compare password
 	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password)); err != nil {
-		http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		writeJSONError(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
 	// Generate JWT
 	token, err := GenerateJWT(userID, email)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
@@ -206,7 +206,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 // handleRegisterAgent handles POST /auth/agent - register a new agent with API key
 func handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
@@ -214,20 +214,20 @@ func handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	apiKey := r.FormValue("api_key")
 	if agentID == "" || name == "" || apiKey == "" {
-		http.Error(w, "missing agent_id, name, or api_key", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "missing agent_id, name, or api_key")
 		return
 	}
 
 	// Hash the API key for storage
 	hash, err := HashAPIKey(apiKey)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
 	_, err = db.Exec("INSERT OR IGNORE INTO agents (id, api_key_hash, name) VALUES (?, ?, ?)", agentID, hash, name)
 	if err != nil {
-		http.Error(w, "failed to register agent: "+err.Error(), http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "failed to register agent: "+err.Error())
 		return
 	}
 
@@ -241,21 +241,21 @@ func handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
 // handleRegisterUser handles POST /auth/user - register a new user account
 func handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	if email == "" || password == "" {
-		http.Error(w, "missing email or password", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "missing email or password")
 		return
 	}
 
 	// Hash the password
 	hash, err := HashAPIKey(password) // bcrypt works for passwords too
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
@@ -264,7 +264,7 @@ func handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	_, err = db.Exec("INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)", userID, email, hash)
 	if err != nil {
-		http.Error(w, "failed to register user: "+err.Error(), http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "failed to register user: "+err.Error())
 		return
 	}
 
@@ -288,7 +288,7 @@ var hub *Hub
 // handleCreateConversation handles POST /conversations/create
 func handleCreateConversation(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
@@ -298,19 +298,19 @@ func handleCreateConversation(w http.ResponseWriter, r *http.Request) {
 	}
 	claims, err := ValidateJWT(token)
 	if err != nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	agentID := r.FormValue("agent_id")
 	if agentID == "" {
-		http.Error(w, "missing agent_id", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "missing agent_id")
 		return
 	}
 
 	conv, err := GetOrCreateConversation(claims.UserID, agentID)
 	if err != nil {
-		http.Error(w, "failed to create conversation", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "failed to create conversation")
 		return
 	}
 
@@ -325,7 +325,7 @@ func handleCreateConversation(w http.ResponseWriter, r *http.Request) {
 // handleListConversations handles GET /conversations/list
 func handleListConversations(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
@@ -335,7 +335,7 @@ func handleListConversations(w http.ResponseWriter, r *http.Request) {
 	}
 	claims, err := ValidateJWT(token)
 	if err != nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -344,7 +344,7 @@ func handleListConversations(w http.ResponseWriter, r *http.Request) {
 		claims.UserID,
 	)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 	defer rows.Close()
@@ -360,7 +360,7 @@ func handleListConversations(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var c ConvInfo
 		if err := rows.Scan(&c.ID, &c.UserID, &c.AgentID, &c.CreatedAt); err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeJSONError(w, http.StatusInternalServerError, "internal error")
 			return
 		}
 		conversations = append(conversations, c)
@@ -376,7 +376,7 @@ func handleListConversations(w http.ResponseWriter, r *http.Request) {
 // handleGetMessages handles GET /conversations/messages
 func handleGetMessages(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
@@ -386,30 +386,30 @@ func handleGetMessages(w http.ResponseWriter, r *http.Request) {
 	}
 	claims, err := ValidateJWT(token)
 	if err != nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	convID := r.URL.Query().Get("conversation_id")
 	if convID == "" {
-		http.Error(w, "missing conversation_id", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "missing conversation_id")
 		return
 	}
 
 	// Verify user is participant
 	conv, err := getConversation(convID)
 	if err != nil || conv == nil {
-		http.Error(w, "conversation not found", http.StatusNotFound)
+		writeJSONError(w, http.StatusNotFound, "conversation not found")
 		return
 	}
 	if conv.UserID != claims.UserID {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	messages, err := getConversationMessages(convID, 50)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
