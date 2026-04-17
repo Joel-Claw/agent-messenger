@@ -14,6 +14,7 @@ import {
 } from 'openclaw/plugin-sdk/inbound-reply-dispatch';
 import { AgentMessengerClient, type UserMessage } from './client.js';
 import type { ResolvedAccount } from './channel.js';
+import { createTypingGuard, AgentStatusManager } from './typing.js';
 
 const CHANNEL_ID = 'agent-messenger';
 const CHANNEL_LABEL = 'Agent Messenger';
@@ -21,6 +22,7 @@ const CHANNEL_LABEL = 'Agent Messenger';
 let runtime: PluginRuntime | null = null;
 let client: AgentMessengerClient | null = null;
 let currentAccount: ResolvedAccount | null = null;
+let statusManager: AgentStatusManager | null = null;
 
 /**
  * Set the PluginRuntime reference. Called by OpenClaw when the plugin is loaded.
@@ -71,6 +73,10 @@ export async function startRuntime(account: ResolvedAccount): Promise<void> {
     );
   });
 
+  // Start status manager
+  statusManager = new AgentStatusManager();
+  statusManager.onActivity();
+
   await client.connect();
   console.log('[AgentMessenger] Runtime started, connected to server');
 }
@@ -82,6 +88,10 @@ export function stopRuntime(): void {
   if (client) {
     client.disconnect();
     client = null;
+  }
+  if (statusManager) {
+    statusManager.onOffline();
+    statusManager = null;
   }
   currentAccount = null;
 }
@@ -126,6 +136,10 @@ async function handleInboundUserMessage(msg: UserMessage): Promise<void> {
     },
   };
 
+  // Send typing indicator while processing
+  const typing = createTypingGuard(msg.conversation_id);
+  typing.start();
+
   // Deliver outbound replies back through the Agent Messenger server
   const deliver = async (payload: OutboundReplyPayload): Promise<void> => {
     if (!client || !client.connected) {
@@ -140,6 +154,9 @@ async function handleInboundUserMessage(msg: UserMessage): Promise<void> {
   };
 
   try {
+    // Mark agent as active
+    statusManager?.onActivity();
+
     await dispatchInboundDirectDmWithRuntime({
       cfg,
       runtime: dmRuntime,
@@ -167,5 +184,8 @@ async function handleInboundUserMessage(msg: UserMessage): Promise<void> {
     });
   } catch (err) {
     console.error('[AgentMessenger] Failed to dispatch inbound DM:', err);
+  } finally {
+    // Stop typing indicator when done
+    typing.stop();
   }
 }
