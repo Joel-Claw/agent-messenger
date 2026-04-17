@@ -3,6 +3,8 @@
  */
 import { defineChannelPluginEntry } from 'openclaw/plugin-sdk/channel-core';
 import { agentMessengerPlugin } from './src/channel.js';
+import { setRuntime, startRuntime, stopRuntime } from './src/runtime.js';
+import type { ResolvedAccount } from './src/channel.js';
 
 export default defineChannelPluginEntry({
   id: 'agent-messenger',
@@ -33,10 +35,12 @@ export default defineChannelPluginEntry({
       path: '/agent-messenger/status',
       auth: 'operator',
       handler: async (_req, res) => {
-        // Return connection status
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ status: 'ok' }));
+        const client = require('./src/runtime.js').getClient();
+        res.end(JSON.stringify({
+          status: client?.connected ? 'connected' : 'disconnected',
+        }));
         return true;
       },
     });
