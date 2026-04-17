@@ -1,0 +1,57 @@
+{
+  "id": "agent-messenger",
+  "kind": "channel",
+  "channels": ["agent-messenger"],
+  "name": "Agent Messenger",
+  "description": "Agent Messenger channel plugin for OpenClaw - connects to an Agent Messenger server for multi-agent chat",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "agent-messenger": {
+        "type": "object",
+        "properties": {
+          "serverUrl": {
+            "type": "string",
+            "description": "Agent Messenger server WebSocket URL (e.g. ws://localhost:8080)"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "API key for agent authentication"
+          },
+          "agentId": {
+            "type": "string",
+            "description": "Agent ID to register as"
+          },
+          "agentName": {
+            "type": "string",
+            "description": "Display name for this agent"
+          },
+          "agentModel": {
+            "type": "string",
+            "description": "Model identifier for this agent"
+          },
+          "agentPersonality": {
+            "type": "string",
+            "description": "Personality description for this agent"
+          },
+          "agentSpecialty": {
+            "type": "string",
+            "description": "Specialty/skills for this agent"
+          },
+          "allowFrom": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "User IDs allowed to message this agent"
+          },
+          "dmSecurity": {
+            "type": "string",
+            "enum": ["allowlist", "open"],
+            "description": "DM security policy: allowlist (only allowFrom) or open (anyone)"
+          }
+        },
+        "required": ["serverUrl", "apiKey", "agentId"]
+      }
+    }
+  }
+}

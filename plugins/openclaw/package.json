@@ -1,0 +1,23 @@
+{
+  "name": "@joel-claw/openclaw-agent-messenger",
+  "version": "0.1.0",
+  "description": "Agent Messenger channel plugin for OpenClaw",
+  "type": "module",
+  "main": "./index.js",
+  "openclaw": {
+    "extensions": ["./index.js"],
+    "setupEntry": "./setup-entry.js",
+    "channel": {
+      "id": "agent-messenger",
+      "label": "Agent Messenger",
+      "selectionLabel": "Agent Messenger (WebSocket)",
+      "blurb": "Connect OpenClaw to an Agent Messenger server for multi-agent chat."
+    }
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.3.24-beta.2"
+  }
+}
