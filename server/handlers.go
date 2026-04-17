@@ -215,6 +215,9 @@ func handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
 	agentID := r.FormValue("agent_id")
 	name := r.FormValue("name")
 	apiKey := r.FormValue("api_key")
+	model := r.FormValue("model")
+	personality := r.FormValue("personality")
+	specialty := r.FormValue("specialty")
 	if agentID == "" || name == "" || apiKey == "" {
 		writeJSONError(w, http.StatusBadRequest, "missing agent_id, name, or api_key")
 		return
@@ -227,7 +230,7 @@ func handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec("INSERT OR IGNORE INTO agents (id, api_key_hash, name) VALUES (?, ?, ?)", agentID, hash, name)
+	_, err = db.Exec("INSERT OR IGNORE INTO agents (id, api_key_hash, name, model, personality, specialty) VALUES (?, ?, ?, ?, ?, ?)", agentID, hash, name, model, personality, specialty)
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "failed to register agent: "+err.Error())
 		return
@@ -235,8 +238,11 @@ func handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"agent_id": agentID,
-		"status":   "registered",
+		"agent_id":    agentID,
+		"status":      "registered",
+		"model":       model,
+		"personality": personality,
+		"specialty":   specialty,
 	})
 }
 
@@ -281,6 +287,80 @@ func handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 // generateID creates a simple unique ID with a prefix
 func generateID(prefix string) string {
 	return fmt.Sprintf("%s_%d", prefix, time.Now().UnixNano())
+}
+
+// handleListAgents handles GET /agents - lists all registered agents with their current status
+// This is for clients to discover and choose which agent to talk to.
+func handleListAgents(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	rows, err := db.Query("SELECT id, name, model, personality, specialty FROM agents ORDER BY name ASC")
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	defer rows.Close()
+
+	var agents []AgentInfo
+	for rows.Next() {
+		var a AgentInfo
+		if err := rows.Scan(&a.ID, &a.Name, &a.Model, &a.Personality, &a.Specialty); err != nil {
+			writeJSONError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		a.Status = hub.AgentStatus(a.ID)
+		agents = append(agents, a)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if agents == nil {
+		agents = []AgentInfo{}
+	}
+	json.NewEncoder(w).Encode(agents)
+}
+
+// handleAdminAgents handles GET /admin/agents - lists all connected agents with detailed status
+// This is an admin endpoint for monitoring which agents are online.
+func handleAdminAgents(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	// Get all registered agents from DB
+	rows, err := db.Query("SELECT id, name, model, personality, specialty, created_at FROM agents ORDER BY name ASC")
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	defer rows.Close()
+
+	var agents []AgentInfo
+	for rows.Next() {
+		var a AgentInfo
+		var createdAt string
+		if err := rows.Scan(&a.ID, &a.Name, &a.Model, &a.Personality, &a.Specialty, &createdAt); err != nil {
+			writeJSONError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		a.Status = hub.AgentStatus(a.ID)
+		// Only include connected_at for online agents
+		if a.Status != "offline" {
+			if conn := hub.GetAgent(a.ID); conn != nil {
+				a.ConnectedAt = conn.connectedAt.Format(time.RFC3339)
+			}
+		}
+		agents = append(agents, a)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if agents == nil {
+		agents = []AgentInfo{}
+	}
+	json.NewEncoder(w).Encode(agents)
 }
 
 // DB is the global database reference (set in main)

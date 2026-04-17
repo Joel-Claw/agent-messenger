@@ -39,6 +39,9 @@ type Connection struct {
 	send     chan []byte
 	// connectedAt tracks when this connection was established
 	connectedAt time.Time
+	// status is the agent's current availability ("online", "busy", "idle")
+	// Only meaningful for agent connections
+	status string
 }
 
 // Hub manages all active connections
@@ -162,6 +165,40 @@ func (h *Hub) ClientCount() int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return len(h.clients)
+}
+
+// AgentStatus returns the current status of a connected agent, or "offline" if not connected
+func (h *Hub) AgentStatus(agentID string) string {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	if conn, ok := h.agents[agentID]; ok {
+		if conn.status != "" {
+			return conn.status
+		}
+		return "online"
+	}
+	return "offline"
+}
+
+// SetAgentStatus updates the status of a connected agent
+func (h *Hub) SetAgentStatus(agentID, status string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if conn, ok := h.agents[agentID]; ok {
+		conn.status = status
+	}
+}
+
+// AgentInfo holds metadata about a connected agent for listing
+// (DB fields merged with live status from hub)
+type AgentInfo struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Model       string `json:"model"`
+	Personality string `json:"personality"`
+	Specialty   string `json:"specialty"`
+	Status      string `json:"status"`
+	ConnectedAt string `json:"connected_at,omitempty"`
 }
 
 // readPump reads messages from the WebSocket connection.

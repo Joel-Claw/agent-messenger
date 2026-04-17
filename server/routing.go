@@ -216,6 +216,7 @@ func routeTypingIndicator(sender *Connection, data json.RawMessage) {
 }
 
 // routeStatusUpdate forwards status updates (e.g., agent goes idle/busy)
+// and updates the agent's availability status in the hub.
 func routeStatusUpdate(sender *Connection, data json.RawMessage) {
 	var payload struct {
 		ConversationID string `json:"conversation_id"`
@@ -223,6 +224,11 @@ func routeStatusUpdate(sender *Connection, data json.RawMessage) {
 	}
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return
+	}
+
+	// Update agent status in hub if this is an agent
+	if sender.connType == "agent" && payload.Status != "" {
+		hub.SetAgentStatus(sender.id, payload.Status)
 	}
 
 	if payload.ConversationID == "" {

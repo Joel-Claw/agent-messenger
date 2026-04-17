@@ -46,6 +46,12 @@ func setupTestServer(t *testing.T) *httptest.Server {
 	mux.HandleFunc("/auth/login", handleLogin)
 	mux.HandleFunc("/auth/agent", handleRegisterAgent)
 	mux.HandleFunc("/auth/user", handleRegisterUser)
+	mux.HandleFunc("/agents", handleListAgents)
+	mux.HandleFunc("/admin/agents", handleAdminAgents)
+	mux.HandleFunc("/conversations/create", handleCreateConversation)
+	mux.HandleFunc("/conversations/list", handleListConversations)
+	mux.HandleFunc("/conversations/messages", handleGetMessages)
+	mux.HandleFunc("/metrics", handleMetrics)
 
 	server := httptest.NewServer(mux)
 	t.Cleanup(func() { server.Close() })

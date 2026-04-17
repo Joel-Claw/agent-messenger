@@ -32,6 +32,9 @@ func setupTestServerForRouting(t *testing.T) (*httptest.Server, func()) {
 	mux.HandleFunc("/conversations/create", handleCreateConversation)
 	mux.HandleFunc("/conversations/list", handleListConversations)
 	mux.HandleFunc("/conversations/messages", handleGetMessages)
+	mux.HandleFunc("/agents", handleListAgents)
+	mux.HandleFunc("/admin/agents", handleAdminAgents)
+	mux.HandleFunc("/metrics", handleMetrics)
 
 	server := httptest.NewServer(mux)
 	cleanup := func() {

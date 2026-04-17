@@ -40,6 +40,10 @@ func main() {
 	http.HandleFunc("/auth/agent", handleRegisterAgent)
 	http.HandleFunc("/auth/user", handleRegisterUser)
 
+	// Agent endpoints
+	http.HandleFunc("/agents", handleListAgents)
+	http.HandleFunc("/admin/agents", handleAdminAgents)
+
 	// Conversation endpoints
 	http.HandleFunc("/conversations/create", handleCreateConversation)
 	http.HandleFunc("/conversations/list", handleListConversations)
@@ -56,6 +60,9 @@ func initSchema(db *sql.DB) error {
 		id TEXT PRIMARY KEY,
 		api_key_hash TEXT NOT NULL,
 		name TEXT NOT NULL,
+		model TEXT NOT NULL DEFAULT '',
+		personality TEXT NOT NULL DEFAULT '',
+		specialty TEXT NOT NULL DEFAULT '',
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
 
@@ -86,6 +93,21 @@ func initSchema(db *sql.DB) error {
 		FOREIGN KEY (conversation_id) REFERENCES conversations(id)
 	);
 	`
-	_, err := db.Exec(schema)
-	return err
+	if _, err := db.Exec(schema); err != nil {
+		return err
+	}
+
+	// Migrate: add model/personality/specialty columns if they don't exist
+	migrations := []string{
+		"ALTER TABLE agents ADD COLUMN model TEXT NOT NULL DEFAULT ''",
+		"ALTER TABLE agents ADD COLUMN personality TEXT NOT NULL DEFAULT ''",
+		"ALTER TABLE agents ADD COLUMN specialty TEXT NOT NULL DEFAULT ''",
+	}
+	for _, m := range migrations {
+		// SQLite ALTER TABLE ADD COLUMN fails if column already exists;
+		// we ignore the error since it just means the column is already there.
+		db.Exec(m)
+	}
+
+	return nil
 }
