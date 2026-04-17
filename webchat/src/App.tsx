@@ -3,8 +3,8 @@ import { AgentList } from './components/AgentList';
 import { ChatView } from './components/ChatView';
 import { Login } from './components/Login';
 import { useWebSocket } from './hooks/useWebSocket';
-import type { ServerMessage, Message, Agent } from './types';
-import { getConversations, getMessages } from './services/api';
+import { useConversationHistory } from './hooks/useConversationHistory';
+import type { ServerMessage, Message } from './types';
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('am_token'));
@@ -31,10 +31,16 @@ function App() {
     localStorage.removeItem('am_user_id');
   };
 
+  const { conversations, activeConversationId, loadHistory, loading: historyLoading } =
+    useConversationHistory({
+      token,
+      selectedAgent,
+      connected: false, // will be set below
+    });
+
   const handleMessage = useCallback((msg: ServerMessage) => {
     switch (msg.type) {
       case 'user_message':
-        // Echo of our own message
         if (msg.conversation_id) {
           setConversationId(msg.conversation_id);
         }
@@ -81,7 +87,6 @@ function App() {
   const handleSend = (content: string) => {
     if (!selectedAgent) return;
 
-    // Add local message immediately
     const localMsg: Message = {
       id: `user-${Date.now()}`,
       conversation_id: conversationId || '',
@@ -92,7 +97,6 @@ function App() {
     };
     setMessages(prev => [...prev, localMsg]);
 
-    // Send to server
     send({
       type: 'message',
       data: {
