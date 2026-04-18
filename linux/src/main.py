@@ -20,6 +20,7 @@ from src.window import MainWindow
 from src.client import AgentMessengerClient
 from src.config import Config
 from src.notifications import NotificationManager
+from src.tray import SystemTray
 
 
 class AgentMessengerApp(Adw.Application):
@@ -34,6 +35,31 @@ class AgentMessengerApp(Adw.Application):
         self.config = Config.load()
         self.window = None
         self.notifications = None
+        self.tray = None
+
+        # Add app actions
+        self._add_actions()
+
+    def _add_actions(self):
+        """Add GActions for app menu."""
+        show_action = Gio.SimpleAction.new('show', None)
+        show_action.connect('activate', lambda *_: self._show_window())
+        self.add_action(show_action)
+
+        quit_action = Gio.SimpleAction.new('quit', None)
+        quit_action.connect('activate', lambda *_: self._quit_app())
+        self.add_action(quit_action)
+
+    def _show_window(self):
+        if self.window:
+            self.window.set_visible(True)
+            self.window.present()
+
+    def _quit_app(self):
+        if self.tray:
+            self.tray.quit_app()
+        else:
+            self.quit()
 
     def do_activate(self):
         """Called when the application is activated."""
@@ -41,6 +67,8 @@ class AgentMessengerApp(Adw.Application):
             self.window = MainWindow(application=self, config=self.config)
             self.client = AgentMessengerClient(self.config, self.window)
             self.notifications = NotificationManager(self)
+            self.tray = SystemTray(self, self.window)
+            self.tray.setup()
             self.window.set_client(self.client)
             self.window.set_notifications(self.notifications)
 

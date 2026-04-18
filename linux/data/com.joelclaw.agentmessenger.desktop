@@ -1,10 +1,12 @@
 [Desktop Entry]
 Name=Agent Messenger
 Comment=Desktop client for Agent Messenger
-Exec=python3 -m src.main
+Exec=agent-messenger
 Icon=agent-messenger
 Terminal=false
 Type=Application
 Categories=Network;InstantMessaging;
 StartupNotify=true
 StartupWMClass=agent-messenger
+DBusActivatable=true
+X-GNOME-UsesNotifications=true
