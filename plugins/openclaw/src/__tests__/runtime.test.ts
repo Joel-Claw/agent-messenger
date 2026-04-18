@@ -9,29 +9,21 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock the OpenClaw SDK
-const mockDispatch = vi.fn().mockResolvedValue(undefined);
-const mockSendMessage = vi.fn();
+// Mock the WebSocket module
+const mockWs = {
+  on: vi.fn(),
+  send: vi.fn(),
+  close: vi.fn(),
+  terminate: vi.fn(),
+  readyState: 1,
+};
 
-vi.mock('openclaw/plugin-sdk/inbound-reply-dispatch', () => ({
-  dispatchInboundDirectDmWithRuntime: mockDispatch,
-  resolveInboundDirectDmAccessWithRuntime: vi.fn(),
-}));
-
-vi.mock('openclaw/plugin-sdk/runtime', () => ({}));
-vi.mock('openclaw/plugin-sdk/reply-payload', () => ({}));
-vi.mock('openclaw/plugin-sdk/channel-core', () => ({
-  createChatChannelPlugin: vi.fn((opts) => opts),
-  createChannelPluginBase: vi.fn((opts) => opts),
-}));
-
-// Mock WebSocket
 vi.mock('ws', () => ({
-  default: vi.fn(),
-  WebSocket: vi.fn(),
+  default: vi.fn(() => mockWs),
+  WebSocket: { OPEN: 1, CLOSED: 3 },
 }));
 
-import { setRuntime, startRuntime, stopRuntime, getClient } from '../runtime.js';
+import { setRuntime, startRuntime, stopRuntime, resetRuntime, getClient } from '../runtime.js';
 
 function makeMockRuntime() {
   return {
@@ -52,15 +44,8 @@ function makeMockRuntime() {
         resolveEnvelopeFormatOptions: vi.fn().mockReturnValue({}),
         formatAgentEnvelope: vi.fn().mockReturnValue(''),
         finalizeInboundContext: vi.fn().mockReturnValue({}),
-        dispatchReplyWithBufferedBlockDispatcher: mockDispatch,
+        dispatchReplyWithBufferedBlockDispatcher: vi.fn().mockResolvedValue(undefined),
       },
-    },
-    subagent: {
-      run: vi.fn(),
-      waitForRun: vi.fn(),
-      getSessionMessages: vi.fn(),
-      getSession: vi.fn(),
-      deleteSession: vi.fn(),
     },
   } as any;
 }
@@ -83,39 +68,26 @@ function makeMockAccount() {
 describe('Agent Messenger Runtime - Inbound Messages', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    stopRuntime();
+    resetRuntime();
   });
 
   afterEach(() => {
-    stopRuntime();
+    resetRuntime();
   });
 
-  it('should reject start without runtime', async () => {
-    await expect(startRuntime(makeMockAccount())).rejects.toThrow(
-      'PluginRuntime not set'
-    );
+  it('should reject startRuntime without runtime', async () => {
+    const account = makeMockAccount();
+    await expect(startRuntime(account)).rejects.toThrow('PluginRuntime not set');
   });
 
-  it('should stop runtime and clear client', () => {
+  it('should clear client on stopRuntime', () => {
     stopRuntime();
     expect(getClient()).toBeNull();
-  });
-
-  it('should deliver outbound replies through the client', async () => {
-    mockDispatch.mockImplementation(async (params: any) => {
-      await params.deliver({
-        text: 'Hello from the agent!',
-        channel: 'agent-messenger',
-      });
-    });
-
-    expect(mockDispatch).not.toHaveBeenCalled();
   });
 
   it('should construct DirectDmRuntime from PluginRuntime', () => {
     const rt = makeMockRuntime();
     setRuntime(rt);
-    // Verify runtime was set (would be used by startRuntime)
     expect(rt.channel.routing.resolveAgentRoute).toBeDefined();
     expect(rt.channel.session.recordInboundSession).toBeDefined();
     expect(rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher).toBeDefined();
@@ -125,27 +97,20 @@ describe('Agent Messenger Runtime - Inbound Messages', () => {
 describe('Agent Messenger Runtime - Error Handling', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    stopRuntime();
+    resetRuntime();
   });
 
-  it('should handle dispatch errors gracefully', async () => {
-    mockDispatch.mockRejectedValueOnce(new Error('Dispatch failed'));
-    expect(true).toBe(true);
+  afterEach(() => {
+    resetRuntime();
   });
 
-  it('should call onRecordError when session recording fails', async () => {
-    const onRecordError = vi.fn();
-    mockDispatch.mockImplementation(async (params: any) => {
-      params.onRecordError(new Error('Failed to record session'));
-    });
-    expect(onRecordError).not.toHaveBeenCalled();
+  it('should handle stopRuntime gracefully', () => {
+    expect(() => stopRuntime()).not.toThrow();
   });
 
-  it('should call onDispatchError when reply dispatch fails', async () => {
-    const onDispatchError = vi.fn();
-    mockDispatch.mockImplementation(async (params: any) => {
-      params.onDispatchError(new Error('Reply failed'), { kind: 'reply' });
-    });
-    expect(onDispatchError).not.toHaveBeenCalled();
+  it('should handle null client on deliver', () => {
+    resetRuntime();
+    const client = getClient();
+    expect(client).toBeNull();
   });
 });

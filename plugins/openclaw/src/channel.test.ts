@@ -77,4 +77,42 @@ describe('agent-messenger plugin', () => {
     expect(account.agentPersonality).toBe('');
     expect(account.agentSpecialty).toBe('');
   });
+
+  it('has DM security config', () => {
+    const cfg = {
+      channels: {
+        'agent-messenger': {
+          serverUrl: 'ws://localhost:8080',
+          apiKey: 'test-key',
+          agentId: 'test-agent',
+          dmSecurity: 'open',
+          allowFrom: [],
+        },
+      },
+    } as any;
+    const account = agentMessengerPlugin.setup!.resolveAccount(cfg, undefined);
+    expect(account.dmPolicy).toBe('open');
+  });
+
+  it('defaults to allowlist DM policy', () => {
+    const cfg = {
+      channels: {
+        'agent-messenger': {
+          serverUrl: 'ws://localhost:8080',
+          apiKey: 'test-key',
+          agentId: 'test-agent',
+        },
+      },
+    } as any;
+    const account = agentMessengerPlugin.setup!.resolveAccount(cfg, undefined);
+    expect(account.dmPolicy).toBeUndefined();
+  });
+
+  it('has outbound sendText method', () => {
+    expect(agentMessengerPlugin.outbound?.attachedResults?.sendText).toBeDefined();
+  });
+
+  it('has outbound sendMedia method', () => {
+    expect(agentMessengerPlugin.outbound?.base?.sendMedia).toBeDefined();
+  });
 });

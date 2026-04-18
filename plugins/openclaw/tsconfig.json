@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["vitest/import-meta"]
+  },
+  "include": ["index.ts", "agent-messenger.ts", "api.ts", "runtime-api.ts", "setup-entry.ts", "src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

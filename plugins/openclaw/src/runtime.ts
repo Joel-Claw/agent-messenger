@@ -97,6 +97,15 @@ export function stopRuntime(): void {
 }
 
 /**
+ * Reset the runtime completely: clear runtime ref, client, and account.
+ * Used for testing and full teardown.
+ */
+export function resetRuntime(): void {
+  stopRuntime();
+  runtime = null;
+}
+
+/**
  * Get the active client (for outbound adapter).
  */
 export function getClient(): AgentMessengerClient | null {

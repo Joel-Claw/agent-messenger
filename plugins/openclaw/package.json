@@ -19,5 +19,20 @@
   },
   "peerDependencies": {
     "openclaw": ">=2026.3.24-beta.2"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": { "optional": true }
+  },
+  "devDependencies": {
+    "vitest": "^3.1.1",
+    "typescript": "^5.8.3",
+    "@types/ws": "^8.18.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "AM_INTEGRATION=1 vitest run src/__tests__/integration.test.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
   }
 }
