@@ -129,6 +129,9 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 			default:
 				log.Printf("Client %s send buffer full, dropping message", recipientID)
 			}
+		} else {
+			// Client is offline, send push notification
+			go notifyUser(recipientID, "New Message", truncate(msg.Content, 100), msg.ConversationID)
 		}
 	} else {
 		if agent := hub.GetAgent(recipientID); agent != nil {
@@ -286,4 +289,15 @@ func sendError(conn *Connection, message string) {
 	case conn.send <- data:
 	default:
 	}
+}
+
+// truncate shortens a string to maxLen characters
+func truncate(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	if maxLen <= 3 {
+		return s[:maxLen]
+	}
+	return s[:maxLen-3] + "..."
 }

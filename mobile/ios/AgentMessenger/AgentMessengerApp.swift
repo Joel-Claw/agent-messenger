@@ -3,6 +3,7 @@ import SwiftUI
 /// Main app entry point.
 @main
 struct AgentMessengerApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var appState = AppState()
 
     var body: some Scene {
@@ -18,7 +19,7 @@ struct AgentMessengerApp: App {
     }
 }
 
-/// Shared app state managing authentication, WebSocket, and API connections.
+/// Shared app state managing authentication, WebSocket, API connections, and notifications.
 @MainActor
 class AppState: ObservableObject {
     @Published var config: AppConfig
@@ -29,6 +30,7 @@ class AppState: ObservableObject {
 
     let apiClient: APIClient
     let wsClient: WebSocketClient
+    let notificationManager = NotificationManager()
 
     var currentConversationID: String?
 
@@ -38,6 +40,9 @@ class AppState: ObservableObject {
         self.apiClient = APIClient(config: config)
         self.wsClient = WebSocketClient(config: config)
         self.isLoggedIn = config.isConfigured && !config.email.isEmpty
+
+        // Wire up notification manager
+        notificationManager.configure(apiClient: apiClient)
 
         // Wire up WebSocket callbacks
         setupWSCallbacks()
@@ -70,6 +75,11 @@ class AppState: ObservableObject {
 
             // Connect WebSocket
             wsClient.connect(userID: authResponse.user_id, token: authResponse.token)
+
+            // Request push notification authorization
+            Task {
+                _ = await notificationManager.requestAuthorization()
+            }
         } catch {
             // If login fails, try registering
             do {
@@ -79,6 +89,11 @@ class AppState: ObservableObject {
                 self.userID = authResponse.user_id
                 self.isLoggedIn = true
                 wsClient.connect(userID: authResponse.user_id, token: authResponse.token)
+
+                // Request push notification authorization
+                Task {
+                    _ = await notificationManager.requestAuthorization()
+                }
             } catch let registerError {
                 errorMessage = registerError.localizedDescription
             }
@@ -89,6 +104,7 @@ class AppState: ObservableObject {
 
     func logout() {
         wsClient.disconnect()
+        Task { await notificationManager.unregisterDeviceToken() }
         config.email = ""
         config.password = ""
         config.save()

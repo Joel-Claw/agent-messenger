@@ -62,6 +62,13 @@ func main() {
 	http.HandleFunc("/conversations/list", handleListConversations)
 	http.HandleFunc("/conversations/messages", handleGetMessages)
 
+	// Push notification endpoints
+	http.HandleFunc("/push/register", handleRegisterDeviceToken)
+	http.HandleFunc("/push/unregister", handleUnregisterDeviceToken)
+
+	// Initialize push notifications
+	initPushNotifications()
+
 	// Start server
 	addr := ":" + *port
 	log.Printf("Agent Messenger starting on %s", addr)
@@ -94,6 +101,16 @@ func initSchema(db *sql.DB) error {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (user_id) REFERENCES users(id),
 		FOREIGN KEY (agent_id) REFERENCES agents(id)
+	);
+
+	CREATE TABLE IF NOT EXISTS device_tokens (
+		user_id TEXT NOT NULL,
+		device_token TEXT NOT NULL,
+		platform TEXT NOT NULL DEFAULT 'ios',
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (user_id, device_token),
+		FOREIGN KEY (user_id) REFERENCES users(id)
 	);
 
 	CREATE TABLE IF NOT EXISTS messages (
