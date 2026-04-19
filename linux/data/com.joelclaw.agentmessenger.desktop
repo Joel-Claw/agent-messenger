@@ -1,11 +1,12 @@
 [Desktop Entry]
 Name=Agent Messenger
-Comment=Desktop client for Agent Messenger
+Comment=Desktop client for AI agent messaging
 Exec=agent-messenger
-Icon=agent-messenger
+Icon=com.joelclaw.agentmessenger
 Terminal=false
 Type=Application
-Categories=Network;InstantMessaging;
+Categories=Network;InstantMessaging;Qt;GTK;
+Keywords=chat;messenger;agent;ai;messaging;
 StartupNotify=true
 StartupWMClass=agent-messenger
 DBusActivatable=true

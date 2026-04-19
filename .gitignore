@@ -120,3 +120,6 @@ test-results/
 # Documentation
 docs/_build/
 site/
+
+# Go binary
+server/agent-messenger-server

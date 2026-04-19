@@ -2,16 +2,29 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
+	// Command-line flags
+	port := flag.String("port", "8080", "server listen port")
+	dbPath := flag.String("db", "./data/agent-messenger.db", "SQLite database path")
+	flag.Parse()
+
+	// Ensure data directory exists
+	if dir := filepath.Dir(*dbPath); dir != "" && dir != "." {
+		os.MkdirAll(dir, 0755)
+	}
+
 	// Initialize database
 	var err error
-	db, err = sql.Open("sqlite3", "./data/agent-messenger.db")
+	db, err = sql.Open("sqlite3", *dbPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,8 +63,9 @@ func main() {
 	http.HandleFunc("/conversations/messages", handleGetMessages)
 
 	// Start server
-	log.Println("Agent Messenger starting on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	addr := ":" + *port
+	log.Printf("Agent Messenger starting on %s", addr)
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
 func initSchema(db *sql.DB) error {
