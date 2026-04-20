@@ -7,12 +7,12 @@ import Foundation
 struct AuthResponse: Codable {
     let token: String
     let user_id: String
-    let email: String
+    let username: String
 }
 
 struct RegisterResponse: Codable {
     let user_id: String
-    let email: String
+    let username: String
 }
 
 struct ErrorResponse: Codable {

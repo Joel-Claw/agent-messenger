@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Login form for email/password authentication.
+/// Login form for username/password authentication.
 struct LoginView: View {
     @EnvironmentObject var appState: AppState
-    @State private var email = ""
+    @State private var username = ""
     @State private var password = ""
     @State private var serverURL = ""
     @State private var showServerSettings = false
@@ -27,10 +27,9 @@ struct LoginView: View {
 
                 // Login Form
                 VStack(spacing: 16) {
-                    TextField("Email", text: $email)
+                    TextField("Username", text: $username)
                         .textFieldStyle(.roundedBorder)
                         .textInputAutocapitalization(.never)
-                        .keyboardType(.emailAddress)
                         .autocorrectionDisabled()
 
                     SecureField("Password", text: $password)
@@ -46,7 +45,7 @@ struct LoginView: View {
                                 .padding()
                         }
                         .buttonStyle(.borderedProminent)
-                        .disabled(email.isEmpty || password.isEmpty)
+                        .disabled(username.isEmpty || password.isEmpty)
                     }
 
                     if let error = appState.errorMessage {
@@ -80,14 +79,14 @@ struct LoginView: View {
                 }
             }
             .onAppear {
-                email = appState.config.email
+                username = appState.config.username
             }
         }
     }
 
     private func doLogin() {
         Task {
-            await appState.login(email: email, password: password)
+            await appState.login(username: username, password: password)
         }
     }
 }

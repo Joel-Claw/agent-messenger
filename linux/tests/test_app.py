@@ -40,7 +40,7 @@ class TestAppActions:
             config = Config(
                 server_url='ws://testhost:9090',
                 api_url='http://testhost:9090',
-                email='test@example.com',
+                username='testuser',
                 password='secret123',
             )
 
@@ -49,7 +49,7 @@ class TestAppActions:
             data = {
                 'server_url': config.server_url,
                 'api_url': config.api_url,
-                'email': config.email,
+                'username': config.username,
                 'password': config.password,
             }
             with open(config_path, 'w') as f:
@@ -61,7 +61,7 @@ class TestAppActions:
 
             assert loaded['server_url'] == 'ws://testhost:9090'
             assert loaded['api_url'] == 'http://testhost:9090'
-            assert loaded['email'] == 'test@example.com'
+            assert loaded['username'] == 'testuser'
             assert loaded['password'] == 'secret123'
 
     def test_default_config_values(self):
@@ -70,7 +70,7 @@ class TestAppActions:
         config = Config()
         assert config.server_url == 'ws://localhost:8080'
         assert config.api_url == 'http://localhost:8080'
-        assert config.email == ''
+        assert config.username == ''
         assert config.password == ''
 
     def test_desktop_file_exists(self):

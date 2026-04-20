@@ -41,13 +41,13 @@ data class AuthResponse(
 
 @Serializable
 data class RegisterRequest(
-    val email: String,
+    val username: String,
     val password: String
 )
 
 @Serializable
 data class LoginRequest(
-    val email: String,
+    val username: String,
     val password: String
 )
 

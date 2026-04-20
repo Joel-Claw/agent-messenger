@@ -68,10 +68,10 @@ func registerAndConnectAgent(t *testing.T, server *httptest.Server, agentID, api
 }
 
 // registerUserAndGetToken is a helper to register a user and get JWT
-func registerUserAndGetToken(t *testing.T, email, password string) string {
+func registerUserAndGetToken(t *testing.T, username, password string) string {
 	t.Helper()
 	form := url.Values{}
-	form.Set("email", email)
+	form.Set("username", username)
 	form.Set("password", password)
 
 	req := httptest.NewRequest(http.MethodPost, "/auth/user", strings.NewReader(form.Encode()))
@@ -84,7 +84,7 @@ func registerUserAndGetToken(t *testing.T, email, password string) string {
 
 	// Login
 	form2 := url.Values{}
-	form2.Set("email", email)
+	form2.Set("username", username)
 	form2.Set("password", password)
 	req2 := httptest.NewRequest(http.MethodPost, "/auth/login", strings.NewReader(form2.Encode()))
 	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -100,7 +100,7 @@ func TestCreateConversation(t *testing.T) {
 	_, cleanup := setupTestServerForRouting(t)
 	defer cleanup()
 
-	token := registerUserAndGetToken(t, "conv-test@example.com", "password123")
+	token := registerUserAndGetToken(t, "conv_tester", "password123")
 
 	form := url.Values{}
 	form.Set("agent_id", "conv-agent")
@@ -145,7 +145,7 @@ func TestListConversations(t *testing.T) {
 	_, cleanup := setupTestServerForRouting(t)
 	defer cleanup()
 
-	token := registerUserAndGetToken(t, "list-conv@example.com", "password123")
+	token := registerUserAndGetToken(t, "list_conv", "password123")
 
 	// Create a conversation first
 	form := url.Values{}
@@ -172,7 +172,7 @@ func TestGetMessagesEmpty(t *testing.T) {
 	hub = newHub()
 	go hub.run()
 
-	token := registerUserAndGetToken(t, "msgs-test@example.com", "password123")
+	token := registerUserAndGetToken(t, "msgs_tester", "password123")
 
 	// Create a conversation
 	form := url.Values{}
@@ -600,7 +600,7 @@ func TestGetMessagesViaREST(t *testing.T) {
 	_, cleanup := setupTestServerForRouting(t)
 	defer cleanup()
 
-	token := registerUserAndGetToken(t, "rest-msgs@example.com", "password123")
+	token := registerUserAndGetToken(t, "rest_msgs", "password123")
 
 	// Create a conversation
 	form := url.Values{}
@@ -653,7 +653,7 @@ func TestGetMessagesUnauthorizedUser(t *testing.T) {
 	go hub.run()
 
 	// User A creates a conversation
-	tokenA := registerUserAndGetToken(t, "user-a@example.com", "password123")
+	tokenA := registerUserAndGetToken(t, "user_a", "password123")
 	form := url.Values{}
 	form.Set("agent_id", "shared-agent")
 	req := httptest.NewRequest(http.MethodPost, "/conversations/create", strings.NewReader(form.Encode()))
@@ -667,7 +667,7 @@ func TestGetMessagesUnauthorizedUser(t *testing.T) {
 	convID := createResp["conversation_id"]
 
 	// User B tries to read User A's messages
-	tokenB := registerUserAndGetToken(t, "user-b@example.com", "password456")
+	tokenB := registerUserAndGetToken(t, "user_b", "password456")
 	req2 := httptest.NewRequest(http.MethodGet, "/conversations/messages?conversation_id="+convID, nil)
 	req2.Header.Set("Authorization", "Bearer "+tokenB)
 	w2 := httptest.NewRecorder()
@@ -683,7 +683,7 @@ func TestGetMessagesNonexistentConversation(t *testing.T) {
 	hub = newHub()
 	go hub.run()
 
-	token := registerUserAndGetToken(t, "no-conv@example.com", "password123")
+	token := registerUserAndGetToken(t, "no_conv", "password123")
 	req := httptest.NewRequest(http.MethodGet, "/conversations/messages?conversation_id=conv_nonexistent", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()

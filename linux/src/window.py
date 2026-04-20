@@ -44,7 +44,7 @@ class MainWindow(Adw.ApplicationWindow):
         self._build_ui()
 
         # Load agents if authenticated
-        if self.config.email and self.config.password:
+        if self.config.username and self.config.password:
             GLib.idle_add(self._authenticate_and_load)
 
     def _load_css(self):
@@ -95,9 +95,9 @@ class MainWindow(Adw.ApplicationWindow):
         self.login_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.login_box.set_margin_top(12)
 
-        self.email_entry = Adw.EntryRow(title='Email')
-        self.email_entry.set_text(self.config.email)
-        self.login_box.append(self.email_entry)
+        self.username_entry = Adw.EntryRow(title='Username')
+        self.username_entry.set_text(self.config.username)
+        self.login_box.append(self.username_entry)
 
         self.password_entry = Adw.EntryRow(title='Password')
         self.password_entry.set_input_purpose(Gtk.InputPurpose.PASSWORD)
@@ -192,7 +192,7 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _update_ui_state(self):
         """Update UI based on connection state."""
-        authenticated = bool(self.config.email and self.config.password)
+        authenticated = bool(self.config.username and self.config.password)
         self.message_entry.set_sensitive(authenticated)
         self.send_button.set_sensitive(authenticated)
 
@@ -202,14 +202,14 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _on_login_clicked(self, button):
         """Handle login button click."""
-        email = self.email_entry.get_text().strip()
+        username = self.username_entry.get_text().strip()
         password = self.password_entry.get_text().strip()
 
-        if not email or not password:
-            self.login_status.set_text('Please enter email and password')
+        if not username or not password:
+            self.login_status.set_text('Please enter username and password')
             return
 
-        self.config.email = email
+        self.config.username = username
         self.config.password = password
         self.config.save()
 
@@ -224,7 +224,7 @@ class MainWindow(Adw.ApplicationWindow):
         try:
             resp = requests.post(
                 f'{self.config.api_url}/auth/login',
-                data={'email': self.config.email, 'password': self.config.password},
+                data={'username': self.config.username, 'password': self.config.password},
             )
 
             if resp.status_code != 200:

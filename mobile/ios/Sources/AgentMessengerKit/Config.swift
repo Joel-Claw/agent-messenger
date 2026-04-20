@@ -5,7 +5,7 @@ import Foundation
 struct AppConfig: Codable, Equatable {
     var serverURL: String
     var apiURL: String
-    var email: String
+    var username: String
     var password: String
 
     static let defaults = UserDefaults.standard
@@ -14,12 +14,12 @@ struct AppConfig: Codable, Equatable {
     init(
         serverURL: String = "ws://localhost:8080",
         apiURL: String = "http://localhost:8080",
-        email: String = "",
+        username: String = "",
         password: String = ""
     ) {
         self.serverURL = serverURL
         self.apiURL = apiURL
-        self.email = email
+        self.username = username
         self.password = password
     }
 
@@ -44,6 +44,6 @@ struct AppConfig: Codable, Equatable {
     }
 
     var isConfigured: Bool {
-        !email.isEmpty && !password.isEmpty && !serverURL.isEmpty
+        !username.isEmpty && !password.isEmpty && !serverURL.isEmpty
     }
 }

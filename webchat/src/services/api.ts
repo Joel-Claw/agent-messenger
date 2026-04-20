@@ -5,11 +5,11 @@ const API_BASE = process.env.REACT_APP_API_URL || `http://${window.location.host
 
 export { WS_BASE, API_BASE };
 
-export async function login(email: string, password: string): Promise<{ token: string; user_id: string }> {
+export async function login(username: string, password: string): Promise<{ token: string; user_id: string; username: string }> {
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Login failed' }));
@@ -18,11 +18,11 @@ export async function login(email: string, password: string): Promise<{ token: s
   return res.json();
 }
 
-export async function register(email: string, password: string, name: string): Promise<{ token: string; user_id: string }> {
+export async function register(username: string, password: string): Promise<{ user_id: string; username: string }> {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, name }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Registration failed' }));

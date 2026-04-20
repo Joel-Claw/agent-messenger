@@ -20,7 +20,7 @@ class TestConfig:
         config = Config()
         assert config.server_url == 'ws://localhost:8080'
         assert config.api_url == 'http://localhost:8080'
-        assert config.email == ''
+        assert config.username == ''
         assert config.password == ''
 
     def test_custom_values(self):
@@ -28,12 +28,12 @@ class TestConfig:
         config = Config(
             server_url='ws://example.com:9090',
             api_url='http://example.com:9090',
-            email='test@example.com',
+            username='testuser',
             password='secret',
         )
         assert config.server_url == 'ws://example.com:9090'
         assert config.api_url == 'http://example.com:9090'
-        assert config.email == 'test@example.com'
+        assert config.username == 'testuser'
         assert config.password == 'secret'
 
     def test_save_and_load(self, tmp_path):
@@ -47,7 +47,7 @@ class TestConfig:
             config = Config(
                 server_url='ws://test:8080',
                 api_url='http://test:8080',
-                email='user@test.com',
+                username='myuser',
                 password='pass123',
             )
             config.save()
@@ -55,7 +55,7 @@ class TestConfig:
             loaded = Config.load()
             assert loaded.server_url == 'ws://test:8080'
             assert loaded.api_url == 'http://test:8080'
-            assert loaded.email == 'user@test.com'
+            assert loaded.username == 'myuser'
             assert loaded.password == 'pass123'
         finally:
             config_module.CONFIG_DIR = original_dir
@@ -70,7 +70,7 @@ class TestConfig:
         try:
             config = Config.load()
             assert config.server_url == 'ws://localhost:8080'
-            assert config.email == ''
+            assert config.username == ''
         finally:
             config_module.CONFIG_FILE = original_file
 

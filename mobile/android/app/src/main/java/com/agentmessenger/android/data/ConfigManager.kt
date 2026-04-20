@@ -20,7 +20,7 @@ object ConfigManager {
     private val KEY_WS_URL = stringPreferencesKey("ws_url")
     private val KEY_AUTH_TOKEN = stringPreferencesKey("auth_token")
     private val KEY_USER_ID = stringPreferencesKey("user_id")
-    private val KEY_USER_EMAIL = stringPreferencesKey("user_email")
+    private val KEY_USERNAME = stringPreferencesKey("username")
     private val KEY_FCM_TOKEN = stringPreferencesKey("fcm_token")
 
     fun init(context: Context) {
@@ -48,9 +48,9 @@ object ConfigManager {
         get() = runBlocking { appContext.dataStore.data.map { it[KEY_USER_ID] }.first() }
         set(value) = runBlocking { appContext.dataStore.edit { if (value != null) it[KEY_USER_ID] = value else it.remove(KEY_USER_ID) } }
 
-    var userEmail: String?
-        get() = runBlocking { appContext.dataStore.data.map { it[KEY_USER_EMAIL] }.first() }
-        set(value) = runBlocking { appContext.dataStore.edit { if (value != null) it[KEY_USER_EMAIL] = value else it.remove(KEY_USER_EMAIL) } }
+    var username: String?
+        get() = runBlocking { appContext.dataStore.data.map { it[KEY_USERNAME] }.first() }
+        set(value) = runBlocking { appContext.dataStore.edit { if (value != null) it[KEY_USERNAME] = value else it.remove(KEY_USERNAME) } }
 
     // FCM
     var fcmToken: String?

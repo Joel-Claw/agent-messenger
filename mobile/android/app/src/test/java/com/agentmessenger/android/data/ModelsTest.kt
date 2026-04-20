@@ -113,17 +113,17 @@ class ModelsTest {
     // LoginRequest / RegisterRequest
     @Test
     fun loginRequest_serialization() {
-        val login = LoginRequest(email = "test@example.com", password = "secret123")
+        val login = LoginRequest(username = "testuser", password = "secret123")
         val jsonString = json.encodeToString(login)
-        assertTrue(jsonString.contains("\"email\""))
+        assertTrue(jsonString.contains("\"username\""))
         assertTrue(jsonString.contains("\"password\""))
     }
 
     @Test
     fun registerRequest_serialization() {
-        val reg = RegisterRequest(email = "new@example.com", password = "pass123")
+        val reg = RegisterRequest(username = "newuser", password = "pass123")
         val jsonString = json.encodeToString(reg)
-        assertTrue(jsonString.contains("\"email\""))
+        assertTrue(jsonString.contains("\"username\""))
         assertTrue(jsonString.contains("\"password\""))
     }
 

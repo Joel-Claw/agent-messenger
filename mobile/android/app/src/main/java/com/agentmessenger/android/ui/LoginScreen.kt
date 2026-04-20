@@ -32,7 +32,7 @@ fun LoginScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var email by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var serverUrl by remember { mutableStateOf(ConfigManager.serverUrl) }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -95,14 +95,14 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Email
+            // Username
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
+                value = username,
+                onValueChange = { username = it },
+                label = { Text("Username") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 enabled = !isLoading
             )
 
@@ -143,8 +143,8 @@ fun LoginScreen(
             // Login button
             Button(
                 onClick = {
-                    if (email.isBlank() || password.isBlank()) {
-                        errorMessage = "Email and password are required"
+                    if (username.isBlank() || password.isBlank()) {
+                        errorMessage = "Username and password are required"
                         return@Button
                     }
 
@@ -154,10 +154,10 @@ fun LoginScreen(
                         try {
                             ConfigManager.serverUrl = serverUrl
                             val apiClient = ApiClient(serverUrl)
-                            val authResponse = apiClient.login(email, password)
+                            val authResponse = apiClient.login(username, password)
                             ConfigManager.authToken = authResponse.token
                             ConfigManager.userId = authResponse.userId
-                            ConfigManager.userEmail = email
+                            ConfigManager.username = username
                             onLoginSuccess()
                         } catch (e: Exception) {
                             errorMessage = "Login failed: ${e.message}"
@@ -185,8 +185,8 @@ fun LoginScreen(
             // Register button
             OutlinedButton(
                 onClick = {
-                    if (email.isBlank() || password.isBlank()) {
-                        errorMessage = "Email and password are required"
+                    if (username.isBlank() || password.isBlank()) {
+                        errorMessage = "Username and password are required"
                         return@OutlinedButton
                     }
                     isLoading = true
@@ -195,10 +195,10 @@ fun LoginScreen(
                         try {
                             ConfigManager.serverUrl = serverUrl
                             val apiClient = ApiClient(serverUrl)
-                            val authResponse = apiClient.register(email, password)
+                            val authResponse = apiClient.register(username, password)
                             ConfigManager.authToken = authResponse.token
                             ConfigManager.userId = authResponse.userId
-                            ConfigManager.userEmail = email
+                            ConfigManager.username = username
                             onLoginSuccess()
                         } catch (e: Exception) {
                             errorMessage = "Registration failed: ${e.message}"

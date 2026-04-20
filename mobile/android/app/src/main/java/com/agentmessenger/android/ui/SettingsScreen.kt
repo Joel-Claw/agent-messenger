@@ -86,7 +86,7 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            ConfigManager.userEmail?.let { email ->
+            ConfigManager.username?.let { username ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
@@ -95,7 +95,7 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = email,
+                            text = username,
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }

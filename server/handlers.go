@@ -166,16 +166,16 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email := r.FormValue("email")
+	username := r.FormValue("username")
 	password := r.FormValue("password")
-	if email == "" || password == "" {
-		writeJSONError(w, http.StatusBadRequest, "missing email or password")
+	if username == "" || password == "" {
+		writeJSONError(w, http.StatusBadRequest, "missing username or password")
 		return
 	}
 
-	// Look up user by email
+	// Look up user by username
 	var userID, passwordHash string
-	err := db.QueryRow("SELECT id, password_hash FROM users WHERE email = ?", email).Scan(&userID, &passwordHash)
+	err := db.QueryRow("SELECT id, password_hash FROM users WHERE username = ?", username).Scan(&userID, &passwordHash)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			writeJSONError(w, http.StatusUnauthorized, "invalid credentials")
@@ -192,7 +192,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate JWT
-	token, err := GenerateJWT(userID, email)
+	token, err := GenerateJWT(userID, username)
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "internal error")
 		return
@@ -253,11 +253,23 @@ func handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email := r.FormValue("email")
+	username := r.FormValue("username")
 	password := r.FormValue("password")
-	if email == "" || password == "" {
-		writeJSONError(w, http.StatusBadRequest, "missing email or password")
+	if username == "" || password == "" {
+		writeJSONError(w, http.StatusBadRequest, "missing username or password")
 		return
+	}
+
+	// Validate username: 3-50 chars, alphanumeric + underscore
+	if len(username) < 3 || len(username) > 50 {
+		writeJSONError(w, http.StatusBadRequest, "username must be between 3 and 50 characters")
+		return
+	}
+	for _, c := range username {
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
+			writeJSONError(w, http.StatusBadRequest, "username must contain only letters, numbers, and underscores")
+			return
+		}
 	}
 
 	// Hash the password
@@ -267,10 +279,10 @@ func handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate a user ID from email
+	// Generate a user ID
 	userID := generateID("user")
 
-	_, err = db.Exec("INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)", userID, email, hash)
+	_, err = db.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", userID, username, hash)
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "failed to register user: "+err.Error())
 		return
@@ -278,9 +290,9 @@ func handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"user_id": userID,
-		"email":   email,
-		"status":  "registered",
+		"user_id":  userID,
+		"username": username,
+		"status":   "registered",
 	})
 }
 

@@ -15,10 +15,10 @@ class Config:
     """Application configuration."""
 
     def __init__(self, server_url='ws://localhost:8080', api_url='http://localhost:8080',
-                 email='', password=''):
+                 username='', password=''):
         self.server_url = server_url
         self.api_url = api_url
-        self.email = email
+        self.username = username
         self.password = password
 
     @classmethod
@@ -31,7 +31,7 @@ class Config:
                 return cls(
                     server_url=data.get('server_url', 'ws://localhost:8080'),
                     api_url=data.get('api_url', 'http://localhost:8080'),
-                    email=data.get('email', ''),
+                    username=data.get('username', ''),
                     password=data.get('password', ''),
                 )
             except (json.JSONDecodeError, OSError) as e:
@@ -45,7 +45,7 @@ class Config:
         data = {
             'server_url': self.server_url,
             'api_url': self.api_url,
-            'email': self.email,
+            'username': self.username,
             # Note: In production, password should be stored in keyring
             'password': self.password,
         }

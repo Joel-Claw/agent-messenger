@@ -51,9 +51,9 @@ struct SettingsView: View {
 
                 Section("Account") {
                     HStack {
-                        Text("Email")
+                        Text("Username")
                         Spacer()
-                        Text(appState.config.email)
+                        Text(appState.config.username)
                             .foregroundStyle(.secondary)
                     }
 

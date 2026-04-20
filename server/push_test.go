@@ -14,7 +14,7 @@ func TestRegisterDeviceToken(t *testing.T) {
 	db.Exec("DELETE FROM device_tokens")
 	db.Exec("DELETE FROM users")
 
-	userID, token := createPushTestUser(t, "pushuser@test.com", "password123")
+	userID, token := createPushTestUser(t, "pushuser", "password123")
 
 	tests := []struct {
 		name       string
@@ -95,7 +95,7 @@ func TestUnregisterDeviceToken(t *testing.T) {
 	db.Exec("DELETE FROM device_tokens")
 	db.Exec("DELETE FROM users")
 
-	_, token := createPushTestUser(t, "unreguser@test.com", "password123")
+	_, token := createPushTestUser(t, "unreguser", "password123")
 
 	// First register
 	body := `{"device_token":"abc123def456","platform":"ios"}`
@@ -135,7 +135,7 @@ func TestGetDeviceTokensForUser(t *testing.T) {
 	db.Exec("DELETE FROM device_tokens")
 	db.Exec("DELETE FROM users")
 
-	userID, token := createPushTestUser(t, "tokens@test.com", "password123")
+	userID, token := createPushTestUser(t, "tokens", "password123")
 
 	devices := []string{"token_ios_1", "token_ios_2"}
 	for _, dt := range devices {
@@ -196,7 +196,7 @@ func TestRegisterAndroidDeviceToken(t *testing.T) {
 	db.Exec("DELETE FROM device_tokens")
 	db.Exec("DELETE FROM users")
 
-	_, token := createPushTestUser(t, "android@test.com", "password123")
+	_, token := createPushTestUser(t, "android_test", "password123")
 
 	// Register Android device token
 	body := `{"device_token":"fcm-token-abc123","platform":"android"}`
@@ -251,7 +251,7 @@ func TestRegisterMultiplePlatforms(t *testing.T) {
 	db.Exec("DELETE FROM device_tokens")
 	db.Exec("DELETE FROM users")
 
-	userID, token := createPushTestUser(t, "multi@test.com", "password123")
+	userID, token := createPushTestUser(t, "multi", "password123")
 
 	// Register iOS token
 	iosBody := `{"device_token":"ios-token-1","platform":"ios"}`
@@ -298,11 +298,11 @@ func TestRegisterMultiplePlatforms(t *testing.T) {
 }
 
 // Helper to create a test user and get their auth token
-func createPushTestUser(t *testing.T, email, password string) (userID, authToken string) {
+func createPushTestUser(t *testing.T, username, password string) (userID, authToken string) {
 	t.Helper()
 
 	// Register using form values
-	form := url.Values{"email": {email}, "password": {password}}.Encode()
+	form := url.Values{"username": {username}, "password": {password}}.Encode()
 	req := httptest.NewRequest("POST", "/auth/user", strings.NewReader(form))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr := httptest.NewRecorder()
@@ -317,7 +317,7 @@ func createPushTestUser(t *testing.T, email, password string) (userID, authToken
 	userID = regResp["user_id"]
 
 	// Login to get token
-	form = url.Values{"email": {email}, "password": {password}}.Encode()
+	form = url.Values{"username": {username}, "password": {password}}.Encode()
 	req = httptest.NewRequest("POST", "/auth/login", strings.NewReader(form))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr = httptest.NewRecorder()

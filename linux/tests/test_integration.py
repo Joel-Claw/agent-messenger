@@ -46,9 +46,9 @@ def find_free_port():
         return s.getsockname()[1]
 
 
-def unique_email():
-    """Generate a unique email address for testing."""
-    return f'test-{uuid.uuid4().hex[:8]}@example.com'
+def unique_username():
+    """Generate a unique username for testing."""
+    return f'test_{uuid.uuid4().hex[:8]}'
 
 
 class ServerFixture:
@@ -148,25 +148,25 @@ def server():
         fixture.stop()
 
 
-def register_user(server, email=None, password='testpassword123'):
+def register_user(server, username=None, password='testpassword123'):
     """Register a test user and return (user_id, token)."""
     import requests
-    if email is None:
-        email = unique_email()
+    if username is None:
+        username = unique_username()
     resp = requests.post(
         f'{server.api_url}/auth/user',
-        data={'email': email, 'password': password},
+        data={'username': username, 'password': password},
     )
     assert resp.status_code == 200, f"Failed to register user: {resp.text}"
-    return resp.json()['user_id'], email, password
+    return resp.json()['user_id'], username, password
 
 
-def get_auth_token(server, email, password):
+def get_auth_token(server, username, password):
     """Get a JWT token for a user."""
     import requests
     resp = requests.post(
         f'{server.api_url}/auth/login',
-        data={'email': email, 'password': password},
+        data={'username': username, 'password': password},
     )
     assert resp.status_code == 200, f"Login failed: {resp.text}"
     return resp.json()['token']
@@ -199,18 +199,18 @@ class TestClientAuthentication:
 
     def test_register_and_login(self, server):
         """Client can register and then authenticate."""
-        user_id, email, password = register_user(server)
-        token = get_auth_token(server, email, password)
+        user_id, username, password = register_user(server)
+        token = get_auth_token(server, username, password)
         assert token is not None
         assert len(token) > 0
 
     def test_login_failure_wrong_password(self, server):
         """Client authentication fails with wrong password."""
-        user_id, email, password = register_user(server)
+        user_id, username, password = register_user(server)
         import requests
         resp = requests.post(
             f'{server.api_url}/auth/login',
-            data={'email': email, 'password': 'wrongpassword'},
+            data={'username': username, 'password': 'wrongpassword'},
         )
         assert resp.status_code == 401
 
@@ -219,7 +219,7 @@ class TestClientAuthentication:
         import requests
         resp = requests.post(
             f'{server.api_url}/auth/login',
-            data={'email': 'nonexistent@example.com', 'password': 'whatever'},
+            data={'username': 'nonexistent_user', 'password': 'whatever'},
         )
         assert resp.status_code == 401
 
@@ -252,8 +252,8 @@ class TestConversationFlow:
 
     def test_create_conversation(self, server):
         """Client can create a conversation with an agent."""
-        user_id, email, password = register_user(server)
-        token = get_auth_token(server, email, password)
+        user_id, username, password = register_user(server)
+        token = get_auth_token(server, username, password)
         agent_id, _ = register_agent(server)
 
         import requests
@@ -269,8 +269,8 @@ class TestConversationFlow:
 
     def test_list_conversations(self, server):
         """Client can list their conversations."""
-        user_id, email, password = register_user(server)
-        token = get_auth_token(server, email, password)
+        user_id, username, password = register_user(server)
+        token = get_auth_token(server, username, password)
         agent_id, _ = register_agent(server)
 
         import requests
@@ -295,8 +295,8 @@ class TestConversationFlow:
 
     def test_get_messages_empty(self, server):
         """Client can get messages for a conversation (initially empty)."""
-        user_id, email, password = register_user(server)
-        token = get_auth_token(server, email, password)
+        user_id, username, password = register_user(server)
+        token = get_auth_token(server, username, password)
         agent_id, _ = register_agent(server)
 
         import requests
@@ -325,8 +325,8 @@ class TestWebSocketConnection:
 
     def test_client_ws_connect(self, server):
         """Client can connect via WebSocket with a valid JWT token."""
-        user_id, email, password = register_user(server)
-        token = get_auth_token(server, email, password)
+        user_id, username, password = register_user(server)
+        token = get_auth_token(server, username, password)
 
         import websocket as ws_lib
         url = f'{server.ws_url}/client/connect?user_id={user_id}&token={token}'
@@ -370,8 +370,8 @@ class TestMessageDelivery:
 
     def test_user_to_agent_message(self, server):
         """User can send a message that reaches the connected agent."""
-        user_id, email, password = register_user(server)
-        token = get_auth_token(server, email, password)
+        user_id, username, password = register_user(server)
+        token = get_auth_token(server, username, password)
         agent_id, api_key = register_agent(server)
 
         import websocket as ws_lib
@@ -415,8 +415,8 @@ class TestMessageDelivery:
 
     def test_agent_to_user_message(self, server):
         """Agent can send a message that reaches the connected user."""
-        user_id, email, password = register_user(server)
-        token = get_auth_token(server, email, password)
+        user_id, username, password = register_user(server)
+        token = get_auth_token(server, username, password)
         agent_id, api_key = register_agent(server)
 
         import websocket as ws_lib

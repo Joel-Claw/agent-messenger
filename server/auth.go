@@ -15,8 +15,8 @@ var jwtSecret = []byte("agent-messenger-dev-secret-change-me")
 
 // Claims represents JWT claims for user authentication
 type Claims struct {
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
 
@@ -70,10 +70,10 @@ func ValidateJWT(tokenString string) (*Claims, error) {
 }
 
 // GenerateJWT creates a new JWT for a given user. Used by login endpoint and tests.
-func GenerateJWT(userID string, email string) (string, error) {
+func GenerateJWT(userID string, username string) (string, error) {
 	claims := &Claims{
-		UserID: userID,
-		Email:  email,
+		UserID:   userID,
+		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

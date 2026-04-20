@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -86,9 +87,9 @@ func TestHashAPIKey_RoundTrip(t *testing.T) {
 
 func TestGenerateJWT_RoundTrip(t *testing.T) {
 	userID := "user_123"
-	email := "test@example.com"
+	username := "testuser"
 
-	token, err := GenerateJWT(userID, email)
+	token, err := GenerateJWT(userID, username)
 	if err != nil {
 		t.Fatalf("GenerateJWT failed: %v", err)
 	}
@@ -103,8 +104,8 @@ func TestGenerateJWT_RoundTrip(t *testing.T) {
 	if claims.UserID != userID {
 		t.Fatalf("expected userID %s, got %s", userID, claims.UserID)
 	}
-	if claims.Email != email {
-		t.Fatalf("expected email %s, got %s", email, claims.Email)
+	if claims.Username != username {
+		t.Fatalf("expected username %s, got %s", username, claims.Username)
 	}
 }
 
@@ -125,7 +126,7 @@ func TestValidateJWT_InvalidToken(t *testing.T) {
 func TestValidateJWT_WrongSecret(t *testing.T) {
 	claims := &Claims{
 		UserID: "user-456",
-		Email:  "evil@example.com",
+		Username: "evil_user",
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -213,6 +214,54 @@ func TestHandleRegisterUser_MissingFields(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", w.Code)
+	}
+}
+
+func TestHandleRegisterUser_UsernameTooShort(t *testing.T) {
+	setupTestDB(t)
+	form := url.Values{"username": {"ab"}, "password": {"pass123"}}.Encode()
+	req := httptest.NewRequest(http.MethodPost, "/auth/user", strings.NewReader(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	handleRegisterUser(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for short username, got %d", w.Code)
+	}
+}
+
+func TestHandleRegisterUser_UsernameTooLong(t *testing.T) {
+	setupTestDB(t)
+	form := url.Values{"username": {strings.Repeat("a", 51)}, "password": {"pass123"}}.Encode()
+	req := httptest.NewRequest(http.MethodPost, "/auth/user", strings.NewReader(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	handleRegisterUser(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for long username, got %d", w.Code)
+	}
+}
+
+func TestHandleRegisterUser_UsernameInvalidChars(t *testing.T) {
+	setupTestDB(t)
+	form := url.Values{"username": {"bad user!"}, "password": {"pass123"}}.Encode()
+	req := httptest.NewRequest(http.MethodPost, "/auth/user", strings.NewReader(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	handleRegisterUser(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for invalid chars, got %d", w.Code)
+	}
+}
+
+func TestHandleRegisterUser_UsernameWithUnderscore(t *testing.T) {
+	setupTestDB(t)
+	form := url.Values{"username": {"good_user"}, "password": {"pass123"}}.Encode()
+	req := httptest.NewRequest(http.MethodPost, "/auth/user", strings.NewReader(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	handleRegisterUser(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200 for valid username with underscore, got %d", w.Code)
 	}
 }
 
@@ -314,7 +363,7 @@ func TestUserRegisterAndLogin(t *testing.T) {
 
 	// Register a user
 	resp, err := http.PostForm(server.URL+"/auth/user", url.Values{
-		"email":    {"alice@example.com"},
+		"username": {"alice"},
 		"password": {"password123"},
 	})
 	if err != nil {
@@ -329,7 +378,7 @@ func TestUserRegisterAndLogin(t *testing.T) {
 
 	// Login
 	resp2, err := http.PostForm(server.URL+"/auth/login", url.Values{
-		"email":    {"alice@example.com"},
+		"username": {"alice"},
 		"password": {"password123"},
 	})
 	if err != nil {
@@ -358,13 +407,13 @@ func TestLoginWrongPassword(t *testing.T) {
 
 	// Register a user
 	http.PostForm(server.URL+"/auth/user", url.Values{
-		"email":    {"bob@example.com"},
+		"username": {"bob"},
 		"password": {"correct-pass"},
 	})
 
 	// Try login with wrong password
 	resp, err := http.PostForm(server.URL+"/auth/login", url.Values{
-		"email":    {"bob@example.com"},
+		"username": {"bob"},
 		"password": {"wrong-pass"},
 	})
 	if err != nil {
@@ -381,7 +430,7 @@ func TestLoginUnknownUser(t *testing.T) {
 	server := setupTestServer(t)
 
 	resp, err := http.PostForm(server.URL+"/auth/login", url.Values{
-		"email":    {"nobody@example.com"},
+		"username": {"nobody"},
 		"password": {"whatever"},
 	})
 	if err != nil {
@@ -399,7 +448,7 @@ func TestClientConnectInvalidToken(t *testing.T) {
 
 	// Register user
 	http.PostForm(server.URL+"/auth/user", url.Values{
-		"email":    {"carol@example.com"},
+		"username": {"carol"},
 		"password": {"pass123"},
 	})
 
@@ -453,7 +502,7 @@ func TestFullAuthFlow(t *testing.T) {
 
 	// 3. Register a user
 	resp, _ = http.PostForm(server.URL+"/auth/user", url.Values{
-		"email":    {"flow@example.com"},
+		"username": {"flowuser"},
 		"password": {"flowpass"},
 	})
 	if resp.StatusCode != http.StatusOK {
@@ -463,7 +512,7 @@ func TestFullAuthFlow(t *testing.T) {
 
 	// 4. Login
 	resp, _ = http.PostForm(server.URL+"/auth/login", url.Values{
-		"email":    {"flow@example.com"},
+		"username": {"flowuser"},
 		"password": {"flowpass"},
 	})
 	if resp.StatusCode != http.StatusOK {
@@ -478,8 +527,8 @@ func TestFullAuthFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("JWT validation failed: %v", err)
 	}
-	if claims.Email != "flow@example.com" {
-		t.Fatalf("expected email flow@example.com, got %s", claims.Email)
+	if claims.Username != "flowuser" {
+		t.Fatalf("expected username flowuser, got %s", claims.Username)
 	}
 
 	// 6. Verify wrong key fails

@@ -39,7 +39,7 @@ class AppState: ObservableObject {
         self.config = config
         self.apiClient = APIClient(config: config)
         self.wsClient = WebSocketClient(config: config)
-        self.isLoggedIn = config.isConfigured && !config.email.isEmpty
+        self.isLoggedIn = config.isConfigured && !config.username.isEmpty
 
         // Wire up notification manager
         notificationManager.configure(apiClient: apiClient)
@@ -59,17 +59,17 @@ class AppState: ObservableObject {
 
     // MARK: - Authentication
 
-    func login(email: String, password: String) async {
+    func login(username: String, password: String) async {
         isLoading = true
         errorMessage = nil
 
         // Update config with new credentials
-        config.email = email
+        config.username = username
         config.password = password
         config.save()
 
         do {
-            let authResponse = try await apiClient.login(email: email, password: password)
+            let authResponse = try await apiClient.login(username: username, password: password)
             self.userID = authResponse.user_id
             self.isLoggedIn = true
 
@@ -83,9 +83,9 @@ class AppState: ObservableObject {
         } catch {
             // If login fails, try registering
             do {
-                let registerResponse = try await apiClient.register(email: email, password: password)
+                let registerResponse = try await apiClient.register(username: username, password: password)
                 // Then login
-                let authResponse = try await apiClient.login(email: email, password: password)
+                let authResponse = try await apiClient.login(username: username, password: password)
                 self.userID = authResponse.user_id
                 self.isLoggedIn = true
                 wsClient.connect(userID: authResponse.user_id, token: authResponse.token)
@@ -105,7 +105,7 @@ class AppState: ObservableObject {
     func logout() {
         wsClient.disconnect()
         Task { await notificationManager.unregisterDeviceToken() }
-        config.email = ""
+        config.username = ""
         config.password = ""
         config.save()
         userID = nil

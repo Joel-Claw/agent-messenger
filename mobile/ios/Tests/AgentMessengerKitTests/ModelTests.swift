@@ -98,23 +98,23 @@ final class ModelTests: XCTestCase {
 
     func testAuthResponseDecoding() throws {
         let json = """
-        {"token": "jwt-token-123", "user_id": "user-1", "email": "test@example.com"}
+        {"token": "jwt-token-123", "user_id": "user-1", "username": "testuser"}
         """.data(using: .utf8)!
 
         let resp = try JSONDecoder().decode(AuthResponse.self, from: json)
         XCTAssertEqual(resp.token, "jwt-token-123")
         XCTAssertEqual(resp.user_id, "user-1")
-        XCTAssertEqual(resp.email, "test@example.com")
+        XCTAssertEqual(resp.username, "testuser")
     }
 
     func testRegisterResponseDecoding() throws {
         let json = """
-        {"user_id": "new-user-1", "email": "new@example.com"}
+        {"user_id": "new-user-1", "username": "newuser"}
         """.data(using: .utf8)!
 
         let resp = try JSONDecoder().decode(RegisterResponse.self, from: json)
         XCTAssertEqual(resp.user_id, "new-user-1")
-        XCTAssertEqual(resp.email, "new@example.com")
+        XCTAssertEqual(resp.username, "newuser")
     }
 
     func testErrorResponseDecoding() throws {

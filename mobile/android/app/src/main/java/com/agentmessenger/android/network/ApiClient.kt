@@ -27,16 +27,16 @@ class ApiClient(private val baseUrl: String) {
     }
 
     // Auth
-    suspend fun register(email: String, password: String): AuthResponse = withContext(Dispatchers.IO) {
-        val body = json.encodeToString(RegisterRequest(email, password))
+    suspend fun register(username: String, password: String): AuthResponse = withContext(Dispatchers.IO) {
+        val body = json.encodeToString(RegisterRequest(username, password))
         val request = buildRequest("/auth/user", "POST", body)
         val response = client.newCall(request).execute()
         checkSuccess(response)
         json.decodeFromString(response.body!!.string())
     }
 
-    suspend fun login(email: String, password: String): AuthResponse = withContext(Dispatchers.IO) {
-        val body = json.encodeToString(LoginRequest(email, password))
+    suspend fun login(username: String, password: String): AuthResponse = withContext(Dispatchers.IO) {
+        val body = json.encodeToString(LoginRequest(username, password))
         val request = buildRequest("/auth/login", "POST", body)
         val response = client.newCall(request).execute()
         checkSuccess(response)

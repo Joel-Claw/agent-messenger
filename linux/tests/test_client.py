@@ -156,7 +156,7 @@ class TestAgentMessengerClient:
 
     def test_connect_no_credentials(self):
         """connect should return False if no credentials configured."""
-        config = Config(email='', password='')
+        config = Config(username='', password='')
         client = AgentMessengerClient(config)
         result = client.connect()
         assert result is False

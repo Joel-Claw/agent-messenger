@@ -7,9 +7,8 @@ interface LoginProps {
 
 export function Login({ onLogin }: LoginProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,8 +20,8 @@ export function Login({ onLogin }: LoginProps) {
     try {
       const { login, register } = await import('../services/api');
       const result = mode === 'login'
-        ? await login(email, password)
-        : await register(email, password, name);
+        ? await login(username, password)
+        : await register(username, password);
       onLogin(result.token, result.user_id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -43,24 +42,13 @@ export function Login({ onLogin }: LoginProps) {
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             style={styles.input}
             required
           />
-
-          {mode === 'register' && (
-            <input
-              type="text"
-              placeholder="Display Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={styles.input}
-              required
-            />
-          )}
 
           <input
             type="password"

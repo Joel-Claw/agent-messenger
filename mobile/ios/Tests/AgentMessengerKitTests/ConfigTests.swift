@@ -12,7 +12,7 @@ final class ConfigTests: XCTestCase {
         let config = AppConfig()
         XCTAssertEqual(config.serverURL, "ws://localhost:8080")
         XCTAssertEqual(config.apiURL, "http://localhost:8080")
-        XCTAssertEqual(config.email, "")
+        XCTAssertEqual(config.username, "")
         XCTAssertEqual(config.password, "")
         XCTAssertFalse(config.isConfigured)
     }
@@ -21,12 +21,12 @@ final class ConfigTests: XCTestCase {
         let config = AppConfig(
             serverURL: "ws://example.com:9090",
             apiURL: "http://example.com:9090",
-            email: "test@example.com",
+            username: "testuser",
             password: "secret"
         )
         XCTAssertEqual(config.serverURL, "ws://example.com:9090")
         XCTAssertEqual(config.apiURL, "http://example.com:9090")
-        XCTAssertEqual(config.email, "test@example.com")
+        XCTAssertEqual(config.username, "testuser")
         XCTAssertTrue(config.isConfigured)
     }
 
@@ -34,7 +34,7 @@ final class ConfigTests: XCTestCase {
         let config = AppConfig(
             serverURL: "ws://test.local:8080",
             apiURL: "http://test.local:8080",
-            email: "user@test.com",
+            username: "myuser",
             password: "pass123"
         )
         config.save()
@@ -42,7 +42,7 @@ final class ConfigTests: XCTestCase {
         let loaded = AppConfig.load()
         XCTAssertEqual(loaded.serverURL, config.serverURL)
         XCTAssertEqual(loaded.apiURL, config.apiURL)
-        XCTAssertEqual(loaded.email, config.email)
+        XCTAssertEqual(loaded.username, config.username)
         XCTAssertEqual(loaded.password, config.password)
     }
 
@@ -50,26 +50,26 @@ final class ConfigTests: XCTestCase {
         let config = AppConfig.load()
         // Should return defaults when no config saved
         XCTAssertEqual(config.serverURL, "ws://localhost:8080")
-        XCTAssertEqual(config.email, "")
+        XCTAssertEqual(config.username, "")
     }
 
     func testConfigDelete() {
-        let config = AppConfig(email: "deleteme@test.com", password: "xxx")
+        let config = AppConfig(username: "deleteme", password: "xxx")
         config.save()
         AppConfig.delete()
         let loaded = AppConfig.load()
-        XCTAssertEqual(loaded.email, "")
+        XCTAssertEqual(loaded.username, "")
     }
 
     func testIsConfigured() {
         let emptyConfig = AppConfig()
         XCTAssertFalse(emptyConfig.isConfigured)
 
-        let configured = AppConfig(email: "user@example.com", password: "pass")
+        let configured = AppConfig(username: "myuser", password: "pass")
         XCTAssertTrue(configured.isConfigured)
 
         // Missing password
-        let noPassword = AppConfig(email: "user@example.com", password: "")
+        let noPassword = AppConfig(username: "myuser", password: "")
         XCTAssertFalse(noPassword.isConfigured)
     }
 }

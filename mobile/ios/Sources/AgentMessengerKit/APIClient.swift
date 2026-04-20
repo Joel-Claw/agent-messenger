@@ -34,7 +34,7 @@ class APIClient: ObservableObject {
     // MARK: - Authentication
 
     /// Register a new user account.
-    func register(email: String, password: String) async throws -> RegisterResponse {
+    func register(username: String, password: String) async throws -> RegisterResponse {
         guard let url = URL(string: "\(config.apiURL)/auth/user") else {
             throw APIError.invalidURL
         }
@@ -42,7 +42,7 @@ class APIClient: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        let body = "email=\(urlEncode(email))&password=\(urlEncode(password))"
+        let body = "username=\(urlEncode(username))&password=\(urlEncode(password))"
         request.httpBody = body.data(using: .utf8)
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -70,7 +70,7 @@ class APIClient: ObservableObject {
     }
 
     /// Login with existing credentials. Returns JWT token.
-    func login(email: String, password: String) async throws -> AuthResponse {
+    func login(username: String, password: String) async throws -> AuthResponse {
         guard let url = URL(string: "\(config.apiURL)/auth/login") else {
             throw APIError.invalidURL
         }
@@ -78,7 +78,7 @@ class APIClient: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        let body = "email=\(urlEncode(email))&password=\(urlEncode(password))"
+        let body = "username=\(urlEncode(username))&password=\(urlEncode(password))"
         request.httpBody = body.data(using: .utf8)
 
         let (data, response) = try await URLSession.shared.data(for: request)

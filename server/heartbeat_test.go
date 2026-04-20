@@ -586,7 +586,7 @@ func TestRegisterAndConnectAgentWithHeartbeat(t *testing.T) {
 	}
 
 	// Register a user and connect as client
-	token := registerUserAndGetToken(t, "integ-hb@example.com", "password123")
+	token := registerUserAndGetToken(t, "integ_hb", "password123")
 	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/client/connect?user_id=ignore&token=" + url.QueryEscape(token)
 	clientConn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	if err != nil {

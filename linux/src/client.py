@@ -43,7 +43,7 @@ class AgentMessengerClient:
 
     def connect(self):
         """Authenticate and connect to the server."""
-        if not self.config.email or not self.config.password:
+        if not self.config.username or not self.config.password:
             print('[AgentMessenger] No credentials configured, skipping auth')
             return False
 
@@ -52,7 +52,7 @@ class AgentMessengerClient:
             import requests
             resp = requests.post(
                 f'{self.config.api_url}/auth/login',
-                data={'email': self.config.email, 'password': self.config.password},
+                data={'username': self.config.username, 'password': self.config.password},
             )
             if resp.status_code != 200:
                 print(f'[AgentMessenger] Auth failed: {resp.status_code} {resp.text}')
