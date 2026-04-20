@@ -7,80 +7,49 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-// Brand colors - deep blue/purple palette
-val Primary = Color(0xFF6C5CE7)
-val OnPrimary = Color(0xFFFFFFFF)
-val PrimaryContainer = Color(0xFFDDD5FF)
-val OnPrimaryContainer = Color(0xFF21005E)
-
-val Secondary = Color(0xFF00B894)
-val OnSecondary = Color(0xFFFFFFFF)
-val SecondaryContainer = Color(0xFFB8F0E0)
-val OnSecondaryContainer = Color(0xFF002016)
-
-val Tertiary = Color(0xFF7C5800)
-val OnTertiary = Color(0xFFFFFFFF)
-val TertiaryContainer = Color(0xFFFFDEA6)
-val OnTertiaryContainer = Color(0xFF271900)
-
-val Error = Color(0xFFBA1A1A)
-val OnError = Color(0xFFFFFFFF)
-val ErrorContainer = Color(0xFFFFDAD6)
-val OnErrorContainer = Color(0xFF410002)
-
-// Dark theme colors
-val DarkPrimary = Color(0xFFD0BCFF)
-val DarkOnPrimary = Color(0xFF381E72)
-val DarkPrimaryContainer = Color(0xFF4F378B)
-val DarkOnPrimaryContainer = Color(0xFFEADDFF)
-
-val DarkSecondary = Color(0xFF9CD4BF)
-val DarkOnSecondary = Color(0xFF003828)
-val DarkSecondaryContainer = Color(0xFF00503C)
-val DarkOnSecondaryContainer = Color(0xFFB8F0E0)
-
-private val LightColors = lightColorScheme(
-    primary = Primary,
-    onPrimary = OnPrimary,
-    primaryContainer = PrimaryContainer,
-    onPrimaryContainer = OnPrimaryContainer,
-    secondary = Secondary,
-    onSecondary = OnSecondary,
-    secondaryContainer = SecondaryContainer,
-    onSecondaryContainer = OnSecondaryContainer,
-    tertiary = Tertiary,
-    onTertiary = OnTertiary,
-    tertiaryContainer = TertiaryContainer,
-    onTertiaryContainer = OnTertiaryContainer,
-    error = Error,
-    onError = OnError,
-    errorContainer = ErrorContainer,
-    onErrorContainer = OnErrorContainer,
+// CoreScope-inspired dark theme colors
+private val DarkColorScheme = darkColorScheme(
+    primary = Color(0xFF58A6FF),        // Accent blue
+    onPrimary = Color(0xFF0033AA),       // Navy
+    primaryContainer = Color(0xFF0033AA),
+    onPrimaryContainer = Color(0xFFD0E4FF),
+    secondary = Color(0xFF58A6FF),
+    onSecondary = Color(0xFF001F34),
+    secondaryContainer = Color(0xFF1A2E40),
+    onSecondaryContainer = Color(0xFFCCE5FF),
+    tertiary = Color(0xFF58A6FF),
+    background = Color(0xFF0D1117),
+    onBackground = Color(0xFFE6EDF3),
+    surface = Color(0xFF161B22),
+    onSurface = Color(0xFFE6EDF3),
+    surfaceVariant = Color(0xFF1C2128),
+    onSurfaceVariant = Color(0xFF8B949E),
+    outline = Color(0xFF30363D),
 )
 
-private val DarkColors = darkColorScheme(
-    primary = DarkPrimary,
-    onPrimary = DarkOnPrimary,
-    primaryContainer = DarkPrimaryContainer,
-    onPrimaryContainer = DarkOnPrimaryContainer,
-    secondary = DarkSecondary,
-    onSecondary = DarkOnSecondary,
-    secondaryContainer = DarkSecondaryContainer,
-    onSecondaryContainer = DarkOnSecondaryContainer,
-    tertiary = Color(0xFFF0BD5C),
-    onTertiary = Color(0xFF422C00),
-    tertiaryContainer = Color(0xFF5E4100),
-    onTertiaryContainer = Color(0xFFFFDEA6),
-    error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005),
-    errorContainer = Color(0xFF93000A),
-    onErrorContainer = Color(0xFFFFDAD6),
+private val LightColorScheme = lightColorScheme(
+    primary = Color(0xFF0033AA),         // Navy
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFD0E4FF),
+    onPrimaryContainer = Color(0xFF001D3D),
+    secondary = Color(0xFF0033AA),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFD0E4FF),
+    onSecondaryContainer = Color(0xFF001D3D),
+    tertiary = Color(0xFF58A6FF),
+    background = Color(0xFFF8FAFC),
+    onBackground = Color(0xFF0D1117),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF0D1117),
+    surfaceVariant = Color(0xFFE6EDF3),
+    onSurfaceVariant = Color(0xFF57606A),
+    outline = Color(0xFFD0D7DE),
 )
 
 @Composable
 fun AgentMessengerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -89,8 +58,8 @@ fun AgentMessengerTheme(
             if (darkTheme) dynamicDarkColorScheme(context)
             else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColors
-        else -> LightColors
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
     }
 
     MaterialTheme(

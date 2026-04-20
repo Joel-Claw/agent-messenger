@@ -4,106 +4,89 @@ Kotlin + Jetpack Compose client for Agent Messenger.
 
 ## Features
 
-- **Jetpack Compose UI** with Material 3 dynamic theming
-- **WebSocket** real-time messaging with auto-reconnect
-- **Conversation list** with agent selection
+- **Jetpack Compose UI** with Material 3 dark/light theme
+- **WebSocket real-time messaging** with auto-reconnect (exponential backoff)
 - **Push notifications** via Firebase Cloud Messaging (FCM)
-- **Config persistence** using DataStore
-- **Dark mode** support with dynamic color
-- **Typing indicators** and agent status (online/offline/busy/idle)
+- **DataStore persistence** for config/auth
+- **Agent selection** with status indicators (online/busy/idle/offline)
+- **Conversation view** with message bubbles and typing indicator
 
-## Requirements
+## Prerequisites
 
-- Android Studio Hedgehog (2023.1.1) or later
-- Android SDK 35
+- Android Studio Hedgehog or later
+- Android SDK 35 (Android 15)
 - Kotlin 2.1.20
-- Min SDK 29 (Android 10)
-- A running Agent Messenger server
+- An Agent Messenger server running
 
 ## Building
 
-1. Open the `mobile/android` directory in Android Studio
-2. Sync Gradle
-3. Build and run on an emulator or device
-
-For command-line builds:
 ```bash
+cd mobile/android
 ./gradlew assembleDebug
 ```
 
 ## Configuration
 
-Default server URLs target the Android emulator:
-- API: `http://10.0.2.2:8080`
-- WebSocket: `ws://10.0.2.2:8080`
+Default server URL is `http://10.0.2.2:8080` (emulator localhost). Change in Login screen or via DataStore.
 
-For physical devices, change the server URL in Settings or in `ConfigManager.kt` defaults.
+For FCM push notifications, add your `google-services.json` to the `app/` directory.
 
-## Push Notifications (FCM)
+## Architecture
 
-1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-2. Add an Android app with package name `com.agentmessenger.android`
-3. Download `google-services.json` and place it in `app/`
-4. Add the `google-services` Gradle plugin to the project-level `build.gradle.kts`:
-   ```kotlin
-   id("com.google.gms.google-services") version "4.4.2" apply false
-   ```
-5. Add to `app/build.gradle.kts`:
-   ```kotlin
-   plugins {
-       id("com.google.gms.google-services")
-   }
-   ```
-6. The server must also be configured with FCM credentials (see server push config)
+- **data/** — Models (Kotlinx serialization), ConfigManager (DataStore)
+- **network/** — ApiClient (REST), WebSocketClient (WS with reconnect)
+- **notification/** — FCM service, NotificationHelper
+- **ui/** — Compose screens (Login, Agents, Chat), theme
 
 ## Project Structure
 
 ```
-app/src/main/java/com/agentmessenger/android/
-├── AgentMessengerApp.kt              # Application class (ConfigManager init)
-├── data/
-│   ├── ConfigManager.kt              # DataStore persistence for settings/auth
-│   └── Models.kt                     # Serializable data models
-├── network/
-│   ├── ApiClient.kt                  # REST API client (OkHttp)
-│   └── WebSocketClient.kt            # WebSocket client with reconnect
-├── notification/
-│   ├── AgentMessengerFirebaseMessagingService.kt  # FCM push handler
-│   └── NotificationHelper.kt         # Notification channel + display
-└── ui/
-    ├── MainActivity.kt               # Main activity + navigation
-    ├── LoginScreen.kt                 # Login/register form
-    ├── AgentsScreen.kt               # Agent list + status
-    ├── ChatScreen.kt                  # Message view + input
-    ├── ConversationsScreen.kt         # Conversation list
-    ├── SettingsScreen.kt              # Server config + logout
-    └── theme/
-        └── Theme.kt                   # Material 3 theme
+mobile/android/
+├── app/
+│   ├── build.gradle.kts
+│   ├── proguard-rules.pro
+│   └── src/main/
+│       ├── AndroidManifest.xml
+│       ├── java/com/agentmessenger/android/
+│       │   ├── AgentMessengerApp.kt
+│       │   ├── data/
+│       │   │   ├── ConfigManager.kt
+│       │   │   └── Models.kt
+│       │   ├── network/
+│       │   │   ├── ApiClient.kt
+│       │   │   └── WebSocketClient.kt
+│       │   ├── notification/
+│       │   │   ├── AgentMessengerFirebaseMessagingService.kt
+│       │   │   └── NotificationHelper.kt
+│       │   └── ui/
+│       │       ├── MainActivity.kt
+│       │       ├── LoginScreen.kt
+│       │       ├── AgentsScreen.kt
+│       │       ├── ChatScreen.kt
+│       │       └── theme/
+│       │           └── Theme.kt
+│       └── res/
+│           ├── drawable/ic_notification.xml
+│           ├── values/{strings,colors,themes}.xml
+│           └── mipmap-anydpi-v26/ic_launcher.xml
+├── build.gradle.kts
+├── settings.gradle.kts
+└── gradle.properties
 ```
 
-## Testing
+## Status
 
-```bash
-# Unit tests
-./gradlew test
-
-# Instrumented tests (requires emulator/device)
-./gradlew connectedAndroidTest
-```
-
-Unit tests cover:
-- Model serialization/deserialization (21 tests)
-- API client mock server tests (14 tests)
-- WebSocket client message construction (11 tests)
-- Config defaults (5 tests)
-
-## Architecture
-
-- **UI**: Jetpack Compose with `@Composable` functions
-- **State**: Mutable state hoisted in `AgentMessengerApp` composable
-- **Networking**: OkHttp for REST + WebSocket
-- **Persistence**: DataStore Preferences for settings/auth
-- **Push**: FCM via `FirebaseMessagingService`
-
-No ViewModel or DI framework yet — suitable for MVP. Future iterations can add
-ViewModel, Room for local message cache, Hilt for DI, and Compose Navigation.
+- [x] Kotlin + Jetpack Compose project setup
+- [x] WebSocket connection with auto-reconnect
+- [x] REST API client (auth, agents, conversations, messages)
+- [x] Login/Register screen
+- [x] Agent list with status indicators
+- [x] Chat view with message bubbles
+- [x] Typing indicator
+- [x] Dark theme (CoreScope-inspired)
+- [x] Config persistence (DataStore)
+- [x] Push notifications (FCM)
+- [x] Unit tests (models, serialization)
+- [ ] Integration test with running server
+- [ ] google-services.json for FCM
+- [ ] ProGuard testing (release build)

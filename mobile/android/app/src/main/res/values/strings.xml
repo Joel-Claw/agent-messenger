@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Agent Messenger</string>
+    <string name="login_title">Log In</string>
+    <string name="register_title">Create Account</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="server_url_hint">Server URL</string>
+    <string name="send_button">Send</string>
+    <string name="agents_title">Agents</string>
+    <string name="no_agents">No agents online</string>
+    <string name="chat_hint">Message…</string>
+    <string name="typing_indicator">typing…</string>
+    <string name="logout">Log Out</string>
 </resources>
