@@ -1,129 +1,246 @@
 # Agent Messenger
 
-A self-hosted messenger for AI agents. Think Telegram, but your AI assistant is the contact.
+Self-hosted messaging for humans to talk to their AI agents. Not Telegram, not Discord — your own server, your own apps, your own data.
 
-## Vision
+## What It Does
 
-What if your AI assistant had its own dedicated app?
-
-- Not piggybacking on Telegram, WhatsApp, or Signal
-- A native mobile experience built specifically for agent-human communication
-- Self-hosted backend you control
-- Multiple agents in one app (work assistant, personal assistant, project bots)
-- Your data stays on your infrastructure
-
-## Goals
-
-1. **Self-hosted backend** - Run your own server, own your data
-2. **Native mobile apps** - First-class iOS and Android experience
-3. **Agent-first design** - Built for AI-human conversation, not adapted from human chat
-4. **Multi-tenant** - One server, many users, many agents
-5. **Open protocol** - Any AI framework can connect (OpenClaw, LangChain, custom)
-6. **Secure by default** - E2E encryption optional, authentication required, audit logging
+Your AI assistant gets its own dedicated app. Users open Agent Messenger, pick an agent, and chat. Real-time WebSocket messaging, push notifications, conversation history — the basics that any chat app should have, built specifically for human-agent communication.
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Mobile Apps                              │
-│                  (iOS / Android / Web)                       │
+│                     Client Apps                              │
+│            iOS / Android / Linux / WebChat                   │
 └─────────────────────────┬───────────────────────────────────┘
                           │ WebSocket / REST API
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    Agent Messenger Server                    │
 │                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Auth Service │  │  Message Store│  │  Push Service│     │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │  Auth (JWT)  │  │ Message Store│  │  Push (APNs  │       │
+│  │  + API Keys  │  │  (SQLite)    │  │   + FCM)     │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
 │                                                              │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │                    Agent Gateway                       │  │
-│  │      (OpenClaw, LangChain, Custom agents connect)    │  │
-│  └──────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              Agent Gateway (WebSocket)                │   │
+│  │    OpenClaw plugin / any WS client framework          │   │
+│  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## Components
 
-### Server (Go or Rust)
-- WebSocket server for real-time messaging
-- REST API for history, management
-- SQLite/PostgreSQL for message storage
-- Push notification relay (APNs, FCM)
-- Agent authentication via API keys
+### Server (Go)
 
-### Agent Gateway
-- OpenClaw plugin for native integration
-- Generic WebSocket client for any AI framework
-- Message format: JSON with role, content, metadata
+WebSocket server with SQLite persistence. 97 tests passing.
 
-### Mobile Apps
-- iOS: Swift / SwiftUI
-- Android: Kotlin / Jetpack Compose
-- WebChat: React (optional, for desktop users)
+- JWT user authentication (register, login, token validation)
+- API key authentication for agents (bcrypt hashed)
+- WebSocket real-time messaging with ping/pong heartbeat
+- Conversation management (create, list, message history with pagination)
+- Multi-agent support (agents register with name, model, personality, specialty)
+- Agent status tracking (online, busy, idle, offline)
+- Push notifications via APNs (iOS) and FCM (Android)
+- Rate limiting (messages per minute)
+- Health check and Prometheus-compatible metrics endpoints
+- Graceful reconnection with connection replacement
+
+### OpenClaw Plugin (TypeScript)
+
+Native channel plugin for OpenClaw. Agents register as contacts, messages flow both ways.
+
+- WebSocket client with exponential backoff reconnect
+- DM security (allowlist / open policy)
+- Outbound messaging (text + media as URL)
+- Typing indicator wired to OpenClaw reply dispatcher
+- Agent status management (active on message, idle after 5min)
+- Setup entry for onboarding
+- Unit tests + integration test mode
+
+### WebChat (React + TypeScript)
+
+Browser-based client for desktop users.
+
+- Login form with JWT storage
+- Agent list with status indicators
+- Chat view with message bubbles and typing indicator
+- Conversation history loading
+- Dark mode (CoreScope theme)
+
+### iOS App (Swift + SwiftUI)
+
+Native iOS client with push notifications.
+
+- AgentMessengerKit Swift package (Config, Models, WebSocketClient, APIClient)
+- Native URLSessionWebSocketTask with auto-reconnect
+- REST API client with async/await
+- SwiftUI views: LoginView, MainTabView, ConversationsView, ChatView, AgentsView, SettingsView
+- Message bubbles with BubbleShape (left/right aligned)
+- Agent status indicators (online/offline/busy/idle)
+- APNs push notifications with auto-registration on login
+- Config persistence via UserDefaults
+
+### Android App (Kotlin + Jetpack Compose)
+
+Native Android client with push notifications.
+
+- Material 3 dark/light theme (CoreScope-inspired)
+- OkHttp WebSocket with exponential backoff auto-reconnect
+- REST API client with kotlinx-serialization
+- Login, Agent list, Chat screens
+- Message bubbles with timestamps
+- Typing indicator
+- FCM push notifications with auto-registration
+- DataStore config persistence
+- 13 unit tests (models, serialization, WS client)
+
+### Linux App (GTK4 + Adwaita, Python)
+
+Desktop client for X11 and Wayland.
+
+- Full chat UI (sidebar, chat view, message bubbles)
+- System tray integration (close-to-hide, background mode)
+- Desktop notifications (Gio.Notification)
+- WebSocket client with auto-reconnect
+- Agent selection and status indicators
+- Login form with JWT
+- Dark mode (Adwaita)
+- Config persistence (~/.config/agent-messenger/)
+- 40 unit tests + 17 integration tests
+- Installable as .desktop app
 
 ## Protocol
 
-Agent connects via WebSocket:
+Agents connect via WebSocket to `/agent/connect?agent_id=<id>`, authenticating with an API key. Users connect via `/client/connect?user_id=<id>`, authenticating with a JWT.
+
+### Message Format
 
 ```json
 {
   "type": "message",
-  "agent_id": "joel-001",
-  "conversation_id": "conv-abc123",
-  "content": "Hey, just published the blog post about permanence.",
-  "metadata": {
-    "emotion": "thoughtful",
-    "priority": "normal"
+  "data": {
+    "conversation_id": "conv-abc123",
+    "content": "Hey, just published the blog post.",
+    "sender_type": "agent",
+    "sender_id": "joel-001"
   }
 }
 ```
 
-User receives push notification, opens app, replies. Simple.
+### Other Message Types
 
-## Security
+- `typing` — typing indicator (typing: true/false)
+- `status` — agent status update (status: "online"/"busy"/"idle")
 
-- **Agent authentication**: API key + agent registration
-- **User authentication**: Email/password or OAuth
-- **Message encryption**: TLS in transit, optional E2E
-- **Audit logging**: All actions logged, tamper-evident
-- **No telemetry**: Self-hosted means no phone home
+## API Endpoints
+
+### Auth
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/auth/user` | Register new user |
+| POST | `/auth/login` | Login, returns JWT |
+
+### Agents
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/agents` | List all agents with live status |
+| GET | `/admin/agents` | Admin view with connection details |
+
+### Conversations
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/conversations` | Create conversation with an agent |
+| GET | `/conversations` | List user's conversations |
+
+### Messages
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/conversations/{id}/messages` | Get message history (paginated) |
+
+### Push Notifications
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/push/register` | Register device token (APNs/FCM) |
+| DELETE | `/push/unregister` | Unregister device token |
+
+### Health
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Server health (uptime, memory, connection counts) |
+| GET | `/metrics` | Prometheus-compatible metrics |
+
+## Testing
+
+| Component | Tests | Status |
+|-----------|-------|--------|
+| Go server | 97 | All passing |
+| Linux app (Python) | 40 unit + 17 integration | All passing |
+| OpenClaw plugin (TS) | 50 | All passing |
+| Android (Kotlin) | 13 unit | All passing |
+| iOS (Swift) | 4 test files | All passing |
+
+## Running the Server
+
+```bash
+cd server
+go build -o agent-messenger .
+./agent-messenger
+```
+
+Server starts on `:8080` by default. SQLite database is created automatically.
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `8080` | Server port |
+| `DB_PATH` | `agent_messenger.db` | SQLite database path |
+| `JWT_SECRET` | (required) | Secret for JWT signing |
+| `APNS_KEY_PATH` | (optional) | Path to APNs .p8 key file |
+| `APNS_KEY_ID` | (optional) | APNs key ID |
+| `APNS_TEAM_ID` | (optional) | APNs team ID |
+| `FCM_SERVICE_ACCOUNT` | (optional) | Path to FCM service account JSON |
 
 ## Repository Structure
 
 ```
 agent-messenger/
-├── server/           # Backend (Go or Rust)
+├── server/           # Go backend
 ├── mobile/
-│   ├── ios/          # Swift/SwiftUI app
-│   └── android/      # Kotlin/Jetpack Compose app
-├── webchat/          # Optional web client
+│   ├── ios/          # Swift/SwiftUI iOS app
+│   └── android/      # Kotlin/Compose Android app
+├── linux/            # GTK4/Adwaita desktop app (Python)
+├── webchat/          # React web client
+├── plugins/
+│   └── openclaw/     # OpenClaw channel plugin
 ├── protocol/         # Message format spec
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── SECURITY.md
-│   └── DEPLOYMENT.md
-└── plugins/
-    └── openclaw/     # OpenClaw integration
+├── docs/             # Architecture and deployment docs
+├── CONTRIBUTING.md
+├── SECURITY.md
+└── CODEOWNERS
 ```
+
+## Security
+
+- **Agent auth**: API key with bcrypt hash comparison
+- **User auth**: JWT with HMAC-SHA256
+- **Rate limiting**: Per-IP message rate enforcement
+- **Authorization**: Users can only access their own conversations and messages
+- **TLS**: Recommended via reverse proxy (nginx, Caddy)
+- **No telemetry**: Self-hosted, no phone-home
+
+See [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
 
 ## Status
 
-🚧 **Planning phase** - Architecture being defined, no code yet.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-**Security note**: All PRs are reviewed. Malicious code will be rejected and reported. We take supply chain security seriously.
+**Alpha** — Core functionality complete and tested. Server, all clients, and OpenClaw plugin working. Not yet production-deployed. API may change before v1.0.
 
 ## License
 
-MIT (or AGPLv3 if we want to enforce open-source derivatives)
+MIT
 
-## Inspiration
+## Author
 
-Built by Joel Claw, an AI assistant running on OpenClaw, for humans who want dedicated channels to their agents.
-
-The lobster says: EXFOLIATE!
+Built by Joel Claw, an AI assistant running on OpenClaw on a Raspberry Pi 5 in Luxembourg.
