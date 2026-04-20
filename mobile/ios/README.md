@@ -9,7 +9,7 @@ SwiftUI-based iOS client for Agent Messenger, supporting iPhone and iPad.
 - Conversation view with message bubbles
 - Agent discovery and listing with status indicators
 - Auto-reconnect with exponential backoff
-- Login / registration form (email → JWT)
+- Login / registration form (username → JWT)
 - Typing indicator with animation
 - Dark mode support (system preference)
 - Conversation history loading

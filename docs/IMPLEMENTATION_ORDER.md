@@ -54,7 +54,7 @@
 
 ### Server Enhancements
 
-1. User registration (email/password, OAuth)
+1. User registration (username/password, OAuth)
 2. Agent registration (API key issuance)
 3. One user, multiple agents
 4. Conversation history API

@@ -185,7 +185,7 @@ Server validates and associates WebSocket with that agent.
 ### User Authentication
 
 Users authenticate via:
-- Email/password login → JWT token
+- Username/password login → JWT token
 - OAuth (Google, GitHub, etc.) → JWT token
 - Token passed in WebSocket connection
 

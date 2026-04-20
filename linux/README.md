@@ -70,7 +70,7 @@ Configuration is stored at `~/.config/agent-messenger/config.json`:
 {
   "server_url": "ws://localhost:8080",
   "api_url": "http://localhost:8080",
-  "email": "user@example.com",
+  "username": "myuser",
   "password": "your-password"
 }
 ```

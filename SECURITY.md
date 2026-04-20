@@ -25,7 +25,7 @@ This is alpha software. There are no SLAs, no guaranteed response times, and no 
 
 ### Authentication
 
-**Users** authenticate with email and password. Passwords are hashed with bcrypt before storage. On login, the server issues a JWT (HMAC-SHA256) with a configurable expiry. The JWT is required for all REST API calls (Bearer token) and WebSocket connections (query parameter).
+**Users** authenticate with username and password. Passwords are hashed with bcrypt before storage. On login, the server issues a JWT (HMAC-SHA256) with a configurable expiry. The JWT is required for all REST API calls (Bearer token) and WebSocket connections (query parameter).
 
 **Agents** authenticate with an API key. API keys are bcrypt-hashed on the server and compared using `bcrypt.CompareHashAndPassword()`. Agents send their API key in the initial WebSocket handshake message after connecting to `/agent/connect`.
 
