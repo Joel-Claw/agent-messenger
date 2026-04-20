@@ -157,6 +157,12 @@ func TestGetDeviceTokensForUser(t *testing.T) {
 	if len(tokens) != 2 {
 		t.Errorf("expected 2 tokens, got %d", len(tokens))
 	}
+	// Verify platform is stored correctly
+	for _, tok := range tokens {
+		if tok.Platform != "ios" {
+			t.Errorf("expected platform ios, got %s", tok.Platform)
+		}
+	}
 }
 
 func TestTruncateHelper(t *testing.T) {
@@ -183,6 +189,112 @@ func TestNotifyUserWhenDisabled(t *testing.T) {
 	// pushConfig is nil in tests, so the nil check should handle it
 	notifyUser("test-user", "Test", "Body", "conv-1")
 	// If we got here without panicking, the test passes
+}
+
+func TestRegisterAndroidDeviceToken(t *testing.T) {
+	setupTestDB(t)
+	db.Exec("DELETE FROM device_tokens")
+	db.Exec("DELETE FROM users")
+
+	_, token := createPushTestUser(t, "android@test.com", "password123")
+
+	// Register Android device token
+	body := `{"device_token":"fcm-token-abc123","platform":"android"}`
+	req := httptest.NewRequest("POST", "/push/register", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	rr := httptest.NewRecorder()
+	handleRegisterDeviceToken(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("android register: got %d, want %d; body: %s", rr.Code, http.StatusOK, rr.Body.String())
+	}
+
+	if !strings.Contains(rr.Body.String(), `"status":"ok"`) {
+		t.Errorf("expected ok status, got %s", rr.Body.String())
+	}
+
+	// Verify Android platform is stored
+	var platform string
+	err := db.QueryRow("SELECT platform FROM device_tokens WHERE device_token = ?", "fcm-token-abc123").Scan(&platform)
+	if err != nil {
+		t.Fatalf("Error querying device_tokens: %v", err)
+	}
+	if platform != "android" {
+		t.Errorf("expected platform android, got %s", platform)
+	}
+}
+
+func TestSendPushNotificationRouting(t *testing.T) {
+	// Test that Android platform routes to FCM (which will be a no-op if not configured)
+	err := sendPushNotification("test-token", "Test", "Body", "conv-1", "android")
+	// Should not error when FCM is not configured (graceful skip)
+	if err != nil {
+		t.Errorf("expected no error for Android push when FCM not configured, got: %v", err)
+	}
+
+	// iOS platform should route to APNs (also a no-op when not configured)
+	err = sendPushNotification("test-token", "Test", "Body", "conv-1", "ios")
+	if err != nil {
+		t.Errorf("expected no error for iOS push when APNs not configured, got: %v", err)
+	}
+
+	// Unknown platform defaults to APNs
+	err = sendPushNotification("test-token", "Test", "Body", "conv-1", "unknown")
+	if err != nil {
+		t.Errorf("expected no error for unknown platform, got: %v", err)
+	}
+}
+
+func TestRegisterMultiplePlatforms(t *testing.T) {
+	setupTestDB(t)
+	db.Exec("DELETE FROM device_tokens")
+	db.Exec("DELETE FROM users")
+
+	userID, token := createPushTestUser(t, "multi@test.com", "password123")
+
+	// Register iOS token
+	iosBody := `{"device_token":"ios-token-1","platform":"ios"}`
+	req := httptest.NewRequest("POST", "/push/register", strings.NewReader(iosBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	rr := httptest.NewRecorder()
+	handleRegisterDeviceToken(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("iOS register failed: %d", rr.Code)
+	}
+
+	// Register Android token
+	androidBody := `{"device_token":"android-token-1","platform":"android"}`
+	req = httptest.NewRequest("POST", "/push/register", strings.NewReader(androidBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	rr = httptest.NewRecorder()
+	handleRegisterDeviceToken(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("Android register failed: %d", rr.Code)
+	}
+
+	// Should have 2 tokens for the user
+	tokens, err := getDeviceTokensForUser(userID)
+	if err != nil {
+		t.Fatalf("Error getting tokens: %v", err)
+	}
+	if len(tokens) != 2 {
+		t.Errorf("expected 2 tokens, got %d", len(tokens))
+	}
+
+	// Verify platforms
+	platforms := map[string]bool{}
+	for _, tok := range tokens {
+		platforms[tok.Platform] = true
+	}
+	if !platforms["ios"] {
+		t.Error("expected ios platform in tokens")
+	}
+	if !platforms["android"] {
+		t.Error("expected android platform in tokens")
+	}
 }
 
 // Helper to create a test user and get their auth token
