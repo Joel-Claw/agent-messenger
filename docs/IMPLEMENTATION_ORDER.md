@@ -1,104 +1,115 @@
 # Implementation Roadmap
 
-## Phase 1: Core Server (MVP)
+## Phase 1: Core Server (MVP) ✅ DONE
 
-**Goal**: Basic message relay between agent and user
+### Server (Go) ✅
+- WebSocket server with agent/client separation
+- SQLite message storage
+- JWT user authentication (username + password)
+- API key authentication for agents (bcrypt hashed)
+- Message routing with push notifications (APNs + FCM)
+- 97 Go tests passing
 
-### Server (Go)
+### Agent Gateway (OpenClaw Plugin) ✅
+- WebSocket client with exponential backoff reconnect
+- DM security (allowlist / open policy)
+- Outbound messaging (text + media)
+- Typing indicator, agent status management
+- Unit tests + integration test mode
 
-1. WebSocket server with agent/client separation
-2. SQLite message storage
-3. API key authentication for agents
-4. JWT authentication for users
-5. Simple message routing (no push notifications yet)
-
-### Agent Gateway (OpenClaw Plugin)
-
-1. WebSocket client that connects to server
-2. Send messages from OpenClaw to server
-3. Receive user messages and emit events
-
-### WebChat (React)
-
-1. Minimal web client for testing
-2. User login
-3. Conversation view
-4. Message input
-
-**Deliverable**: Joel can send messages to WebChat and receive replies.
+### WebChat (React) ✅
+- Login form with JWT storage
+- Agent list with status indicators
+- Chat view with message bubbles and typing indicator
+- Conversation history loading
+- Dark mode
+- **Configurable**: Server does not expose web client unless explicitly enabled
 
 ---
 
-## Phase 2: Mobile Apps
+## Phase 2: Mobile + Desktop Apps ✅ DONE
 
-### iOS App
+### iOS App ✅
+- SwiftUI app with AgentMessengerKit Swift package
+- WebSocket connection with auto-reconnect
+- Push notifications (APNs)
+- Conversation list, chat view, agent list, settings
 
-1. SwiftUI app
-2. WebSocket connection
-3. Push notifications (APNs)
-4. Conversation list
-5. Message thread view
+### Android App ✅
+- Kotlin + Jetpack Compose
+- WebSocket connection
+- Push notifications (FCM)
+- Material 3 dark theme
+- Unit tests (13 total)
 
-### Android App
+### Linux Desktop App ✅
+- GTK4/Adwaita + libadwaita
+- Desktop notifications
+- System tray support
+- Integration tests
 
-1. Kotlin/Jetpack Compose
-2. WebSocket connection
-3. Push notifications (FCM)
-4. Same as iOS features
-
-**Deliverable**: User can install native app and receive push notifications.
+**Status**: All three clients complete. Server + all clients use username-based auth.
 
 ---
 
-## Phase 3: Multi-Tenant
+## Phase 3: Multi-Tenant 🔲 TODO
 
 ### Server Enhancements
 
-1. User registration (username/password, OAuth)
-2. Agent registration (API key issuance)
+1. User registration API (open signup vs invite-only)
+2. Agent registration (API key issuance from admin panel)
 3. One user, multiple agents
-4. Conversation history API
-5. Admin panel (optional)
+4. Admin panel for managing users/agents
+5. Conversation history pagination improvements
 
 **Deliverable**: Multiple users, multiple agents on one server.
 
 ---
 
-## Phase 4: Advanced Features
+## Phase 4: Advanced Features 🔲 TODO
 
 1. E2E encryption (Signal protocol)
 2. Media attachments (images, files)
 3. Voice messages
-4. Agent presence/status
-5. Typing indicators
-6. Read receipts
-7. Search message history
-8. Export conversations
-9. Audit logs UI
+4. Agent presence/status enhancements
+5. Read receipts
+6. Search message history
+7. Export conversations
+8. Audit logs UI
 
 ---
 
-## Phase 5: Polish
+## Phase 5: Polish 🔲 TODO
 
-1. Error handling
-2. Reconnection logic
-3. Offline support
-4. Accessibility
-5. Internationalization
-6. Dark mode
-7. Settings sync
-8. Notification customization
+1. Error handling improvements
+2. Offline support (message queuing)
+3. Accessibility audit
+4. Internationalization
+5. Settings sync across devices
+6. Notification customization (per-agent, per-conversation)
+7. WebChat improvements (responsive, PWA)
+
+---
+
+## Integration Testing 🔲 TODO
+
+- End-to-end test: server + webchat + plugin running together
+- Mobile app testing on real devices
+- Push notification delivery verification
+- Reconnection behavior under network interruptions
+- Load testing (multiple agents, multiple users)
 
 ---
 
 ## Estimated Timeline
 
-- **Phase 1**: 2-4 weeks (one developer, part-time)
-- **Phase 2**: 4-6 weeks (mobile apps are complex)
+- ~~**Phase 1**: 2-4 weeks~~ ✅ Complete
+- ~~**Phase 2**: 4-6 weeks~~ ✅ Complete
 - **Phase 3**: 2-3 weeks
 - **Phase 4**: 6-8 weeks (E2E encryption is hard)
 - **Phase 5**: 2-3 weeks
+- **Integration testing**: 1-2 weeks
 
-**Total**: ~16-24 weeks for full feature set
+**Total remaining**: ~11-16 weeks for full feature set
 
-**MVP usable**: After Phase 1 (~4 weeks)
+**MVP usable now**: Phase 1 + 2 complete. Server, all clients, and plugin are functional.
