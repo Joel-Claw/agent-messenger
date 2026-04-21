@@ -62,7 +62,7 @@ func TestRegisterAgentWithMetadata(t *testing.T) {
 	resp, err := http.PostForm(server.URL+"/auth/agent", url.Values{
 		"agent_id":    {"gpt-agent"},
 		"name":        {"GPT Assistant"},
-		"api_key":     {"key-123"},
+		"agent_secret":     {agentSecret},
 		"model":       {"gpt-4"},
 		"personality": {"helpful"},
 		"specialty":   {"general"},
@@ -100,7 +100,7 @@ func TestRegisterAgentWithoutMetadata(t *testing.T) {
 	resp, err := http.PostForm(server.URL+"/auth/agent", url.Values{
 		"agent_id": {"basic-agent"},
 		"name":     {"Basic Agent"},
-		"api_key":  {"basic-key"},
+		"agent_secret":  {agentSecret},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -145,18 +145,18 @@ func TestListAgentsWithMultiple(t *testing.T) {
 
 	// Register multiple agents
 	agents := []struct {
-		id, name, key, model, personality, specialty string
+		id, name, model, personality, specialty string
 	}{
-		{"agent-alpha", "Alpha Agent", "alpha-key", "gpt-4", "professional", "coding"},
-		{"agent-beta", "Beta Agent", "beta-key", "claude-3", "friendly", "writing"},
-		{"agent-gamma", "Gamma Agent", "gamma-key", "llama-3", "casual", "general"},
+		{"agent-alpha", "Alpha Agent", "gpt-4", "professional", "coding"},
+		{"agent-beta", "Beta Agent", "claude-3", "friendly", "writing"},
+		{"agent-gamma", "Gamma Agent", "llama-3", "casual", "general"},
 	}
 
 	for _, a := range agents {
 		http.PostForm(server.URL+"/auth/agent", url.Values{
 			"agent_id":    {a.id},
 			"name":        {a.name},
-			"api_key":     {a.key},
+			"agent_secret": {agentSecret},
 			"model":       {a.model},
 			"personality": {a.personality},
 			"specialty":   {a.specialty},
@@ -213,16 +213,16 @@ func TestListAgentsOnlineStatus(t *testing.T) {
 	http.PostForm(server.URL+"/auth/agent", url.Values{
 		"agent_id": {"online-agent"},
 		"name":     {"Online Agent"},
-		"api_key":  {"online-key"},
+		"agent_secret":  {agentSecret},
 	})
 	http.PostForm(server.URL+"/auth/agent", url.Values{
 		"agent_id": {"offline-agent"},
 		"name":     {"Offline Agent"},
-		"api_key":  {"offline-key"},
+		"agent_secret":  {agentSecret},
 	})
 
 	// Connect only the first agent via WebSocket
-	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/agent/connect?agent_id=online-agent&api_key=online-key"
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/agent/connect?agent_id=online-agent&agent_secret=" + url.QueryEscape(agentSecret)
 	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	if err != nil {
 		t.Fatalf("WebSocket connect failed: %v", err)
@@ -266,8 +266,7 @@ func TestAgentStatusTracking(t *testing.T) {
 	defer hub.Stop()
 
 	// Register agent directly in DB
-	hash, _ := HashAPIKey("status-key")
-	db.Exec("INSERT INTO agents (id, api_key_hash, name) VALUES (?, ?, ?)", "status-agent", hash, "Status Agent")
+	db.Exec("INSERT INTO agents (id, name) VALUES (?, ?)", "status-agent", "Status Agent")
 
 	// Initially offline
 	if hub.AgentStatus("status-agent") != "offline" {
@@ -382,7 +381,7 @@ func TestAdminAgentsEndpoint(t *testing.T) {
 	http.PostForm(server.URL+"/auth/agent", url.Values{
 		"agent_id":    {"admin-agent"},
 		"name":        {"Admin Agent"},
-		"api_key":     {"admin-key"},
+		"agent_secret":     {agentSecret},
 		"model":       {"gpt-4"},
 		"personality": {"professional"},
 		"specialty":   {"admin"},
@@ -390,11 +389,11 @@ func TestAdminAgentsEndpoint(t *testing.T) {
 	http.PostForm(server.URL+"/auth/agent", url.Values{
 		"agent_id": {"admin-offline"},
 		"name":     {"Admin Offline"},
-		"api_key":  {"offline-key"},
+		"agent_secret":  {agentSecret},
 	})
 
 	// Connect one agent
-	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/agent/connect?agent_id=admin-agent&api_key=admin-key"
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/agent/connect?agent_id=admin-agent&agent_secret=" + url.QueryEscape(agentSecret)
 	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	if err != nil {
 		t.Fatalf("WebSocket connect failed: %v", err)
@@ -639,7 +638,7 @@ func TestSchemaMigration(t *testing.T) {
 	}
 	defer db.Close()
 
-	// Create the old-style schema (without model/personality/specialty)
+	// Create the old-style schema (with api_key_hash, without model/personality/specialty)
 	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id TEXT PRIMARY KEY,
 		api_key_hash TEXT NOT NULL,

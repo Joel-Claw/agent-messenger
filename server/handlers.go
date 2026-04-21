@@ -31,16 +31,31 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apiKey := r.URL.Query().Get("api_key")
-	if apiKey == "" {
-		writeJSONError(w, http.StatusUnauthorized, "missing api_key parameter")
+	secret := r.URL.Query().Get("agent_secret")
+	if secret == "" {
+		writeJSONError(w, http.StatusUnauthorized, "missing agent_secret parameter")
 		return
 	}
 
-	// Validate API key against stored bcrypt hash
-	if err := ValidateAPIKey(agentID, apiKey); err != nil {
+	// Validate against shared AGENT_SECRET
+	if err := ValidateAgentSecret(agentID, secret); err != nil {
 		if ServerMetrics != nil { ServerMetrics.ErrorsTotal.Add(1) }
-		writeJSONError(w, http.StatusUnauthorized, "authentication failed: "+err.Error())
+		status := http.StatusUnauthorized
+		if err.Error() == "rate limited: too many connection attempts" {
+			status = http.StatusTooManyRequests
+		}
+		writeJSONError(w, status, "authentication failed: "+err.Error())
+		return
+	}
+
+	// Self-register: ensure agent exists in database
+	name := r.URL.Query().Get("name")
+	model := r.URL.Query().Get("model")
+	personality := r.URL.Query().Get("personality")
+	specialty := r.URL.Query().Get("specialty")
+	if err := RegisterAgentOnConnect(agentID, name, model, personality, specialty); err != nil {
+		log.Printf("Failed to self-register agent %s: %v", agentID, err)
+		writeJSONError(w, http.StatusInternalServerError, "failed to register agent")
 		return
 	}
 
@@ -206,32 +221,45 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleRegisterAgent handles POST /auth/agent - register a new agent with API key
+// handleRegisterAgent handles POST /auth/agent - pre-register an agent with metadata.
+// Agents can also self-register on connect, but this endpoint allows pre-seeding
+// metadata. Requires the AGENT_SECRET for authentication.
 func handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
+	// Authenticate with AGENT_SECRET
+	secret := r.Header.Get("X-Agent-Secret")
+	if secret == "" {
+		secret = r.FormValue("agent_secret")
+	}
+	if secret != agentSecret {
+		writeJSONError(w, http.StatusUnauthorized, "invalid agent secret")
+		return
+	}
+
 	agentID := r.FormValue("agent_id")
 	name := r.FormValue("name")
-	apiKey := r.FormValue("api_key")
 	model := r.FormValue("model")
 	personality := r.FormValue("personality")
 	specialty := r.FormValue("specialty")
-	if agentID == "" || name == "" || apiKey == "" {
-		writeJSONError(w, http.StatusBadRequest, "missing agent_id, name, or api_key")
+	if agentID == "" {
+		writeJSONError(w, http.StatusBadRequest, "missing agent_id")
 		return
 	}
-
-	// Hash the API key for storage
-	hash, err := HashAPIKey(apiKey)
-	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "internal error")
-		return
+	if name == "" {
+		name = agentID
 	}
 
-	_, err = db.Exec("INSERT OR IGNORE INTO agents (id, api_key_hash, name, model, personality, specialty) VALUES (?, ?, ?, ?, ?, ?)", agentID, hash, name, model, personality, specialty)
+	_, err := db.Exec(`
+		INSERT INTO agents (id, name, model, personality, specialty) 
+		VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET name=?, model=?, personality=?, specialty=?`,
+		agentID, name, model, personality, specialty,
+		name, model, personality, specialty,
+	)
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "failed to register agent: "+err.Error())
 		return

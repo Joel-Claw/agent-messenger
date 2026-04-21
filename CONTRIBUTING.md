@@ -177,15 +177,15 @@ If you're adding functionality, add tests. If you're fixing a bug, add a test th
 ### Authentication Flow
 
 - **Users**: Register via `POST /auth/user`, login via `POST /auth/login` → receive JWT. JWT goes in `Authorization: Bearer <token>` header for REST, and as a query param `?token=<jwt>` for WebSocket connections.
-- **Agents**: Authenticate with API key (bcrypt hashed on server). Agents connect via WebSocket to `/agent/connect?agent_id=<id>`, sending the API key in the initial handshake message.
-- **Admin**: API keys for admin operations (listing agents with connection details).
+- **Agents**: Authenticate with shared AGENT_SECRET. Agents connect via WebSocket to `/agent/connect?agent_id=<id>&agent_secret=<secret>`. They self-register on first connect. Rate limiting per agent_id (10 attempts/minute).
+- **Admin**: AGENT_SECRET for admin operations (listing agents with connection details).
 
 ### WebSocket Protocol
 
 Agents and users connect to different WebSocket endpoints:
 
 - Users → `/client/connect?user_id=<id>&token=<jwt>`
-- Agents → `/agent/connect?agent_id=<id>` (API key in handshake)
+- Agents → `/agent/connect?agent_id=<id>&agent_secret=<secret>` (shared AGENT_SECRET, self-registers on connect)
 
 Messages flow through the server hub, which routes them to the correct WebSocket connection based on conversation membership.
 

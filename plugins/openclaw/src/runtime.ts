@@ -51,7 +51,7 @@ export async function startRuntime(account: ResolvedAccount): Promise<void> {
 
   client = new AgentMessengerClient({
     serverUrl: account.serverUrl,
-    apiKey: account.apiKey,
+    agentSecret: account.agentSecret,
     agentId: account.agentId,
     agentName: account.agentName,
     agentModel: account.agentModel,

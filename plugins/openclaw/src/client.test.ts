@@ -4,7 +4,7 @@ import { AgentMessengerClient } from './client.js';
 describe('AgentMessengerClient', () => {
   const config = {
     serverUrl: 'ws://localhost:8080',
-    apiKey: 'test-api-key',
+    agentSecret: 'test-agent-secret',
     agentId: 'test-agent',
   };
 

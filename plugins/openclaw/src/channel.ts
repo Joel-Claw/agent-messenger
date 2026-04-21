@@ -20,7 +20,7 @@ import { getClient } from './runtime.js';
 type ResolvedAccount = {
   accountId: string | null;
   serverUrl: string;
-  apiKey: string;
+  agentSecret: string;
   agentId: string;
   agentName: string;
   agentModel: string;
@@ -36,17 +36,17 @@ function resolveAccount(
 ): ResolvedAccount {
   const section = (cfg.channels as Record<string, any>)?.['agent-messenger'];
   const serverUrl = section?.serverUrl;
-  const apiKey = section?.apiKey;
+  const agentSecret = section?.agentSecret;
   const agentId = section?.agentId;
 
   if (!serverUrl) throw new Error('agent-messenger: serverUrl is required');
-  if (!apiKey) throw new Error('agent-messenger: apiKey is required');
+  if (!agentSecret) throw new Error('agent-messenger: agentSecret is required');
   if (!agentId) throw new Error('agent-messenger: agentId is required');
 
   return {
     accountId: accountId ?? null,
     serverUrl,
-    apiKey,
+    agentSecret,
     agentId,
     agentName: section?.agentName || 'OpenClaw Agent',
     agentModel: section?.agentModel || '',
@@ -66,8 +66,8 @@ export const agentMessengerPlugin = createChatChannelPlugin<ResolvedAccount>({
         const section =
           (cfg.channels as Record<string, any>)?.['agent-messenger'];
         return {
-          enabled: Boolean(section?.serverUrl && section?.apiKey && section?.agentId),
-          configured: Boolean(section?.serverUrl && section?.apiKey && section?.agentId),
+          enabled: Boolean(section?.serverUrl && section?.agentSecret && section?.agentId),
+          configured: Boolean(section?.serverUrl && section?.agentSecret && section?.agentId),
           serverUrl: section?.serverUrl ? 'configured' : 'missing',
         };
       },

@@ -7,7 +7,7 @@ describe('agent-messenger plugin', () => {
       channels: {
         'agent-messenger': {
           serverUrl: 'ws://localhost:8080',
-          apiKey: 'test-key',
+          agentSecret: 'test-secret',
           agentId: 'test-agent',
           agentName: 'Test Agent',
           allowFrom: ['user1'],
@@ -16,7 +16,7 @@ describe('agent-messenger plugin', () => {
     } as any;
     const account = agentMessengerPlugin.setup!.resolveAccount(cfg, undefined);
     expect(account.serverUrl).toBe('ws://localhost:8080');
-    expect(account.apiKey).toBe('test-key');
+    expect(account.agentSecret).toBe('test-secret');
     expect(account.agentId).toBe('test-agent');
     expect(account.agentName).toBe('Test Agent');
     expect(account.allowFrom).toEqual(['user1']);
@@ -27,7 +27,7 @@ describe('agent-messenger plugin', () => {
       channels: {
         'agent-messenger': {
           serverUrl: 'ws://localhost:8080',
-          apiKey: 'test-key',
+          agentSecret: 'test-secret',
           agentId: 'test-agent',
         },
       },
@@ -48,7 +48,7 @@ describe('agent-messenger plugin', () => {
       channels: {
         'agent-messenger': {
           serverUrl: 'ws://localhost:8080',
-          // Missing apiKey and agentId
+          // Missing agentSecret and agentId
         },
       },
     } as any;
@@ -66,7 +66,7 @@ describe('agent-messenger plugin', () => {
       channels: {
         'agent-messenger': {
           serverUrl: 'ws://localhost:8080',
-          apiKey: 'test-key',
+          agentSecret: 'test-secret',
           agentId: 'test-agent',
         },
       },
@@ -83,7 +83,7 @@ describe('agent-messenger plugin', () => {
       channels: {
         'agent-messenger': {
           serverUrl: 'ws://localhost:8080',
-          apiKey: 'test-key',
+          agentSecret: 'test-secret',
           agentId: 'test-agent',
           dmSecurity: 'open',
           allowFrom: [],
@@ -99,7 +99,7 @@ describe('agent-messenger plugin', () => {
       channels: {
         'agent-messenger': {
           serverUrl: 'ws://localhost:8080',
-          apiKey: 'test-key',
+          agentSecret: 'test-secret',
           agentId: 'test-agent',
         },
       },

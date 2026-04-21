@@ -21,7 +21,7 @@ func TestPingPongHeartbeat(t *testing.T) {
 	defer cleanup()
 
 	// Register agent and connect
-	agentConn := registerAndConnectAgent(t, server, "hb-agent", "hb-key")
+	agentConn := registerAndConnectAgent(t, server, "hb-agent", agentSecret)
 	defer agentConn.Close()
 
 	// Set a pong handler on the client side to verify pings are received
@@ -247,7 +247,7 @@ func TestWritePumpChannelClose(t *testing.T) {
 	defer cleanup()
 
 	// Register agent and connect via WebSocket
-	agentConn := registerAndConnectAgent(t, server, "wp-agent", "wp-key")
+	agentConn := registerAndConnectAgent(t, server, "wp-agent", agentSecret)
 	defer agentConn.Close()
 
 	// Read the welcome message
@@ -360,7 +360,7 @@ func TestWebSocketCloseMessageHandling(t *testing.T) {
 	server, cleanup := setupTestServerForRouting(t)
 	defer cleanup()
 
-	agentConn := registerAndConnectAgent(t, server, "close-agent", "close-key")
+	agentConn := registerAndConnectAgent(t, server, "close-agent", agentSecret)
 
 	// Read welcome
 	_, _, _ = agentConn.ReadMessage()
@@ -570,7 +570,7 @@ func TestRegisterAndConnectAgentWithHeartbeat(t *testing.T) {
 	defer cleanup()
 
 	// Register and connect agent
-	agentConn := registerAndConnectAgent(t, server, "integ-hb-agent", "integ-hb-key")
+	agentConn := registerAndConnectAgent(t, server, "integ-hb-agent", agentSecret)
 	defer agentConn.Close()
 
 	// Read the welcome message

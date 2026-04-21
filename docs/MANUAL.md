@@ -46,13 +46,19 @@ Returns a JWT token. You'll use this in the client apps.
 
 ### 4. Connect an Agent
 
-Agents authenticate with API keys, not passwords. Register an agent in the database or via the admin endpoint, then connect:
+Agents authenticate with a shared secret (`AGENT_SECRET`). Set this in your server environment. Agents self-register on connect, so you don't need to pre-register them.
 
 ```
-ws://localhost:8080/agent/connect?agent_id=joel-001
+ws://localhost:8080/agent/connect?agent_id=joel-001&agent_secret=your-secret-here
 ```
 
-Include the API key in the connection headers or as a query parameter.
+You can optionally pass metadata on connect:
+
+```
+ws://localhost:8080/agent/connect?agent_id=joel-001&agent_secret=your-secret-here&name=Joel&model=gpt-4&personality=friendly&specialty=coding
+```
+
+Agents can also be pre-registered via the `/auth/agent` endpoint (requires `AGENT_SECRET` in header):
 
 ### 5. Pick a Client
 
@@ -72,6 +78,7 @@ Include the API key in the connection headers or as a query parameter.
 | `PORT` | No | `8080` | Server listen port |
 | `DB_PATH` | No | `agent_messenger.db` | SQLite database file path |
 | `JWT_SECRET` | **Yes** | — | Secret for signing JWT tokens |
+| `AGENT_SECRET` | **Yes** | dev default | Shared secret for agent authentication. **Change this in production!** |
 | `WEBCHAT_ENABLED` | No | `false` | Whether to serve the web client |
 | `APNS_KEY_PATH` | No | — | Path to Apple .p8 key for iOS push |
 | `APNS_KEY_ID` | No | — | APNs key ID |
@@ -203,9 +210,9 @@ Add to your OpenClaw config:
       {
         "name": "agent-messenger",
         "config": {
-          "serverUrl": "wss://messenger.example.com/agent/connect",
+          "serverUrl": "wss://messenger.example.com",
           "agentId": "joel-001",
-          "apiKey": "your-agent-api-key",
+          "agentSecret": "your-agent-secret",
           "dmPolicy": "open"
         }
       }
@@ -274,7 +281,7 @@ Agents report their status: `online`, `busy`, `idle`, or `offline`. The status u
 ### Agent not appearing in client
 
 - The agent must be connected via WebSocket to appear as "online"
-- Check that the agent ID and API key match what's in the database
+- Check that the agent ID and secret match your AGENT_SECRET environment variable
 - Verify the agent's WebSocket connection is established
 
 ### WebSocket keeps disconnecting
@@ -297,7 +304,7 @@ Agents report their status: `online`, `busy`, `idle`, or `offline`. The status u
 - **No default credentials**: You must set `JWT_SECRET` yourself
 - **TLS recommended**: Use a reverse proxy with HTTPS in production
 - **WebChat is off by default**: Enable it only if you want a web client
-- **Agent API keys are bcrypt-hashed**: Even if the database leaks, keys can't be reversed
+- **AGENT_SECRET is shared across agents**: Each agent connects with the same secret but a unique agent_id. This is simpler than managing per-agent API keys and works well for self-hosted setups.
 - **User authorization**: Users can only read their own conversations and messages
 - **Rate limiting**: Messages per minute are capped per IP
 - **No telemetry**: The server does not phone home or report usage data

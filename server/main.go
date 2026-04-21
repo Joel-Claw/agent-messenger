@@ -110,6 +110,14 @@ func main() {
 		}
 	}()
 
+	// Start rate limiter cleanup goroutine
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		for range ticker.C {
+			agentRateLimiter.Clean()
+		}
+	}()
+
 	// Wait for interrupt signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -134,7 +142,7 @@ func initSchema(db *sql.DB) error {
 	schema := `
 	CREATE TABLE IF NOT EXISTS agents (
 		id TEXT PRIMARY KEY,
-		api_key_hash TEXT NOT NULL,
+		
 		name TEXT NOT NULL,
 		model TEXT NOT NULL DEFAULT '',
 		personality TEXT NOT NULL DEFAULT '',
@@ -184,6 +192,7 @@ func initSchema(db *sql.DB) error {
 	}
 
 	// Migrate: add model/personality/specialty columns if they don't exist
+	// Also migrate from per-agent API keys to shared AGENT_SECRET
 	migrations := []string{
 		"ALTER TABLE agents ADD COLUMN model TEXT NOT NULL DEFAULT ''",
 		"ALTER TABLE agents ADD COLUMN personality TEXT NOT NULL DEFAULT ''",
@@ -194,6 +203,10 @@ func initSchema(db *sql.DB) error {
 		// we ignore the error since it just means the column is already there.
 		db.Exec(m)
 	}
+
+	// Migration: agents table no longer requires api_key_hash.
+	// For existing DBs that have the column, it remains but is no longer used.
+	// New DBs won't have it at all. No action needed either way.
 
 	return nil
 }

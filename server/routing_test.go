@@ -44,12 +44,14 @@ func setupTestServerForRouting(t *testing.T) (*httptest.Server, func()) {
 }
 
 // registerAndConnectAgent is a helper to register an agent and connect via WebSocket
-func registerAndConnectAgent(t *testing.T, server *httptest.Server, agentID, apiKey string) *websocket.Conn {
+func registerAndConnectAgent(t *testing.T, server *httptest.Server, agentID, agentSecret string) *websocket.Conn {
 	t.Helper()
+
+	// Pre-register the agent with the shared secret
 	form := url.Values{}
 	form.Set("agent_id", agentID)
 	form.Set("name", "Agent "+agentID)
-	form.Set("api_key", apiKey)
+	form.Set("agent_secret", agentSecret)
 
 	req := httptest.NewRequest(http.MethodPost, "/auth/agent", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -59,7 +61,7 @@ func registerAndConnectAgent(t *testing.T, server *httptest.Server, agentID, api
 		t.Fatalf("register agent failed: %d", w.Code)
 	}
 
-	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/agent/connect?agent_id=" + agentID + "&api_key=" + apiKey
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/agent/connect?agent_id=" + agentID + "&agent_secret=" + url.QueryEscape(agentSecret)
 	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	if err != nil {
 		t.Fatalf("agent connect failed: %v", err)

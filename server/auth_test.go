@@ -144,44 +144,24 @@ func TestValidateJWT_WrongSecret(t *testing.T) {
 
 // --- Unit tests for auth functions (DB needed) ---
 
-func TestValidateAPIKey_EmptyKey(t *testing.T) {
-	setupTestDB(t)
-	err := ValidateAPIKey("test-agent", "")
+func TestValidateAgentSecret_EmptySecret(t *testing.T) {
+	err := ValidateAgentSecret("test-agent", "")
 	if err == nil {
-		t.Fatal("expected error for empty API key")
+		t.Fatal("expected error for empty secret")
 	}
 }
 
-func TestValidateAPIKey_UnknownAgent(t *testing.T) {
-	setupTestDB(t)
-	err := ValidateAPIKey("nonexistent-agent", "some-key")
-	if err == nil {
-		t.Fatal("expected error for unknown agent")
-	}
-	if err.Error() != "unknown agent" {
-		t.Fatalf("expected 'unknown agent' error, got: %v", err)
-	}
-}
-
-func TestValidateAPIKey_ValidKey(t *testing.T) {
-	setupTestDB(t)
-	hash, _ := HashAPIKey("correct-key")
-	db.Exec("INSERT INTO agents (id, api_key_hash, name) VALUES (?, ?, ?)", "agent-1", hash, "Agent One")
-
-	err := ValidateAPIKey("agent-1", "correct-key")
+func TestValidateAgentSecret_ValidSecret(t *testing.T) {
+	err := ValidateAgentSecret("test-agent", agentSecret)
 	if err != nil {
-		t.Fatalf("expected valid key to pass, got: %v", err)
+		t.Fatalf("expected valid secret to pass, got: %v", err)
 	}
 }
 
-func TestValidateAPIKey_WrongKey(t *testing.T) {
-	setupTestDB(t)
-	hash, _ := HashAPIKey("correct-key")
-	db.Exec("INSERT INTO agents (id, api_key_hash, name) VALUES (?, ?, ?)", "agent-1", hash, "Agent One")
-
-	err := ValidateAPIKey("agent-1", "wrong-key")
+func TestValidateAgentSecret_WrongSecret(t *testing.T) {
+	err := ValidateAgentSecret("test-agent", "wrong-secret")
 	if err == nil {
-		t.Fatal("expected error for wrong key")
+		t.Fatal("expected error for wrong secret")
 	}
 }
 
@@ -198,12 +178,28 @@ func TestHandleLogin_MissingFields(t *testing.T) {
 }
 
 func TestHandleRegisterAgent_MissingFields(t *testing.T) {
+	setupTestDB(t)
+
+	// Empty body should fail - missing agent_secret
 	req := httptest.NewRequest(http.MethodPost, "/auth/agent", nil)
+	req.Header.Set("X-Agent-Secret", "wrong")
 	w := httptest.NewRecorder()
 	handleRegisterAgent(w, req)
 
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400, got %d", w.Code)
+	// Should be 401 (invalid secret) not 400
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 for invalid secret, got %d", w.Code)
+	}
+
+	// Valid secret but missing agent_id
+	req2 := httptest.NewRequest(http.MethodPost, "/auth/agent", strings.NewReader("name=Test"))
+	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req2.Header.Set("X-Agent-Secret", agentSecret)
+	w2 := httptest.NewRecorder()
+	handleRegisterAgent(w2, req2)
+
+	if w2.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for missing agent_id, got %d", w2.Code)
 	}
 }
 
@@ -283,11 +279,11 @@ func TestHandleHealth(t *testing.T) {
 func TestAgentRegisterAndConnect(t *testing.T) {
 	server := setupTestServer(t)
 
-	// Register an agent
+	// Register an agent with AGENT_SECRET
 	resp, err := http.PostForm(server.URL+"/auth/agent", url.Values{
-		"agent_id": {"test-agent-1"},
-		"name":     {"Test Agent"},
-		"api_key":  {"secret-key-123"},
+		"agent_id":     {"test-agent-1"},
+		"name":         {"Test Agent"},
+		"agent_secret": {agentSecret},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -309,15 +305,15 @@ func TestAgentRegisterAndConnect(t *testing.T) {
 func TestAgentConnectInvalidKey(t *testing.T) {
 	server := setupTestServer(t)
 
-	// Register agent
+	// Register agent with AGENT_SECRET via header
 	http.PostForm(server.URL+"/auth/agent", url.Values{
-		"agent_id": {"agent-x"},
-		"name":     {"Agent X"},
-		"api_key":  {"correct-key"},
+		"agent_id":     {"agent-x"},
+		"name":         {"Agent X"},
+		"agent_secret": {agentSecret},
 	})
 
-	// Try to connect with wrong API key
-	resp, err := http.Get(server.URL + "/agent/connect?agent_id=agent-x&api_key=wrong-key")
+	// Try to connect with wrong secret
+	resp, err := http.Get(server.URL + "/agent/connect?agent_id=agent-x&agent_secret=wrong-secret")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -329,7 +325,7 @@ func TestAgentConnectInvalidKey(t *testing.T) {
 	}
 }
 
-func TestAgentConnectMissingKey(t *testing.T) {
+func TestAgentConnectMissingSecret(t *testing.T) {
 	server := setupTestServer(t)
 
 	resp, err := http.Get(server.URL + "/agent/connect?agent_id=agent-y")
@@ -346,7 +342,7 @@ func TestAgentConnectMissingKey(t *testing.T) {
 func TestAgentConnectUnknownAgent(t *testing.T) {
 	server := setupTestServer(t)
 
-	resp, err := http.Get(server.URL + "/agent/connect?agent_id=unknown&api_key=whatever")
+	resp, err := http.Get(server.URL + "/agent/connect?agent_id=unknown&agent_secret=whatever")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -483,21 +479,21 @@ func TestClientConnectMissingToken(t *testing.T) {
 func TestFullAuthFlow(t *testing.T) {
 	server := setupTestServer(t)
 
-	// 1. Register an agent
+	// 1. Register an agent with AGENT_SECRET
 	resp, _ := http.PostForm(server.URL+"/auth/agent", url.Values{
-		"agent_id": {"flow-agent"},
-		"name":     {"Flow Agent"},
-		"api_key":  {"flow-key-789"},
+		"agent_id":     {"flow-agent"},
+		"name":         {"Flow Agent"},
+		"agent_secret": {agentSecret},
 	})
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("agent registration failed: %d", resp.StatusCode)
 	}
 	resp.Body.Close()
 
-	// 2. Validate the agent API key
-	err := ValidateAPIKey("flow-agent", "flow-key-789")
+	// 2. Validate the agent secret
+	err := ValidateAgentSecret("flow-agent", agentSecret)
 	if err != nil {
-		t.Fatalf("API key validation failed: %v", err)
+		t.Fatalf("Agent secret validation failed: %v", err)
 	}
 
 	// 3. Register a user
@@ -531,11 +527,123 @@ func TestFullAuthFlow(t *testing.T) {
 		t.Fatalf("expected username flowuser, got %s", claims.Username)
 	}
 
-	// 6. Verify wrong key fails
-	err = ValidateAPIKey("flow-agent", "wrong-key")
+	// 6. Verify wrong secret fails
+	err = ValidateAgentSecret("flow-agent", "wrong-secret")
 	if err == nil {
-		t.Fatal("expected error for wrong API key")
+		t.Fatal("expected error for wrong agent secret")
 	}
 
 	t.Logf("Full auth flow passed! Agent: flow-agent, User: %s, Token valid", claims.UserID)
+}
+
+func TestAgentSelfRegistration(t *testing.T) {
+	server := setupTestServer(t)
+
+	// Connect with valid secret - agent should self-register
+	resp, err := http.Get(server.URL + "/agent/connect?agent_id=new-agent&agent_secret=" + url.QueryEscape(agentSecret) + "&name=New%20Agent&model=gpt-4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// Should upgrade to WebSocket (101), not auth error
+	// Since we can't do WS upgrade in unit test, we check for non-401 status
+	// A 400 (bad request for WS upgrade) is expected here, not 401
+	if resp.StatusCode == http.StatusUnauthorized {
+		t.Fatal("expected agent to pass auth with valid secret")
+	}
+
+	// Verify the agent was created in DB
+	var name string
+	err = db.QueryRow("SELECT name FROM agents WHERE id = ?", "new-agent").Scan(&name)
+	if err != nil {
+		t.Fatalf("expected agent to be self-registered, got DB error: %v", err)
+	}
+	if name != "New Agent" {
+		t.Fatalf("expected name 'New Agent', got '%s'", name)
+	}
+}
+
+func TestAgentSelfRegistrationUsesAgentIDAsName(t *testing.T) {
+	server := setupTestServer(t)
+
+	// Connect without name parameter - agent_id should be used as name
+	resp, err := http.Get(server.URL + "/agent/connect?agent_id=unnamed-agent&agent_secret=" + url.QueryEscape(agentSecret))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		t.Fatal("expected agent to pass auth with valid secret")
+	}
+
+	var name string
+	err = db.QueryRow("SELECT name FROM agents WHERE id = ?", "unnamed-agent").Scan(&name)
+	if err != nil {
+		t.Fatalf("expected agent to be self-registered, got DB error: %v", err)
+	}
+	if name != "unnamed-agent" {
+		t.Fatalf("expected name to default to agent_id, got '%s'", name)
+	}
+}
+
+func TestRateLimiter(t *testing.T) {
+	rl := &rateLimiter{attempts: make(map[string]*rateLimitEntry)}
+
+	// Should allow up to maxAgentAttempts
+	for i := 0; i < maxAgentAttempts; i++ {
+		if !rl.Allow("test-agent") {
+			t.Fatalf("expected attempt %d to be allowed", i+1)
+		}
+	}
+
+	// Next attempt should be rate limited
+	if rl.Allow("test-agent") {
+		t.Fatal("expected rate limit to be enforced after max attempts")
+	}
+
+	// Different agent should not be affected
+	if !rl.Allow("other-agent") {
+		t.Fatal("expected different agent to not be rate limited")
+	}
+}
+
+func TestRegisterAgentWithSecret(t *testing.T) {
+	setupTestDB(t)
+
+	// Register agent via header auth
+	req := httptest.NewRequest(http.MethodPost, "/auth/agent", strings.NewReader("agent_id=header-agent&name=Header%20Agent"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("X-Agent-Secret", agentSecret)
+	w := httptest.NewRecorder()
+	handleRegisterAgent(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	// Verify agent exists
+	var name string
+	err := db.QueryRow("SELECT name FROM agents WHERE id = ?", "header-agent").Scan(&name)
+	if err != nil {
+		t.Fatalf("expected agent in DB, got: %v", err)
+	}
+	if name != "Header Agent" {
+		t.Fatalf("expected name 'Header Agent', got '%s'", name)
+	}
+}
+
+func TestRegisterAgentInvalidSecret(t *testing.T) {
+	setupTestDB(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/auth/agent", strings.NewReader("agent_id=bad-agent&name=Bad%20Agent"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("X-Agent-Secret", "wrong-secret")
+	w := httptest.NewRecorder()
+	handleRegisterAgent(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 for invalid secret, got %d", w.Code)
+	}
 }

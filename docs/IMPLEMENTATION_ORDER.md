@@ -6,7 +6,7 @@
 - WebSocket server with agent/client separation
 - SQLite message storage
 - JWT user authentication (username + password)
-- API key authentication for agents (bcrypt hashed)
+- Shared AGENT_SECRET authentication for agents (self-register on connect)
 - Message routing with push notifications (APNs + FCM)
 - 97 Go tests passing
 
@@ -57,7 +57,7 @@
 ### Server Enhancements
 
 1. User registration API (open signup vs invite-only)
-2. Agent registration (API key issuance from admin panel)
+2. Agent registration (pre-seed metadata via AGENT_SECRET-authenticated endpoint, or self-register on connect)
 3. One user, multiple agents
 4. Admin panel for managing users/agents
 5. Conversation history pagination improvements

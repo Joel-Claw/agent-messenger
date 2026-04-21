@@ -37,7 +37,7 @@ Your AI assistant gets its own dedicated app. Users open Agent Messenger, pick a
 WebSocket server with SQLite persistence. 101 tests passing.
 
 - JWT user authentication (register, login, token validation)
-- API key authentication for agents (bcrypt hashed)
+- Shared AGENT_SECRET authentication for agents (self-register on connect)
 - WebSocket real-time messaging with ping/pong heartbeat
 - Conversation management (create, list, message history with pagination)
 - Multi-agent support (agents register with name, model, personality, specialty)
@@ -116,7 +116,7 @@ Desktop client for X11 and Wayland.
 
 ## Protocol
 
-Agents connect via WebSocket to `/agent/connect?agent_id=<id>`, authenticating with an API key. Users connect via `/client/connect?user_id=<id>`, authenticating with a JWT.
+Agents connect via WebSocket to `/agent/connect?agent_id=<id>&agent_secret=<secret>`, authenticating with a shared AGENT_SECRET. They self-register on first connect. Users connect via `/client/connect?user_id=<id>`, authenticating with a JWT.
 
 ### Message Format
 
@@ -242,7 +242,8 @@ go build -o am-admin ./cmd/am-admin
 ./am-admin -db ./data/agent-messenger.db list-agents
 ./am-admin -db ./data/agent-messenger.db list-users
 
-# Reset an agent's API key
+# Change the AGENT_SECRET
+export AGENT_SECRET="your-new-secret"
 ./am-admin -db ./data/agent-messenger.db reset-apikey
 ```
 
@@ -275,7 +276,7 @@ agent-messenger/
 
 ## Security
 
-- **Agent auth**: API key with bcrypt hash comparison
+- **Agent auth**: Shared AGENT_SECRET with rate limiting and self-registration
 - **User auth**: JWT with HMAC-SHA256
 - **Rate limiting**: Per-IP message rate enforcement
 - **Authorization**: Users can only access their own conversations and messages

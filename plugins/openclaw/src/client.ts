@@ -6,7 +6,7 @@ import WebSocket from 'ws';
 
 export interface AgentMessengerConfig {
   serverUrl: string;
-  apiKey: string;
+  agentSecret: string;
   agentId: string;
   agentName?: string;
   agentModel?: string;
@@ -71,7 +71,15 @@ export class AgentMessengerClient {
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const url = `${this.config.serverUrl}/agent/connect?api_key=${encodeURIComponent(this.config.apiKey)}&agent_id=${encodeURIComponent(this.config.agentId)}`;
+      const params = new URLSearchParams({
+        agent_secret: this.config.agentSecret,
+        agent_id: this.config.agentId,
+      });
+      if (this.config.agentName) params.set('name', this.config.agentName);
+      if (this.config.agentModel) params.set('model', this.config.agentModel);
+      if (this.config.agentPersonality) params.set('personality', this.config.agentPersonality);
+      if (this.config.agentSpecialty) params.set('specialty', this.config.agentSpecialty);
+      const url = `${this.config.serverUrl}/agent/connect?${params.toString()}`;
 
       this.ws = new WebSocket(url);
 
