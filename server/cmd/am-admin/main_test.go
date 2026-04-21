@@ -25,7 +25,6 @@ func setupTestDB(t *testing.T) *sql.DB {
 	schema := `
 	CREATE TABLE IF NOT EXISTS agents (
 		id TEXT PRIMARY KEY,
-		api_key_hash TEXT NOT NULL,
 		name TEXT NOT NULL,
 		model TEXT NOT NULL DEFAULT '',
 		personality TEXT NOT NULL DEFAULT '',
@@ -43,21 +42,6 @@ func setupTestDB(t *testing.T) *sql.DB {
 		t.Fatal(err)
 	}
 	return db
-}
-
-func TestGenerateAPIKey(t *testing.T) {
-	key1 := generateAPIKey()
-	key2 := generateAPIKey()
-
-	if !strings.HasPrefix(key1, "am_") {
-		t.Errorf("API key should start with 'am_', got %s", key1)
-	}
-	if key1 == key2 {
-		t.Error("Two generated API keys should not be equal")
-	}
-	if len(key1) < 20 {
-		t.Errorf("API key too short: %s", key1)
-	}
 }
 
 func TestGenerateID(t *testing.T) {

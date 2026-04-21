@@ -32,8 +32,8 @@ func main() {
 		listAgents(*dbPath)
 	case "list-users":
 		listUsers(*dbPath)
-	case "reset-apikey":
-		resetAPIKey(*dbPath)
+	case "delete-agent":
+		deleteAgent(*dbPath)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", flag.Arg(0))
 		printUsage()
@@ -47,11 +47,15 @@ func printUsage() {
 Usage: am-admin [flags] <command> [args]
 
 Commands:
-  create-agent    Register a new agent (generates API key)
+  create-agent    Register a new agent (pre-seed metadata)
   create-user     Register a new user
   list-agents     List all registered agents
   list-users      List all registered users
-  reset-apikey    Generate a new API key for an agent
+  delete-agent    Remove an agent from the database
+
+Agents authenticate with AGENT_SECRET (shared env var), not per-agent keys.
+Use create-agent to pre-seed metadata (name, model, etc.) before first connect.
+Agents can also self-register on connect without pre-seeding.
 
 Flags:
   -db string    SQLite database path (default "./data/agent-messenger.db")
@@ -59,7 +63,7 @@ Flags:
 Examples:
   am-admin -db ./data/agent-messenger.db create-agent
   am-admin -db ./data/agent-messenger.db list-agents
-  am-admin -db ./data/agent-messenger.db reset-apikey`)
+  am-admin -db ./data/agent-messenger.db delete-agent`)
 }
 
 func createAgent(dbPath string) {
@@ -76,39 +80,32 @@ func createAgent(dbPath string) {
 	personality := prompt(reader, "Personality (optional)", "")
 	specialty := prompt(reader, "Specialty (optional)", "")
 
-	// Generate API key
-	apiKey := generateAPIKey()
-	hash, err := bcrypt.GenerateFromPassword([]byte(apiKey), bcrypt.DefaultCost)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error hashing API key: %v\n", err)
-		os.Exit(1)
-	}
-
 	db := openDB(dbPath)
 	defer db.Close()
 
-	_, err = db.Exec(`INSERT INTO agents (id, api_key_hash, name, model, personality, specialty) VALUES (?, ?, ?, ?, ?, ?)`,
-		agentID, string(hash), name, model, personality, specialty)
+	_, err := db.Exec(`INSERT INTO agents (id, name, model, personality, specialty) VALUES (?, ?, ?, ?, ?)`,
+		agentID, name, model, personality, specialty)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating agent: %v\n", err)
 		os.Exit(1)
 	}
 
 	fmt.Println("\n✅ Agent created successfully!")
-	fmt.Printf("   ID:         %s\n", agentID)
-	fmt.Printf("   Name:       %s\n", name)
+	fmt.Printf("   ID:          %s\n", agentID)
+	fmt.Printf("   Name:        %s\n", name)
 	if model != "" {
-		fmt.Printf("   Model:      %s\n", model)
+		fmt.Printf("   Model:       %s\n", model)
 	}
 	if personality != "" {
 		fmt.Printf("   Personality: %s\n", personality)
 	}
 	if specialty != "" {
-		fmt.Printf("   Specialty:  %s\n", specialty)
+		fmt.Printf("   Specialty:   %s\n", specialty)
 	}
 	fmt.Println()
-	fmt.Println("⚠️  API Key (save this — it won't be shown again):")
-	fmt.Printf("   %s\n", apiKey)
+	fmt.Println("ℹ️  Agents authenticate with AGENT_SECRET, not per-agent keys.")
+	fmt.Println("   Set AGENT_SECRET env var on the server and connect via:")
+	fmt.Printf("   ws://host:8080/agent/connect?agent_id=%s&agent_secret=<YOUR_SECRET>\n", agentID)
 }
 
 func createUser(dbPath string) {
@@ -223,28 +220,21 @@ func listUsers(dbPath string) {
 	fmt.Printf("Total: %d\n", count)
 }
 
-func resetAPIKey(dbPath string) {
+func deleteAgent(dbPath string) {
 	reader := bufio.NewReader(os.Stdin)
 
-	agentID := prompt(reader, "Agent ID", "")
+	agentID := prompt(reader, "Agent ID to delete", "")
 	if agentID == "" {
 		fmt.Fprintln(os.Stderr, "Agent ID is required")
-		os.Exit(1)
-	}
-
-	apiKey := generateAPIKey()
-	hash, err := bcrypt.GenerateFromPassword([]byte(apiKey), bcrypt.DefaultCost)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error hashing API key: %v\n", err)
 		os.Exit(1)
 	}
 
 	db := openDB(dbPath)
 	defer db.Close()
 
-	result, err := db.Exec(`UPDATE agents SET api_key_hash = ? WHERE id = ?`, string(hash), agentID)
+	result, err := db.Exec(`DELETE FROM agents WHERE id = ?`, agentID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error resetting API key: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error deleting agent: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -253,10 +243,7 @@ func resetAPIKey(dbPath string) {
 		os.Exit(1)
 	}
 
-	fmt.Println("\n✅ API key reset successfully!")
-	fmt.Println()
-	fmt.Println("⚠️  New API Key (save this — it won't be shown again):")
-	fmt.Printf("   %s\n", apiKey)
+	fmt.Printf("\n✅ Agent %s deleted\n", agentID)
 }
 
 func prompt(reader *bufio.Reader, label, defaultVal string) string {
@@ -271,14 +258,6 @@ func prompt(reader *bufio.Reader, label, defaultVal string) string {
 		return defaultVal
 	}
 	return text
-}
-
-func generateAPIKey() string {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		panic(err)
-	}
-	return "am_" + hex.EncodeToString(b)
 }
 
 func generateID(prefix string) string {
