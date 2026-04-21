@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: agent-messenger
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - PORT=8080
+      - DB_PATH=/data/agent-messenger.db
+      - APNS_KEY_PATH=${APNS_KEY_PATH:-}
+      - APNS_KEY_ID=${APNS_KEY_ID:-}
+      - APNS_TEAM_ID=${APNS_TEAM_ID:-}
+      - FCM_SERVICE_ACCOUNT=${FCM_SERVICE_ACCOUNT:-}
+    volumes:
+      - messenger-data:/data
+      - ${APNS_KEY_PATH:-/dev/null}:/secrets/apns.p8:ro
+      - ${FCM_SERVICE_ACCOUNT:-/dev/null}:/secrets/fcm.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  messenger-data:

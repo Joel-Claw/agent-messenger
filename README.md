@@ -34,7 +34,7 @@ Your AI assistant gets its own dedicated app. Users open Agent Messenger, pick a
 
 ### Server (Go)
 
-WebSocket server with SQLite persistence. 97 tests passing.
+WebSocket server with SQLite persistence. 101 tests passing.
 
 - JWT user authentication (register, login, token validation)
 - API key authentication for agents (bcrypt hashed)
@@ -45,6 +45,9 @@ WebSocket server with SQLite persistence. 97 tests passing.
 - Push notifications via APNs (iOS) and FCM (Android)
 - Rate limiting (messages per minute)
 - Health check and Prometheus-compatible metrics endpoints
+- Graceful shutdown (SIGINT/SIGTERM with 10s drain)
+- WebChat serving (WEBCHAT_ENABLED + WEBCHAT_DIR)
+- Admin CLI for agent/user management
 - Graceful reconnection with connection replacement
 
 ### OpenClaw Plugin (TypeScript)
@@ -175,7 +178,7 @@ Agents connect via WebSocket to `/agent/connect?agent_id=<id>`, authenticating w
 
 | Component | Tests | Status |
 |-----------|-------|--------|
-| Go server | 97 | All passing |
+| Go server | 101 | All passing |
 | Linux app (Python) | 40 unit + 17 integration | All passing |
 | OpenClaw plugin (TS) | 50 | All passing |
 | Android (Kotlin) | 13 unit | All passing |
@@ -198,16 +201,61 @@ Server starts on `:8080` by default. SQLite database is created automatically.
 | `PORT` | `8080` | Server port |
 | `DB_PATH` | `agent_messenger.db` | SQLite database path |
 | `JWT_SECRET` | (required) | Secret for JWT signing |
+| `WEBCHAT_ENABLED` | `false` | Enable serving the web client |
+| `WEBCHAT_DIR` | `../webchat/build` | Path to WebChat build directory |
 | `APNS_KEY_PATH` | (optional) | Path to APNs .p8 key file |
 | `APNS_KEY_ID` | (optional) | APNs key ID |
 | `APNS_TEAM_ID` | (optional) | APNs team ID |
 | `FCM_SERVICE_ACCOUNT` | (optional) | Path to FCM service account JSON |
+
+## Deployment
+
+### Docker
+
+```bash
+cp .env.example .env  # Edit JWT_SECRET
+docker-compose up -d
+docker-compose logs -f
+```
+
+### systemd (Linux)
+
+```bash
+sudo ./deploy/install.sh
+# Edit /etc/agent-messenger/env to set JWT_SECRET
+sudo systemctl start agent-messenger
+```
+
+### Admin CLI
+
+```bash
+cd server
+go build -o am-admin ./cmd/am-admin
+
+# Register a new agent
+./am-admin -db ./data/agent-messenger.db create-agent
+
+# Register a new user
+./am-admin -db ./data/agent-messenger.db create-user
+
+# List agents/users
+./am-admin -db ./data/agent-messenger.db list-agents
+./am-admin -db ./data/agent-messenger.db list-users
+
+# Reset an agent's API key
+./am-admin -db ./data/agent-messenger.db reset-apikey
+```
+
+### Reverse Proxy
+
+See `deploy/Caddyfile` and `deploy/nginx.conf` for example configurations. Caddy handles WebSocket upgrades and TLS automatically. nginx needs explicit `Upgrade` headers (see config).
 
 ## Repository Structure
 
 ```
 agent-messenger/
 ├── server/           # Go backend
+│   └── cmd/am-admin/ # Admin CLI
 ├── mobile/
 │   ├── ios/          # Swift/SwiftUI iOS app
 │   └── android/      # Kotlin/Compose Android app
@@ -215,9 +263,12 @@ agent-messenger/
 ├── webchat/          # React web client
 ├── plugins/
 │   └── openclaw/     # OpenClaw channel plugin
+├── deploy/           # Docker, systemd, reverse proxy configs
 ├── protocol/         # Message format spec
 ├── docs/             # Architecture and deployment docs
+├── CHANGELOG.md
 ├── CONTRIBUTING.md
+├── Makefile
 ├── SECURITY.md
 └── CODEOWNERS
 ```

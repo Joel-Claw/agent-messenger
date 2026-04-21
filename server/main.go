@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -15,7 +20,13 @@ func main() {
 	// Command-line flags
 	port := flag.String("port", "8080", "server listen port")
 	dbPath := flag.String("db", "./data/agent-messenger.db", "SQLite database path")
+	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println("Agent Messenger v0.1.0")
+		os.Exit(0)
+	}
 
 	// Ensure data directory exists
 	if dir := filepath.Dir(*dbPath); dir != "" && dir != "." {
@@ -69,10 +80,54 @@ func main() {
 	// Initialize push notifications
 	initPushNotifications()
 
-	// Start server
+	// Serve WebChat if enabled
+	webchatDir := os.Getenv("WEBCHAT_DIR")
+	webchatEnabled := os.Getenv("WEBCHAT_ENABLED") == "true"
+	if webchatEnabled && webchatDir != "" {
+		fs := http.FileServer(http.Dir(webchatDir))
+		http.Handle("/chat/", http.StripPrefix("/chat/", fs))
+		log.Printf("WebChat enabled: serving from %s at /chat/", webchatDir)
+	} else if webchatEnabled {
+		// Try default path relative to server binary
+		defaultPath := filepath.Join(filepath.Dir(*dbPath), "..", "webchat", "build")
+		if abs, err := filepath.Abs(defaultPath); err == nil {
+			if _, err := os.Stat(abs); err == nil {
+				fs := http.FileServer(http.Dir(abs))
+				http.Handle("/chat/", http.StripPrefix("/chat/", fs))
+				log.Printf("WebChat enabled: serving from %s at /chat/", abs)
+			}
+		}
+	}
+
+	// Start server with graceful shutdown
 	addr := ":" + *port
-	log.Printf("Agent Messenger starting on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	srv := &http.Server{Addr: addr}
+
+	go func() {
+		log.Printf("Agent Messenger starting on %s", addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-quit
+	log.Printf("Received %v, shutting down gracefully...", sig)
+
+	// Stop the hub (closes all WebSocket connections)
+	hub.Stop()
+
+	// Give connections 10 seconds to finish
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("Forced shutdown: %v", err)
+	}
+
+	log.Printf("Agent Messenger stopped")
 }
 
 func initSchema(db *sql.DB) error {

@@ -1,6 +1,14 @@
-server/agent-messenger
-server/data/
-server/agent-messenger
-server/server
-agent-messenger\nserver
-server/agent-messenger-server
+# Binaries
+agent-messenger
+agent-messenger-server
+server
+*.test
+
+# Data
+data/
+*.db
+*.db-journal
+
+# Profiles
+*.prof
+*.out

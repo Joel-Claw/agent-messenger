@@ -1,0 +1,33 @@
+# Agent Messenger — Caddy Reverse Proxy Configuration
+
+# Simple setup with automatic HTTPS (recommended)
+messenger.example.com {
+    reverse_proxy localhost:8080
+}
+
+# If you want the webchat on the same domain
+# Make sure WEBCHAT_ENABLED=true and WEBCHAT_DIR points to the build
+messenger.example.com {
+    reverse_proxy localhost:8080
+}
+
+# Local-only setup (no HTTPS, LAN only)
+# Useful for home servers on a trusted network
+:http-only {
+    bind 0.0.0.0:80
+    reverse_proxy localhost:8080
+}
+
+# With Tailscale (uses Tailscale HTTPS)
+messenger.example.ts.net {
+    reverse_proxy localhost:8080
+}
+
+# Behind Tailscale with funnel (public access)
+messenger.example.ts.net {
+    reverse_proxy localhost:8080
+}
+
+# Important: WebSocket connections need proper headers.
+# Caddy handles WebSocket upgrades automatically with reverse_proxy.
+# No extra configuration needed for WebSocket support.

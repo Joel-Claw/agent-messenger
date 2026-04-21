@@ -1,0 +1,25 @@
+[Unit]
+Description=Agent Messenger Server
+After=network.target
+
+[Service]
+Type=simple
+User=agent-messenger
+Group=agent-messenger
+WorkingDirectory=/opt/agent-messenger
+ExecStart=/opt/agent-messenger/agent-messenger --port 8080 --db /var/lib/agent-messenger/agent-messenger.db
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/agent-messenger
+
+# Environment
+EnvironmentFile=/etc/agent-messenger/env
+
+[Install]
+WantedBy=multi-user.target
