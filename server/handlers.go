@@ -408,6 +408,211 @@ func handleAdminAgents(w http.ResponseWriter, r *http.Request) {
 var db *sql.DB
 var hub *Hub
 
+// handleChangePassword handles POST /auth/change-password - change user password
+func handleChangePassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if len(token) > 7 && token[:7] == "Bearer " {
+		token = token[7:]
+	}
+	claims, err := ValidateJWT(token)
+	if err != nil {
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	oldPassword := r.FormValue("old_password")
+	newPassword := r.FormValue("new_password")
+	if oldPassword == "" || newPassword == "" {
+		writeJSONError(w, http.StatusBadRequest, "missing old_password or new_password")
+		return
+	}
+
+	if err := changeUserPassword(claims.UserID, oldPassword, newPassword); err != nil {
+		if err.Error() == "invalid old password" {
+			writeJSONError(w, http.StatusUnauthorized, "invalid old password")
+			return
+		}
+		if err == sql.ErrNoRows {
+			writeJSONError(w, http.StatusNotFound, "user not found")
+			return
+		}
+		writeJSONError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status": "password_changed",
+	})
+}
+
+// handleDeleteConversation handles DELETE /conversations/delete - delete a conversation
+func handleDeleteConversation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if len(token) > 7 && token[:7] == "Bearer " {
+		token = token[7:]
+	}
+	claims, err := ValidateJWT(token)
+	if err != nil {
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	convID := r.URL.Query().Get("conversation_id")
+	if convID == "" {
+		convID = r.FormValue("conversation_id")
+	}
+	if convID == "" {
+		writeJSONError(w, http.StatusBadRequest, "missing conversation_id")
+		return
+	}
+
+	if err := deleteConversation(convID, claims.UserID); err != nil {
+		if err == sql.ErrNoRows {
+			writeJSONError(w, http.StatusNotFound, "conversation not found")
+			return
+		}
+		if err.Error() == "unauthorized" {
+			writeJSONError(w, http.StatusUnauthorized, "not your conversation")
+			return
+		}
+		writeJSONError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":          "deleted",
+		"conversation_id": convID,
+	})
+}
+
+// handleSearchMessages handles GET /messages/search - search messages by content
+func handleSearchMessages(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if len(token) > 7 && token[:7] == "Bearer " {
+		token = token[7:]
+	}
+	claims, err := ValidateJWT(token)
+	if err != nil {
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	query := r.URL.Query().Get("q")
+	if query == "" {
+		writeJSONError(w, http.StatusBadRequest, "missing search query (q)")
+		return
+	}
+
+	limitStr := r.URL.Query().Get("limit")
+	limit := 50
+	if limitStr != "" {
+		if l, err := fmt.Sscanf(limitStr, "%d", &limit); l != 1 || err != nil {
+			limit = 50
+		}
+		if limit > 200 {
+			limit = 200
+		}
+	}
+
+	messages, err := searchMessages(claims.UserID, query, limit)
+	if err != nil {
+		if err.Error() == "empty search query" {
+			writeJSONError(w, http.StatusBadRequest, "empty search query")
+			return
+		}
+		writeJSONError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if messages == nil {
+		messages = []StoredMessage{}
+	}
+	json.NewEncoder(w).Encode(messages)
+}
+
+// handleMarkRead handles POST /conversations/mark-read - mark messages as read
+func handleMarkRead(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if len(token) > 7 && token[:7] == "Bearer " {
+		token = token[7:]
+	}
+	claims, err := ValidateJWT(token)
+	if err != nil {
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	convID := r.FormValue("conversation_id")
+	if convID == "" {
+		writeJSONError(w, http.StatusBadRequest, "missing conversation_id")
+		return
+	}
+
+	count, err := markMessagesRead(convID, claims.UserID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			writeJSONError(w, http.StatusNotFound, "conversation not found")
+			return
+		}
+		if err.Error() == "unauthorized" {
+			writeJSONError(w, http.StatusUnauthorized, "not your conversation")
+			return
+		}
+		writeJSONError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	// Notify the agent via WebSocket that messages were read
+	conv, _ := getConversation(convID)
+	if conv != nil {
+		if agent := hub.GetAgent(conv.AgentID); agent != nil {
+			readMsg := OutgoingMessage{
+				Type: "read_receipt",
+				Data: map[string]interface{}{
+					"conversation_id": convID,
+					"read_by":         claims.UserID,
+					"count":           count,
+				},
+			}
+			data, _ := json.Marshal(readMsg)
+			select {
+			case agent.send <- data:
+			default:
+			}
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":          "marked_read",
+		"conversation_id": convID,
+		"count":           count,
+	})
+}
+
 // handleCreateConversation handles POST /conversations/create
 func handleCreateConversation(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

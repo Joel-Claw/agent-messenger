@@ -72,6 +72,14 @@ func main() {
 	http.HandleFunc("/conversations/create", handleCreateConversation)
 	http.HandleFunc("/conversations/list", handleListConversations)
 	http.HandleFunc("/conversations/messages", handleGetMessages)
+	http.HandleFunc("/conversations/delete", handleDeleteConversation)
+	http.HandleFunc("/conversations/mark-read", handleMarkRead)
+
+	// Message endpoints
+	http.HandleFunc("/messages/search", handleSearchMessages)
+
+	// Auth endpoints (extended)
+	http.HandleFunc("/auth/change-password", handleChangePassword)
 
 	// Push notification endpoints
 	http.HandleFunc("/push/register", handleRegisterDeviceToken)
@@ -201,6 +209,14 @@ func initSchema(db *sql.DB) error {
 	for _, m := range migrations {
 		// SQLite ALTER TABLE ADD COLUMN fails if column already exists;
 		// we ignore the error since it just means the column is already there.
+		db.Exec(m)
+	}
+
+	// Add read_at column for read receipts
+	migrations_read := []string{
+		"ALTER TABLE messages ADD COLUMN read_at TIMESTAMP DEFAULT NULL",
+	}
+	for _, m := range migrations_read {
 		db.Exec(m)
 	}
 
