@@ -1,0 +1,145 @@
+# Default values for agent-messenger
+
+replicaCount: 1
+
+image:
+  repository: agent-messenger
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion
+  tag: ""
+
+# Server configuration
+server:
+  port: 8080
+  # SQLite database path inside the container
+  dbPath: /data/agent-messenger.db
+
+# Authentication
+auth:
+  # Required: shared secret for agent authentication
+  agentSecret: ""
+  # Required: JWT signing secret
+  jwtSecret: ""
+
+# Push notifications
+push:
+  apns:
+    enabled: false
+    certPath: ""
+    certPassword: ""
+    keyID: ""
+    teamID: ""
+  fcm:
+    enabled: false
+    credentialsPath: ""
+
+# WebChat UI serving
+webchat:
+  enabled: false
+  # Directory inside container where webchat static files are built
+  dir: /webchat
+
+# Persistence for SQLite database
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  # Existing claim (overrides automatic provisioning)
+  existingClaim: ""
+
+# Resource limits
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # Note: SQLite is not suitable for multi-replica HPA.
+  # Enable only with an external database (PostgreSQL).
+
+# Service
+service:
+  type: ClusterIP
+  port: 8080
+  # Optional: NodePort if service.type is NodePort
+  # nodePort: 30080
+
+# Ingress
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: letsencrypt
+  hosts: []
+  #  - host: messenger.example.com
+  #    paths:
+  #      - path: /
+  #        pathType: Prefix
+  tls: []
+  #  - secretName: messenger-tls
+  #    hosts:
+  #      - messenger.example.com
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 3
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Pod-level settings
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  readOnlyRootFilesystem: false  # SQLite needs write access to /data
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Extra environment variables
+extraEnv: {}
+  # KEY: value
+
+# Secrets — if you prefer to store secrets in Kubernetes Secrets instead of values
+existingSecret: ""
+  # When set, the chart looks for a Secret with these keys:
+  #   AGENT_SECRET, JWT_SECRET
+
+# APNS/FCM secret references
+pushSecrets:
+  existingSecret: ""
+  # When set, the chart mounts files from this Secret for push certs
+  # Keys: apns-cert.p8, fcm-credentials.json

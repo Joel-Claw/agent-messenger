@@ -123,3 +123,6 @@ site/
 
 # Go binary
 server/agent-messenger-server
+server/agent-messenger
+server/am-admin
+server/am-migrate

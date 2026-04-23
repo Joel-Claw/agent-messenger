@@ -201,6 +201,41 @@ func initSchema(db *sql.DB) error {
 
 	// Migrate: add model/personality/specialty columns if they don't exist
 	// Also migrate from per-agent API keys to shared AGENT_SECRET
+	//
+	// Note: These inline migrations are mirrored in cmd/am-migrate/main.go.
+	// When adding new migrations, update both places. The am-migrate tool
+	// tracks versions in schema_migrations; the inline path creates the
+	// table but does not record individual versions (for backward compat).
+	if _, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS schema_migrations (
+			version INTEGER NOT NULL,
+			name TEXT NOT NULL,
+			applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (version)
+		);
+	`); err != nil {
+		return err
+	}
+
+	// Check if inline migrations were already recorded
+	var migrationCount int
+	db.QueryRow("SELECT COUNT(*) FROM schema_migrations").Scan(&migrationCount)
+
+	if migrationCount == 0 {
+		// Record the inline migrations as already applied
+		inlineMigrations := []struct {
+			version int
+			name    string
+		}{
+			{1, "initial_schema"},
+			{2, "agent_metadata_columns"},
+			{3, "message_read_at"},
+		}
+		for _, m := range inlineMigrations {
+			db.Exec("INSERT OR IGNORE INTO schema_migrations (version, name) VALUES (?, ?)", m.version, m.name)
+		}
+	}
+
 	migrations := []string{
 		"ALTER TABLE agents ADD COLUMN model TEXT NOT NULL DEFAULT ''",
 		"ALTER TABLE agents ADD COLUMN personality TEXT NOT NULL DEFAULT ''",

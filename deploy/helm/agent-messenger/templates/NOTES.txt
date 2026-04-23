@@ -1,0 +1,31 @@
+Agent Messenger has been deployed!
+
+WebSocket endpoint: ws://{{ include "agent-messenger.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}
+Health check:       http://{{ include "agent-messenger.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}/health
+Metrics:            http://{{ include "agent-messenger.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}/metrics
+
+{{- if .Values.ingress.enabled }}
+
+External URL: {{ range .Values.ingress.hosts }}http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}{{ end }}
+{{- end }}
+
+{{- if not .Values.auth.agentSecret }}
+⚠️  WARNING: AGENT_SECRET is not set. Agent authentication will not work.
+   Set auth.agentSecret in values.yaml or use an existingSecret.
+{{- end }}
+
+{{- if not .Values.auth.jwtSecret }}
+⚠️  WARNING: JWT_SECRET is not set. User authentication will not work.
+   Set auth.jwtSecret in values.yaml or use an existingSecret.
+{{- end }}
+
+{{- if and .Values.autoscaling.enabled (gt .Values.autoscaling.maxReplicas 1) }}
+⚠️  NOTE: HPA is enabled with maxReplicas > 1, but SQLite does not support
+   concurrent writes. Consider PostgreSQL for multi-replica deployments.
+{{- end }}
+
+To check pod status:
+  kubectl get pods -l {{ include "agent-messenger.selectorLabels" . | replace "\n" "," }}
+
+To view logs:
+  kubectl logs -f deployment/{{ include "agent-messenger.fullname" . }} -n {{ .Release.Namespace }}

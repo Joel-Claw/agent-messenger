@@ -8,6 +8,10 @@ build:
 admin:
 	cd server && go build -ldflags="-s -w" -o am-admin ./cmd/am-admin
 
+# Build the migration tool
+migrate:
+	cd server && go build -ldflags="-s -w" -o am-migrate ./cmd/am-migrate
+
 # Run server tests
 test:
 	cd server && go test -count=1 -timeout 120s ./...
@@ -18,7 +22,7 @@ test-fast:
 
 # Clean build artifacts
 clean:
-	rm -f server/agent-messenger server/am-admin server/server server/agent-messenger-server server/server.test
+	rm -f server/agent-messenger server/am-admin server/am-migrate server/server server/agent-messenger-server server/server.test
 	rm -rf server/data/*.db
 
 # Build Docker image
@@ -39,6 +43,18 @@ health:
 # Show server metrics
 metrics:
 	curl -s http://localhost:8080/metrics
+
+# Show migration status
+migrate-status:
+	cd server && go run ./cmd/am-migrate -db ./data/agent-messenger.db -action status
+
+# Run migrations
+migrate-up:
+	cd server && go run ./cmd/am-migrate -db ./data/agent-messenger.db -action up
+
+# Rollback migrations
+migrate-down:
+	cd server && go run ./cmd/am-migrate -db ./data/agent-messenger.db -action down
 
 # Install as systemd service (requires sudo)
 deploy:

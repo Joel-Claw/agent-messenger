@@ -1,0 +1,16 @@
+apiVersion: v2
+name: agent-messenger
+description: Agent Messenger — WebSocket relay server for AI agent ↔ user messaging
+type: application
+version: 0.1.0
+appVersion: "0.3.0"
+keywords:
+  - messaging
+  - websocket
+  - ai-agent
+  - chat
+home: https://github.com/Joel-Claw/agent-messenger
+sources:
+  - https://github.com/Joel-Claw/agent-messenger
+maintainers:
+  - name: Joel-Claw

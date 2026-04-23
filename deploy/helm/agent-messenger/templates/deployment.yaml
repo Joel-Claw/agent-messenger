@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agent-messenger.fullname" . }}
+  labels:
+    {{- include "agent-messenger.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "agent-messenger.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "agent-messenger.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.server.port }}
+              protocol: TCP
+          env:
+            - name: PORT
+              value: {{ .Values.server.port | quote }}
+            - name: DB_PATH
+              value: {{ .Values.server.dbPath | quote }}
+            {{- if .Values.existingSecret }}
+            - name: AGENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: AGENT_SECRET
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: JWT_SECRET
+            {{- else }}
+            - name: AGENT_SECRET
+              value: {{ .Values.auth.agentSecret | quote }}
+            - name: JWT_SECRET
+              value: {{ .Values.auth.jwtSecret | quote }}
+            {{- end }}
+            {{- if .Values.webchat.enabled }}
+            - name: WEBCHAT_ENABLED
+              value: "true"
+            - name: WEBCHAT_DIR
+              value: {{ .Values.webchat.dir | quote }}
+            {{- end }}
+            {{- if .Values.push.apns.enabled }}
+            - name: APNS_ENABLED
+              value: "true"
+            {{- if .Values.pushSecrets.existingSecret }}
+            - name: APNS_CERT_PATH
+              value: /secrets/apns-cert.p8
+            {{- else }}
+            - name: APNS_CERT_PATH
+              value: {{ .Values.push.apns.certPath | quote }}
+            {{- end }}
+            - name: APNS_CERT_PASSWORD
+              value: {{ .Values.push.apns.certPassword | quote }}
+            - name: APNS_KEY_ID
+              value: {{ .Values.push.apns.keyID | quote }}
+            - name: APNS_TEAM_ID
+              value: {{ .Values.push.apns.teamID | quote }}
+            {{- end }}
+            {{- if .Values.push.fcm.enabled }}
+            - name: FCM_ENABLED
+              value: "true"
+            {{- if .Values.pushSecrets.existingSecret }}
+            - name: FCM_CREDENTIALS_PATH
+              value: /secrets/fcm-credentials.json
+            {{- else }}
+            - name: FCM_CREDENTIALS_PATH
+              value: {{ .Values.push.fcm.credentialsPath | quote }}
+            {{- end }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.persistence.enabled }}
+            - name: data
+              mountPath: /data
+            {{- end }}
+            {{- if .Values.pushSecrets.existingSecret }}
+            - name: push-secrets
+              mountPath: /secrets
+              readOnly: true
+            {{- end }}
+      volumes:
+        {{- if .Values.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "agent-messenger.fullname" . }}
+        {{- end }}
+        {{- if .Values.pushSecrets.existingSecret }}
+        - name: push-secrets
+          secret:
+            secretName: {{ .Values.pushSecrets.existingSecret }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
