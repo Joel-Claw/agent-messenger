@@ -11,8 +11,24 @@ image:
 # Server configuration
 server:
   port: 8080
+  # Database driver: sqlite3 or postgres
+  dbDriver: sqlite3
   # SQLite database path inside the container
   dbPath: /data/agent-messenger.db
+  # PostgreSQL connection string (when dbDriver is postgres)
+  databaseUrl: ""
+
+# PostgreSQL sub-chart (only used when server.dbDriver is postgres)
+postgresql:
+  enabled: false
+  auth:
+    username: am
+    password: am
+    database: agentmessenger
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
 
 # Authentication
 auth:

@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -22,30 +23,59 @@ var serverDBPath string
 func main() {
 	// Command-line flags
 	port := flag.String("port", "8080", "server listen port")
-	dbPath := flag.String("db", "./data/agent-messenger.db", "SQLite database path")
+	dbDriver := flag.String("db-driver", "", "database driver: sqlite3 or postgres (env: DB_DRIVER)")
+	dbPath := flag.String("db", "", "database path (SQLite) or connection string (PostgreSQL) (env: DB_PATH / DATABASE_URL)")
 	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
 
-	serverDBPath = *dbPath
+	// Resolve driver from flag or env
+	driverVal := *dbDriver
+	if driverVal == "" {
+		driverVal = os.Getenv("DB_DRIVER")
+	}
+	if driverVal == "" {
+		// If DATABASE_URL is set, assume postgres
+		if os.Getenv("DATABASE_URL") != "" {
+			driverVal = DriverPostgreSQL
+		} else {
+			driverVal = DriverSQLite
+		}
+	}
+
+	// Resolve DB path from flag or env
+	dbPathVal := *dbPath
+	if dbPathVal == "" {
+		dbPathVal = os.Getenv("DATABASE_URL")
+	}
+	if dbPathVal == "" {
+		dbPathVal = os.Getenv("DB_PATH")
+	}
+	if dbPathVal == "" {
+		dbPathVal = "./data/agent-messenger.db"
+	}
+
+	serverDBPath = dbPathVal
 
 	if *showVersion {
 		fmt.Println("Agent Messenger v0.1.0")
 		os.Exit(0)
 	}
 
-	// Ensure data directory exists
-	if dir := filepath.Dir(*dbPath); dir != "" && dir != "." {
-		os.MkdirAll(dir, 0755)
-	}
+	// Ensure data directory exists (SQLite only)
+	if driverVal == DriverSQLite {
+		if dir := filepath.Dir(dbPathVal); dir != "" && dir != "." {
+			os.MkdirAll(dir, 0755)
+		}
 
-	// Ensure upload directory exists
-	if err := ensureUploadDir(); err != nil {
-		log.Printf("Warning: could not create upload directory: %v", err)
+		// Ensure upload directory exists
+		if err := ensureUploadDir(); err != nil {
+			log.Printf("Warning: could not create upload directory: %v", err)
+		}
 	}
 
 	// Initialize database
 	var err error
-	db, err = sql.Open("sqlite3", *dbPath)
+	db, err = openDatabase(driverVal, dbPathVal)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -92,6 +122,13 @@ func main() {
 	http.HandleFunc("/attachments/upload", handleUpload)
 	http.HandleFunc("/attachments/", handleGetAttachment)
 	http.HandleFunc("/messages/attachments", handleListAttachments)
+
+	// E2E encryption endpoints
+	http.HandleFunc("/keys/upload", handleUploadPublicKey)
+	http.HandleFunc("/keys/bundle", handleGetKeyBundle)
+	http.HandleFunc("/keys/otpk-count", handleListOneTimePreKeys)
+	http.HandleFunc("/messages/encrypted", handleStoreEncryptedMessage)
+	http.HandleFunc("/messages/encrypted/list", handleGetEncryptedMessages)
 
 	// Auth endpoints (extended)
 	http.HandleFunc("/auth/change-password", handleChangePassword)
@@ -162,68 +199,7 @@ func main() {
 }
 
 func initSchema(db *sql.DB) error {
-	schema := `
-	CREATE TABLE IF NOT EXISTS agents (
-		id TEXT PRIMARY KEY,
-		
-		name TEXT NOT NULL,
-		model TEXT NOT NULL DEFAULT '',
-		personality TEXT NOT NULL DEFAULT '',
-		specialty TEXT NOT NULL DEFAULT '',
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-	);
-
-	CREATE TABLE IF NOT EXISTS users (
-		id TEXT PRIMARY KEY,
-		username TEXT UNIQUE NOT NULL,
-		password_hash TEXT NOT NULL,
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-	);
-
-	CREATE TABLE IF NOT EXISTS conversations (
-		id TEXT PRIMARY KEY,
-		user_id TEXT NOT NULL,
-		agent_id TEXT NOT NULL,
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY (user_id) REFERENCES users(id),
-		FOREIGN KEY (agent_id) REFERENCES agents(id)
-	);
-
-	CREATE TABLE IF NOT EXISTS device_tokens (
-		user_id TEXT NOT NULL,
-		device_token TEXT NOT NULL,
-		platform TEXT NOT NULL DEFAULT 'ios',
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		PRIMARY KEY (user_id, device_token),
-		FOREIGN KEY (user_id) REFERENCES users(id)
-	);
-
-	CREATE TABLE IF NOT EXISTS messages (
-		id TEXT PRIMARY KEY,
-		conversation_id TEXT NOT NULL,
-		sender_type TEXT NOT NULL, -- 'agent' or 'user'
-		sender_id TEXT NOT NULL,
-		content TEXT NOT NULL,
-		metadata TEXT, -- JSON
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY (conversation_id) REFERENCES conversations(id)
-	);
-
-	CREATE TABLE IF NOT EXISTS attachments (
-		id TEXT PRIMARY KEY,
-		message_id TEXT,
-		user_id TEXT NOT NULL,
-		filename TEXT NOT NULL,
-		content_type TEXT NOT NULL,
-		size INTEGER NOT NULL,
-		sha256 TEXT NOT NULL,
-		storage_path TEXT NOT NULL,
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY (message_id) REFERENCES messages(id),
-		FOREIGN KEY (user_id) REFERENCES users(id)
-	);
-	`
+	schema := initSchemaForDriver()
 	if _, err := db.Exec(schema); err != nil {
 		return err
 	}
@@ -260,9 +236,14 @@ func initSchema(db *sql.DB) error {
 			{2, "agent_metadata_columns"},
 			{3, "message_read_at"},
 			{4, "attachments_table"},
+			{5, "e2e_encryption_tables"},
 		}
 		for _, m := range inlineMigrations {
-			db.Exec("INSERT OR IGNORE INTO schema_migrations (version, name) VALUES (?, ?)", m.version, m.name)
+			if currentDriver == DriverPostgreSQL {
+				db.Exec("INSERT INTO schema_migrations (version, name) VALUES ($1, $2) ON CONFLICT (version) DO NOTHING", m.version, m.name)
+			} else {
+				db.Exec("INSERT OR IGNORE INTO schema_migrations (version, name) VALUES (?, ?)", m.version, m.name)
+			}
 		}
 	}
 
@@ -272,8 +253,7 @@ func initSchema(db *sql.DB) error {
 		"ALTER TABLE agents ADD COLUMN specialty TEXT NOT NULL DEFAULT ''",
 	}
 	for _, m := range migrations {
-		// SQLite ALTER TABLE ADD COLUMN fails if column already exists;
-		// we ignore the error since it just means the column is already there.
+		// ALTER TABLE ADD COLUMN may fail if column exists; ignore errors
 		db.Exec(m)
 	}
 

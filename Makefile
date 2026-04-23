@@ -56,6 +56,14 @@ migrate-up:
 migrate-down:
 	cd server && go run ./cmd/am-migrate -db ./data/agent-messenger.db -action down
 
+# Run server with PostgreSQL
+run-postgres:
+	cd server && go run . -db-driver postgres -db "host=localhost port=5432 user=am password=am dbname=agentmessenger sslmode=disable"
+
+# Run server with SQLite (default)
+run-sqlite:
+	cd server && go run . -db ./data/agent-messenger.db
+
 # Install as systemd service (requires sudo)
 deploy:
 	sudo ./deploy/install.sh

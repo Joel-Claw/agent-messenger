@@ -12,5 +12,6 @@ WORKDIR /app
 COPY --from=builder /app/agent-messenger .
 EXPOSE 8080
 VOLUME /data
+ENV DB_DRIVER=sqlite3
 ENV DB_PATH=/data/agent-messenger.db
 CMD ["./agent-messenger"]

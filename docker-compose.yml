@@ -12,7 +12,9 @@ services:
     environment:
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - PORT=8080
-      - DB_PATH=/data/agent-messenger.db
+      - DB_DRIVER=${DB_DRIVER:-sqlite3}
+      - DB_PATH=${DB_PATH:-/data/agent-messenger.db}
+      - DATABASE_URL=${DATABASE_URL:-}
       - APNS_KEY_PATH=${APNS_KEY_PATH:-}
       - APNS_KEY_ID=${APNS_KEY_ID:-}
       - APNS_TEAM_ID=${APNS_TEAM_ID:-}
@@ -21,11 +23,36 @@ services:
       - messenger-data:/data
       - ${APNS_KEY_PATH:-/dev/null}:/secrets/apns.p8:ro
       - ${FCM_SERVICE_ACCOUNT:-/dev/null}:/secrets/fcm.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
       interval: 30s
       timeout: 5s
       retries: 3
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: agent-messenger-postgres
+    restart: unless-stopped
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_USER=${PG_USER:-am}
+      - POSTGRES_PASSWORD=${PG_PASSWORD:-am}
+      - POSTGRES_DB=${PG_DB:-agentmessenger}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-am}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - postgres
+
 volumes:
   messenger-data:
+  postgres-data:

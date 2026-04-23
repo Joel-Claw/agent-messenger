@@ -129,6 +129,41 @@ CREATE TABLE IF NOT EXISTS attachments (
 DROP TABLE IF EXISTS attachments;
 `,
 	},
+	{
+		Version: 5,
+		Name:    "e2e_encryption_tables",
+		UpSQL: `
+CREATE TABLE IF NOT EXISTS key_bundles (
+	id TEXT PRIMARY KEY,
+	owner_id TEXT NOT NULL,
+	owner_type TEXT NOT NULL,
+	key_type TEXT NOT NULL,
+	public_key TEXT NOT NULL,
+	signature TEXT,
+	key_id INTEGER,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (owner_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS encrypted_messages (
+	id TEXT PRIMARY KEY,
+	conversation_id TEXT NOT NULL,
+	sender_id TEXT NOT NULL,
+	sender_type TEXT NOT NULL,
+	ciphertext TEXT NOT NULL,
+	iv TEXT NOT NULL,
+	recipient_key_id TEXT NOT NULL,
+	sender_key_id TEXT,
+	algorithm TEXT NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+);
+`,
+		DownSQL: `
+DROP TABLE IF EXISTS encrypted_messages;
+DROP TABLE IF EXISTS key_bundles;
+`,
+	},
 }
 
 func main() {

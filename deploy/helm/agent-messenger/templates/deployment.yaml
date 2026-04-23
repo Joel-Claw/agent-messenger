@@ -59,6 +59,20 @@ spec:
             - name: JWT_SECRET
               value: {{ .Values.auth.jwtSecret | quote }}
             {{- end }}
+            - name: DB_DRIVER
+              value: {{ .Values.server.dbDriver | quote }}
+            {{- if eq .Values.server.dbDriver "postgres" }}
+            {{- if .Values.postgresql.enabled }}
+            - name: DATABASE_URL
+              value: "postgres://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.password }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.auth.database }}?sslmode=disable"
+            {{- else }}
+            - name: DATABASE_URL
+              value: {{ .Values.server.databaseUrl | quote }}
+            {{- end }}
+            {{- else }}
+            - name: DB_PATH
+              value: {{ .Values.server.dbPath | quote }}
+            {{- end }}
             {{- if .Values.webchat.enabled }}
             - name: WEBCHAT_ENABLED
               value: "true"
