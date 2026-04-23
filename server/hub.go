@@ -45,20 +45,25 @@ type Connection struct {
 }
 
 // Hub manages all active connections
+// offlineQueue buffers messages for disconnected clients/agents.
+var offlineQueue *OfflineQueue
+
+// Hub manages all active connections
 type Hub struct {
-	mu         sync.RWMutex
-	agents     map[string]*Connection // agent_id -> Connection
-	clients    map[string]*Connection // user_id -> Connection
-	register   chan *Connection
-	unregister chan *Connection
-	broadcast  chan []byte
-	done       chan struct{}
+	mu              sync.RWMutex
+	agents          map[string]*Connection // agent_id -> Connection
+	clients         map[string]*Connection // user_id -> Connection
+	register        chan *Connection
+	unregister      chan *Connection
+	broadcast       chan []byte
+	done            chan struct{}
 
 	// counters for metrics
 	messagesRouted int64
 }
 
 func newHub() *Hub {
+	offlineQueue = newOfflineQueue(100, 7*24*time.Hour) // 100 msgs per user, 7 day TTL
 	return &Hub{
 		agents:     make(map[string]*Connection),
 		clients:    make(map[string]*Connection),

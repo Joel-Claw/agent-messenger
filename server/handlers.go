@@ -83,6 +83,9 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 	go c.writePump()
 	go c.readPump()
 
+	// Replay any offline messages queued for this agent
+	go replayOfflineMessages(c)
+
 	// Send welcome message
 	welcome := OutgoingMessage{
 		Type: "connected",
@@ -143,6 +146,9 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	// Start pumps
 	go c.writePump()
 	go c.readPump()
+
+	// Replay any offline messages queued for this client
+	go replayOfflineMessages(c)
 
 	// Send welcome message
 	welcome := OutgoingMessage{

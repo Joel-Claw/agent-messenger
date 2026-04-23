@@ -84,14 +84,29 @@ func writeJSONError(w http.ResponseWriter, code int, message string) {
 // 60 messages per minute = 1 per second average, allows bursts.
 var messageRateLimiter = NewRateLimiter(60, time.Minute)
 
+// userRateLimiter limits per-user message rates (independent of connections).
+// This prevents a user from circumventing per-connection limits by reconnecting.
+var userRateLimiter = NewRateLimiter(120, time.Minute)
+
 // checkRateLimit checks if a connection is within rate limits.
+// It checks both per-connection and per-user limits.
 // If rate limited, it sends an error to the connection and returns false.
 func checkRateLimit(conn *Connection) bool {
+	// Check per-connection rate limit first
 	if !messageRateLimiter.Allow(conn.id) {
 		if ServerMetrics != nil { ServerMetrics.RateLimited.Add(1) }
 		if ServerMetrics != nil { ServerMetrics.ErrorsTotal.Add(1) }
 		sendError(conn, "rate limit exceeded: too many messages")
 		return false
 	}
+
+	// Check per-user rate limit (uses same ID, but could use different key)
+	if !userRateLimiter.Allow(conn.id) {
+		if ServerMetrics != nil { ServerMetrics.RateLimited.Add(1) }
+		if ServerMetrics != nil { ServerMetrics.ErrorsTotal.Add(1) }
+		sendError(conn, "rate limit exceeded: user message quota reached")
+		return false
+	}
+
 	return true
 }

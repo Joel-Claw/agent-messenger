@@ -131,7 +131,9 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 				log.Printf("Client %s send buffer full, dropping message", recipientID)
 			}
 		} else {
-			// Client is offline, send push notification
+			// Client is offline, queue message for later delivery
+			offlineQueue.Enqueue(recipientID, outgoing)
+			// Also send push notification for immediate awareness
 			go notifyUser(recipientID, "New Message", truncate(msg.Content, 100), msg.ConversationID)
 		}
 	} else {
@@ -141,6 +143,9 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 			default:
 				log.Printf("Agent %s send buffer full, dropping message", recipientID)
 			}
+		} else {
+			// Agent is offline, queue message for later delivery
+			offlineQueue.Enqueue(recipientID, outgoing)
 		}
 	}
 

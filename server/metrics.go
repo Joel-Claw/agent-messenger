@@ -61,5 +61,11 @@ func (m *Metrics) Snapshot() map[string]interface{} {
 		"goroutines":        runtime.NumGoroutine(),
 		"memory_alloc_mb":   float64(memStats.Alloc) / 1024 / 1024,
 		"memory_sys_mb":     float64(memStats.Sys) / 1024 / 1024,
+		"offline_queue_depth": func() int {
+			if offlineQueue != nil {
+				return offlineQueue.TotalDepth()
+			}
+			return 0
+		}(),
 	}
 }
