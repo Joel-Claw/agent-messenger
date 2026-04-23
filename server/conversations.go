@@ -54,15 +54,28 @@ func getConversation(convID string) (*Conversation, error) {
 // storeMessage persists a message to the database
 func storeMessage(msg RoutedMessage) error {
 	id := generateID("msg")
-	metadataJSON, _ := json.Marshal(map[string]string{
+	metadataMap := map[string]interface{}{
 		"sender_type": msg.SenderType,
 		"sender_id":   msg.SenderID,
-	})
+	}
+	if len(msg.AttachmentIDs) > 0 {
+		metadataMap["attachment_ids"] = msg.AttachmentIDs
+	}
+	metadataJSON, _ := json.Marshal(metadataMap)
 	_, err := db.Exec(
 		"INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, metadata, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		id, msg.ConversationID, msg.SenderType, msg.SenderID, msg.Content, string(metadataJSON), time.Now().UTC(),
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Link attachments to this message
+	for _, attachID := range msg.AttachmentIDs {
+		db.Exec("UPDATE attachments SET message_id = ? WHERE id = ? AND message_id IS NULL", id, attachID)
+	}
+
+	return nil
 }
 
 // getConversationMessages retrieves messages for a conversation, ordered by time

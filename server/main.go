@@ -16,12 +16,17 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// serverDBPath holds the database path for use by other modules (e.g. upload dir)
+var serverDBPath string
+
 func main() {
 	// Command-line flags
 	port := flag.String("port", "8080", "server listen port")
 	dbPath := flag.String("db", "./data/agent-messenger.db", "SQLite database path")
 	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
+
+	serverDBPath = *dbPath
 
 	if *showVersion {
 		fmt.Println("Agent Messenger v0.1.0")
@@ -31,6 +36,11 @@ func main() {
 	// Ensure data directory exists
 	if dir := filepath.Dir(*dbPath); dir != "" && dir != "." {
 		os.MkdirAll(dir, 0755)
+	}
+
+	// Ensure upload directory exists
+	if err := ensureUploadDir(); err != nil {
+		log.Printf("Warning: could not create upload directory: %v", err)
 	}
 
 	// Initialize database
@@ -77,6 +87,11 @@ func main() {
 
 	// Message endpoints
 	http.HandleFunc("/messages/search", handleSearchMessages)
+
+	// Attachment endpoints
+	http.HandleFunc("/attachments/upload", handleUpload)
+	http.HandleFunc("/attachments/", handleGetAttachment)
+	http.HandleFunc("/messages/attachments", handleListAttachments)
 
 	// Auth endpoints (extended)
 	http.HandleFunc("/auth/change-password", handleChangePassword)
@@ -194,6 +209,20 @@ func initSchema(db *sql.DB) error {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (conversation_id) REFERENCES conversations(id)
 	);
+
+	CREATE TABLE IF NOT EXISTS attachments (
+		id TEXT PRIMARY KEY,
+		message_id TEXT,
+		user_id TEXT NOT NULL,
+		filename TEXT NOT NULL,
+		content_type TEXT NOT NULL,
+		size INTEGER NOT NULL,
+		sha256 TEXT NOT NULL,
+		storage_path TEXT NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (message_id) REFERENCES messages(id),
+		FOREIGN KEY (user_id) REFERENCES users(id)
+	);
 	`
 	if _, err := db.Exec(schema); err != nil {
 		return err
@@ -230,6 +259,7 @@ func initSchema(db *sql.DB) error {
 			{1, "initial_schema"},
 			{2, "agent_metadata_columns"},
 			{3, "message_read_at"},
+			{4, "attachments_table"},
 		}
 		for _, m := range inlineMigrations {
 			db.Exec("INSERT OR IGNORE INTO schema_migrations (version, name) VALUES (?, ?)", m.version, m.name)

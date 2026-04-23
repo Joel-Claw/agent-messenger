@@ -107,6 +107,28 @@ ALTER TABLE messages ADD COLUMN read_at TIMESTAMP DEFAULT NULL;
 -- SQLite does not support DROP COLUMN before 3.35.0
 `,
 	},
+	{
+		Version: 4,
+		Name:    "attachments_table",
+		UpSQL: `
+CREATE TABLE IF NOT EXISTS attachments (
+	id TEXT PRIMARY KEY,
+	message_id TEXT,
+	user_id TEXT NOT NULL,
+	filename TEXT NOT NULL,
+	content_type TEXT NOT NULL,
+	size INTEGER NOT NULL,
+	sha256 TEXT NOT NULL,
+	storage_path TEXT NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (message_id) REFERENCES messages(id),
+	FOREIGN KEY (user_id) REFERENCES users(id)
+);
+`,
+		DownSQL: `
+DROP TABLE IF EXISTS attachments;
+`,
+	},
 }
 
 func main() {

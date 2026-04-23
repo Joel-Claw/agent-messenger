@@ -101,6 +101,10 @@ captures/
 *.sqlite
 *.sqlite3
 
+# Uploads
+uploads/
+server/data/uploads/
+
 # Logs
 *.log
 logs/

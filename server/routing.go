@@ -17,13 +17,14 @@ const (
 
 // RoutedMessage is the internal message structure for routing
 type RoutedMessage struct {
-	Type           string `json:"type"`
-	ConversationID string `json:"conversation_id"`
-	Content        string `json:"content"`
-	SenderType     string `json:"sender_type"`
-	SenderID       string `json:"sender_id"`
-	RecipientID    string `json:"recipient_id"`
-	Timestamp      string `json:"timestamp,omitempty"`
+	Type           string   `json:"type"`
+	ConversationID string   `json:"conversation_id"`
+	Content        string   `json:"content"`
+	AttachmentIDs  []string `json:"attachment_ids,omitempty"`
+	SenderType     string   `json:"sender_type"`
+	SenderID       string   `json:"sender_id"`
+	RecipientID    string   `json:"recipient_id"`
+	Timestamp      string   `json:"timestamp,omitempty"`
 }
 
 // routeMessage handles incoming messages and routes them to the correct recipient
