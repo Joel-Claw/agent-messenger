@@ -615,6 +615,23 @@ func handleMarkRead(w http.ResponseWriter, r *http.Request) {
 			default:
 			}
 		}
+
+		// Also broadcast read_receipt to the user's other devices for cross-device read sync
+		for _, clientConn := range hub.GetClientConns(claims.UserID) {
+			readMsg := OutgoingMessage{
+				Type: "read_receipt",
+				Data: map[string]interface{}{
+					"conversation_id": convID,
+					"read_by":         claims.UserID,
+					"count":           count,
+				},
+			}
+			data, _ := json.Marshal(readMsg)
+			select {
+			case clientConn.send <- data:
+			default:
+			}
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

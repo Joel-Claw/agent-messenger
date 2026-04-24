@@ -306,12 +306,20 @@ func handleStoreEncryptedMessage(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		} else {
-			// Deliver to user
-			if client := hub.GetClient(conv.UserID); client != nil {
-				select {
-				case client.send <- outgoing:
-				default:
-					log.Printf("Client %s send buffer full, dropping encrypted message", conv.UserID)
+			// Deliver to user on all devices (multi-device)
+			conns := hub.GetClientConns(conv.UserID)
+			if len(conns) > 0 {
+				delivered := 0
+				for _, client := range conns {
+					select {
+					case client.send <- outgoing:
+						delivered++
+					default:
+						log.Printf("Client %s (device %s) send buffer full, dropping encrypted message", conv.UserID, client.deviceID)
+					}
+				}
+				if delivered == 0 {
+					go notifyUser(conv.UserID, "New Encrypted Message", "🔒 Encrypted message", req.ConversationID)
 				}
 			} else {
 				go notifyUser(conv.UserID, "New Encrypted Message", "🔒 Encrypted message", req.ConversationID)
