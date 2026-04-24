@@ -59,6 +59,10 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Negotiate sub-protocol version
+	protocolVersion := negotiateProtocol(r)
+	upgradeWithProtocol(w, r, protocolVersion)
+
 	// Upgrade to WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -86,16 +90,8 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 	// Replay any offline messages queued for this agent
 	go replayOfflineMessages(c)
 
-	// Send welcome message
-	welcome := OutgoingMessage{
-		Type: "connected",
-		Data: map[string]string{
-			"agent_id": agentID,
-			"status":   "connected",
-		},
-	}
-	data, _ := json.Marshal(welcome)
-	c.send <- data
+	// Send welcome message with protocol version
+	sendWelcomeMessage("agent", agentID, "", protocolVersion, c.send)
 }
 
 func handleClientConnect(w http.ResponseWriter, r *http.Request) {
@@ -122,6 +118,10 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 
 	// Use the user ID from the JWT claims (don't trust query param)
 	userID = claims.UserID
+
+	// Negotiate sub-protocol version
+	protocolVersion := negotiateProtocol(r)
+	upgradeWithProtocol(w, r, protocolVersion)
 
 	// Upgrade to WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -152,20 +152,8 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	// Replay any offline messages queued for this client
 	go replayOfflineMessages(c)
 
-	// Send welcome message with device info
-	welcomeData := map[string]string{
-		"user_id":  userID,
-		"status":   "connected",
-	}
-	if deviceID != "" {
-		welcomeData["device_id"] = deviceID
-	}
-	welcome := OutgoingMessage{
-		Type: "connected",
-		Data: welcomeData,
-	}
-	data, _ := json.Marshal(welcome)
-	c.send <- data
+	// Send welcome message with device info + protocol version
+	sendWelcomeMessage("client", userID, deviceID, protocolVersion, c.send)
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
