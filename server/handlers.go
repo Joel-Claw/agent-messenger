@@ -696,8 +696,24 @@ func handleListConversations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query(
-		"SELECT id, user_id, agent_id, created_at FROM conversations WHERE user_id = ? ORDER BY created_at DESC",
+	rows, err := db.Query(`
+		SELECT c.id, c.user_id, c.agent_id, c.created_at,
+		       COALESCE(lm.content, ''), COALESCE(lm.sender_type, ''), COALESCE(lm.created_at, ''),
+		       COALESCE(uc.unread_count, 0)
+		FROM conversations c
+		LEFT JOIN (
+		    SELECT m.conversation_id, m.content, m.sender_type, m.created_at,
+		           ROW_NUMBER() OVER (PARTITION BY m.conversation_id ORDER BY m.created_at DESC) as rn
+		    FROM messages m WHERE m.is_deleted = 0 OR m.is_deleted IS NULL
+		) lm ON lm.conversation_id = c.id AND lm.rn = 1
+		LEFT JOIN (
+		    SELECT conversation_id, COUNT(*) as unread_count
+		    FROM messages
+		    WHERE read_at IS NULL AND (is_deleted = 0 OR is_deleted IS NULL)
+		    GROUP BY conversation_id
+		) uc ON uc.conversation_id = c.id
+		WHERE c.user_id = ?
+		ORDER BY c.created_at DESC`,
 		claims.UserID,
 	)
 	if err != nil {
@@ -706,19 +722,35 @@ func handleListConversations(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	type ConvInfo struct {
-		ID        string `json:"id"`
-		UserID    string `json:"user_id"`
-		AgentID   string `json:"agent_id"`
+	type LastMessage struct {
+		Content   string `json:"content"`
+		SenderType string `json:"sender_type"`
 		CreatedAt string `json:"created_at"`
+	}
+
+	type ConvInfo struct {
+		ID          string      `json:"id"`
+		UserID      string      `json:"user_id"`
+		AgentID     string      `json:"agent_id"`
+		CreatedAt   string      `json:"created_at"`
+		LastMessage *LastMessage `json:"last_message"`
+		UnreadCount int         `json:"unread_count"`
 	}
 
 	var conversations []ConvInfo
 	for rows.Next() {
 		var c ConvInfo
-		if err := rows.Scan(&c.ID, &c.UserID, &c.AgentID, &c.CreatedAt); err != nil {
+		var lmContent, lmSenderType, lmCreatedAt string
+		if err := rows.Scan(&c.ID, &c.UserID, &c.AgentID, &c.CreatedAt, &lmContent, &lmSenderType, &lmCreatedAt, &c.UnreadCount); err != nil {
 			writeJSONError(w, http.StatusInternalServerError, "internal error")
 			return
+		}
+		if lmContent != "" {
+			c.LastMessage = &LastMessage{
+				Content:    lmContent,
+				SenderType: lmSenderType,
+				CreatedAt:  lmCreatedAt,
+			}
 		}
 		conversations = append(conversations, c)
 	}
