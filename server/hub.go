@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"sync"
@@ -92,6 +93,8 @@ func (h *Hub) run() {
 				h.agents[conn.id] = conn
 				log.Printf("Agent connected: %s", conn.id)
 				if ServerMetrics != nil { ServerMetrics.ConnectionsTotal.Add(1) }
+				// Broadcast presence: agent online
+				h.broadcastPresence(conn.id, "agent", true)
 			} else {
 				// Multi-device: append this connection to the user's device list
 				// If same device_id reconnects, replace only that device's connection
@@ -120,6 +123,8 @@ func (h *Hub) run() {
 					delete(h.agents, conn.id)
 					close(conn.send)
 					log.Printf("Agent disconnected: %s", conn.id)
+					// Broadcast presence: agent offline
+					h.broadcastPresence(conn.id, "agent", false)
 				}
 			} else {
 				// Remove only this specific connection from the user's device list
@@ -209,6 +214,29 @@ func (h *Hub) ClientCount() int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return len(h.clientConns)
+}
+
+// broadcastPresence sends a presence_update event to all connected clients
+func (h *Hub) broadcastPresence(id string, connType string, online bool) {
+	event := OutgoingMessage{
+		Type: "presence_update",
+		Data: map[string]interface{}{
+			"id":     id,
+			"type":   connType,
+			"online": online,
+		},
+	}
+	data, _ := json.Marshal(event)
+
+	// Broadcast to all connected clients
+	for _, conns := range h.clientConns {
+		for _, client := range conns {
+			select {
+			case client.send <- data:
+			default:
+			}
+		}
+	}
 }
 
 // ClientConnCount returns the total number of client connections (including multiple devices per user)

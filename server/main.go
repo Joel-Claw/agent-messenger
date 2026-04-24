@@ -120,6 +120,8 @@ func main() {
 
 	http.HandleFunc("/messages/edit", handleMessageEdit)
 	http.HandleFunc("/messages/delete", handleMessageDelete)
+	http.HandleFunc("/presence", handleGetPresence)
+	http.HandleFunc("/presence/user", handleGetUserPresence)
 	http.HandleFunc("/messages/react", handleReact)
 	http.HandleFunc("/messages/reactions", handleGetReactions)
 	http.HandleFunc("/conversations/tags/add", handleAddTag)
