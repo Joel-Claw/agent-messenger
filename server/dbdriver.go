@@ -116,6 +116,8 @@ CREATE TABLE IF NOT EXISTS messages (
 	content TEXT NOT NULL,
 	metadata TEXT,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	edited_at TIMESTAMP,
+	is_deleted BOOLEAN DEFAULT 0,
 	FOREIGN KEY (conversation_id) REFERENCES conversations(id)
 );
 
@@ -206,6 +208,8 @@ CREATE TABLE IF NOT EXISTS messages (
 	content TEXT NOT NULL,
 	metadata TEXT,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	edited_at TIMESTAMP,
+	is_deleted BOOLEAN DEFAULT FALSE,
 	FOREIGN KEY (conversation_id) REFERENCES conversations(id)
 );
 

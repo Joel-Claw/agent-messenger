@@ -118,6 +118,8 @@ func main() {
 	// Message endpoints
 	http.HandleFunc("/messages/search", handleSearchMessages)
 
+	http.HandleFunc("/messages/edit", handleMessageEdit)
+	http.HandleFunc("/messages/delete", handleMessageDelete)
 	http.HandleFunc("/messages/react", handleReact)
 	http.HandleFunc("/messages/reactions", handleGetReactions)
 	http.HandleFunc("/conversations/tags/add", handleAddTag)
@@ -244,6 +246,7 @@ func initSchema(db *sql.DB) error {
 			{4, "attachments_table"},
 			{5, "e2e_encryption_tables"},
 			{6, "reactions_and_tags_tables"},
+		{7, "message_edit_delete_columns"},
 		}
 		for _, m := range inlineMigrations {
 			if currentDriver == DriverPostgreSQL {
@@ -269,6 +272,15 @@ func initSchema(db *sql.DB) error {
 		"ALTER TABLE messages ADD COLUMN read_at TIMESTAMP DEFAULT NULL",
 	}
 	for _, m := range migrations_read {
+		db.Exec(m)
+	}
+
+	// Add edited_at and is_deleted columns for message edit/delete
+	migrations_edit := []string{
+		"ALTER TABLE messages ADD COLUMN edited_at TIMESTAMP DEFAULT NULL",
+		"ALTER TABLE messages ADD COLUMN is_deleted BOOLEAN DEFAULT 0",
+	}
+	for _, m := range migrations_edit {
 		db.Exec(m)
 	}
 

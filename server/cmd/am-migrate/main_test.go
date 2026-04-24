@@ -84,8 +84,8 @@ func TestMigrateUpFromScratch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getCurrentVersion: %v", err)
 	}
-	if version != 5 {
-		t.Errorf("expected version 4, got %d", version)
+	if version != 7 {
+		t.Errorf("expected version 7, got %d", version)
 	}
 }
 
@@ -111,8 +111,8 @@ func TestMigrateUpIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getCurrentVersion: %v", err)
 	}
-	if version != 5 {
-		t.Errorf("expected version 4 after double migrate, got %d", version)
+	if version != 7 {
+		t.Errorf("expected version 7 after double migrate, got %d", version)
 	}
 }
 
@@ -204,8 +204,8 @@ func TestMigrateDown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getCurrentVersion: %v", err)
 	}
-	if version != 5 {
-		t.Errorf("expected version 4 after re-migrate, got %d", version)
+	if version != 7 {
+		t.Errorf("expected version 7 after re-migrate, got %d", version)
 	}
 }
 
@@ -338,8 +338,8 @@ func TestMigrateUpExistingDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getCurrentVersion: %v", err)
 	}
-	if version != 5 {
-		t.Errorf("expected version 4, got %d", version)
+	if version != 7 {
+		t.Errorf("expected version 7, got %d", version)
 	}
 
 	// Verify the new columns exist

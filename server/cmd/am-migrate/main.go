@@ -164,6 +164,46 @@ DROP TABLE IF EXISTS encrypted_messages;
 DROP TABLE IF EXISTS key_bundles;
 `,
 	},
+	{
+		Version: 6,
+		Name:    "reactions_and_tags_tables",
+		UpSQL: `
+CREATE TABLE IF NOT EXISTS reactions (
+	id TEXT PRIMARY KEY,
+	message_id TEXT NOT NULL,
+	user_id TEXT NOT NULL,
+	emoji TEXT NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (message_id) REFERENCES messages(id),
+	FOREIGN KEY (user_id) REFERENCES users(id),
+	UNIQUE(message_id, user_id, emoji)
+);
+
+CREATE TABLE IF NOT EXISTS conversation_tags (
+	id TEXT PRIMARY KEY,
+	conversation_id TEXT NOT NULL,
+	tag TEXT NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (conversation_id) REFERENCES conversations(id),
+	UNIQUE(conversation_id, tag)
+);
+`,
+		DownSQL: `
+DROP TABLE IF EXISTS conversation_tags;
+DROP TABLE IF EXISTS reactions;
+`,
+	},
+	{
+		Version: 7,
+		Name:    "message_edit_delete_columns",
+		UpSQL: `
+ALTER TABLE messages ADD COLUMN edited_at TIMESTAMP DEFAULT NULL;
+ALTER TABLE messages ADD COLUMN is_deleted BOOLEAN DEFAULT 0;
+`,
+		DownSQL: `
+-- SQLite doesn't support DROP COLUMN easily; no-op for safety
+`,
+	},
 }
 
 func main() {

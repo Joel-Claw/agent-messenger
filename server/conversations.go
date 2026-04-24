@@ -25,14 +25,16 @@ const (
 
 // StoredMessage represents a persisted message
 type StoredMessage struct {
-	ID             string
-	ConversationID string
-	SenderType     string
-	SenderID       string
-	Content        string
-	Metadata       string
-	CreatedAt      time.Time
+	ID             string     `json:"id"`
+	ConversationID string     `json:"conversation_id"`
+	SenderType     string     `json:"sender_type"`
+	SenderID       string     `json:"sender_id"`
+	Content        string     `json:"content"`
+	Metadata       string     `json:"metadata,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
 	ReadAt         *time.Time `json:"read_at,omitempty"`
+	EditedAt       *time.Time `json:"edited_at,omitempty"`
+	IsDeleted      bool       `json:"is_deleted"`
 }
 
 // getConversation fetches a conversation by ID
@@ -84,7 +86,7 @@ func getConversationMessages(convID string, limit int) ([]StoredMessage, error) 
 		limit = 50
 	}
 	rows, err := db.Query(
-		"SELECT id, conversation_id, sender_type, sender_id, content, COALESCE(metadata, ''), created_at, read_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?",
+		"SELECT id, conversation_id, sender_type, sender_id, content, COALESCE(metadata, ''), created_at, read_at, edited_at, COALESCE(is_deleted, 0) FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?",
 		convID, limit,
 	)
 	if err != nil {
@@ -95,7 +97,7 @@ func getConversationMessages(convID string, limit int) ([]StoredMessage, error) 
 	var messages []StoredMessage
 	for rows.Next() {
 		var m StoredMessage
-		if err := rows.Scan(&m.ID, &m.ConversationID, &m.SenderType, &m.SenderID, &m.Content, &m.Metadata, &m.CreatedAt, &m.ReadAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.ConversationID, &m.SenderType, &m.SenderID, &m.Content, &m.Metadata, &m.CreatedAt, &m.ReadAt, &m.EditedAt, &m.IsDeleted); err != nil {
 			return nil, err
 		}
 		messages = append(messages, m)
@@ -168,7 +170,7 @@ func searchMessages(userID, query string, limit int) ([]StoredMessage, error) {
 	}
 
 	rows, err := db.Query(`
-		SELECT m.id, m.conversation_id, m.sender_type, m.sender_id, m.content, COALESCE(m.metadata, ''), m.created_at, m.read_at
+		SELECT m.id, m.conversation_id, m.sender_type, m.sender_id, m.content, COALESCE(m.metadata, ''), m.created_at, m.read_at, m.edited_at, COALESCE(m.is_deleted, 0)
 		FROM messages m
 		JOIN conversations c ON m.conversation_id = c.id
 		WHERE c.user_id = ? AND m.content LIKE ?
@@ -184,7 +186,7 @@ func searchMessages(userID, query string, limit int) ([]StoredMessage, error) {
 	var messages []StoredMessage
 	for rows.Next() {
 		var m StoredMessage
-		if err := rows.Scan(&m.ID, &m.ConversationID, &m.SenderType, &m.SenderID, &m.Content, &m.Metadata, &m.CreatedAt, &m.ReadAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.ConversationID, &m.SenderType, &m.SenderID, &m.Content, &m.Metadata, &m.CreatedAt, &m.ReadAt, &m.EditedAt, &m.IsDeleted); err != nil {
 			return nil, err
 		}
 		messages = append(messages, m)
