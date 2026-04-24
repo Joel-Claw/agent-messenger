@@ -35,6 +35,7 @@ type Connection struct {
 	hub      *Hub
 	connType string // "agent" or "client"
 	id       string // agent_id or user_id
+	deviceID string // device_id identifying this specific device/session (multi-device)
 	conn     *websocket.Conn
 	send     chan []byte
 	// connectedAt tracks when this connection was established
@@ -51,8 +52,8 @@ var offlineQueue *OfflineQueue
 // Hub manages all active connections
 type Hub struct {
 	mu              sync.RWMutex
-	agents          map[string]*Connection // agent_id -> Connection
-	clients         map[string]*Connection // user_id -> Connection
+	agents          map[string]*Connection   // agent_id -> Connection (single agent session)
+	clientConns     map[string][]*Connection // user_id -> []*Connection (multi-device: one user, many devices)
 	register        chan *Connection
 	unregister      chan *Connection
 	broadcast       chan []byte
@@ -66,7 +67,7 @@ func newHub() *Hub {
 	offlineQueue = newOfflineQueue(100, 7*24*time.Hour) // 100 msgs per user, 7 day TTL
 	return &Hub{
 		agents:     make(map[string]*Connection),
-		clients:    make(map[string]*Connection),
+		clientConns: make(map[string][]*Connection),
 		register:   make(chan *Connection),
 		unregister: make(chan *Connection),
 		broadcast:  make(chan []byte),
@@ -83,7 +84,7 @@ func (h *Hub) run() {
 		case conn := <-h.register:
 			h.mu.Lock()
 			if conn.connType == "agent" {
-				// Replace existing connection if any
+				// Replace existing agent connection if any
 				if old, ok := h.agents[conn.id]; ok {
 					log.Printf("Agent %s reconnecting, closing old connection", conn.id)
 					close(old.send)
@@ -92,12 +93,22 @@ func (h *Hub) run() {
 				log.Printf("Agent connected: %s", conn.id)
 				if ServerMetrics != nil { ServerMetrics.ConnectionsTotal.Add(1) }
 			} else {
-				if old, ok := h.clients[conn.id]; ok {
-					log.Printf("Client %s reconnecting, closing old connection", conn.id)
-					close(old.send)
+				// Multi-device: append this connection to the user's device list
+				// If same device_id reconnects, replace only that device's connection
+				didReplace := false
+				for i, existing := range h.clientConns[conn.id] {
+					if existing.deviceID == conn.deviceID && conn.deviceID != "" {
+						log.Printf("Client %s device %s reconnecting, closing old connection", conn.id, conn.deviceID)
+						close(existing.send)
+						h.clientConns[conn.id][i] = conn
+						didReplace = true
+						break
+					}
 				}
-				h.clients[conn.id] = conn
-				log.Printf("Client connected: %s", conn.id)
+				if !didReplace {
+					h.clientConns[conn.id] = append(h.clientConns[conn.id], conn)
+				}
+				log.Printf("Client connected: %s (device: %s, total devices: %d)", conn.id, conn.deviceID, len(h.clientConns[conn.id]))
 				if ServerMetrics != nil { ServerMetrics.ConnectionsTotal.Add(1) }
 			}
 			h.mu.Unlock()
@@ -111,11 +122,23 @@ func (h *Hub) run() {
 					log.Printf("Agent disconnected: %s", conn.id)
 				}
 			} else {
-				if existing, ok := h.clients[conn.id]; ok && existing == conn {
-					delete(h.clients, conn.id)
-					close(conn.send)
-					log.Printf("Client disconnected: %s", conn.id)
+				// Remove only this specific connection from the user's device list
+				conns := h.clientConns[conn.id]
+				for i, existing := range conns {
+					if existing == conn {
+						// Remove without preserving order
+						conns[i] = conns[len(conns)-1]
+						conns = conns[:len(conns)-1]
+						break
+					}
 				}
+				if len(conns) == 0 {
+					delete(h.clientConns, conn.id)
+				} else {
+					h.clientConns[conn.id] = conns
+				}
+				close(conn.send)
+				log.Printf("Client disconnected: %s (device: %s, remaining devices: %d)", conn.id, conn.deviceID, len(conns))
 			}
 			h.mu.Unlock()
 
@@ -128,10 +151,12 @@ func (h *Hub) run() {
 					// Buffer full, skip
 				}
 			}
-			for _, conn := range h.clients {
-				select {
-				case conn.send <- message:
-				default:
+			for _, conns := range h.clientConns {
+				for _, conn := range conns {
+					select {
+					case conn.send <- message:
+					default:
+					}
 				}
 			}
 			h.mu.RUnlock()
@@ -151,11 +176,25 @@ func (h *Hub) GetAgent(agentID string) *Connection {
 	return h.agents[agentID]
 }
 
-// GetClient returns a connection for a given user ID
+// GetClient returns the first connection for a given user ID.
+// For multi-device scenarios, use GetClientConns instead.
 func (h *Hub) GetClient(userID string) *Connection {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
-	return h.clients[userID]
+	conns := h.clientConns[userID]
+	if len(conns) == 0 {
+		return nil
+	}
+	return conns[0]
+}
+
+// GetClientConns returns all connections for a given user ID (multi-device).
+func (h *Hub) GetClientConns(userID string) []*Connection {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	result := make([]*Connection, len(h.clientConns[userID]))
+	copy(result, h.clientConns[userID])
+	return result
 }
 
 // AgentCount returns the number of connected agents
@@ -165,11 +204,22 @@ func (h *Hub) AgentCount() int {
 	return len(h.agents)
 }
 
-// ClientCount returns the number of connected clients
+// ClientCount returns the number of unique connected client users
 func (h *Hub) ClientCount() int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
-	return len(h.clients)
+	return len(h.clientConns)
+}
+
+// ClientConnCount returns the total number of client connections (including multiple devices per user)
+func (h *Hub) ClientConnCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	total := 0
+	for _, conns := range h.clientConns {
+		total += len(conns)
+	}
+	return total
 }
 
 // AgentStatus returns the current status of a connected agent, or "offline" if not connected

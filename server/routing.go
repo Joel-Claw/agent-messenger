@@ -124,14 +124,25 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 	}
 
 	if sender.connType == "agent" {
-		if client := hub.GetClient(recipientID); client != nil {
-			select {
-			case client.send <- outgoing:
-			default:
-				log.Printf("Client %s send buffer full, dropping message", recipientID)
+		// Deliver to ALL of the user's connected devices (multi-device sync)
+		conns := hub.GetClientConns(recipientID)
+		if len(conns) > 0 {
+			delivered := 0
+			for _, client := range conns {
+				select {
+				case client.send <- outgoing:
+					delivered++
+				default:
+					log.Printf("Client %s (device %s) send buffer full, dropping message", recipientID, client.deviceID)
+				}
+			}
+			if delivered == 0 {
+				// All buffers full, queue for later
+				offlineQueue.Enqueue(recipientID, outgoing)
+				go notifyUser(recipientID, "New Message", truncate(msg.Content, 100), msg.ConversationID)
 			}
 		} else {
-			// Client is offline, queue message for later delivery
+			// Client is offline on all devices, queue message for later delivery
 			offlineQueue.Enqueue(recipientID, outgoing)
 			// Also send push notification for immediate awareness
 			go notifyUser(recipientID, "New Message", truncate(msg.Content, 100), msg.ConversationID)
@@ -202,13 +213,14 @@ func routeTypingIndicator(sender *Connection, data json.RawMessage) {
 		Data: map[string]string{
 			"conversation_id": payload.ConversationID,
 			"sender_type":     sender.connType,
-			"sender_id":        sender.id,
+			"sender_id":       sender.id,
 		},
 	}
 	outData, _ := json.Marshal(outgoing)
 
 	if sender.connType == "agent" {
-		if client := hub.GetClient(recipientID); client != nil {
+		// Send typing indicator to ALL user's devices
+		for _, client := range hub.GetClientConns(recipientID) {
 			select {
 			case client.send <- outData:
 			default:
@@ -260,15 +272,16 @@ func routeStatusUpdate(sender *Connection, data json.RawMessage) {
 		Type: MsgTypeStatus,
 		Data: map[string]string{
 			"conversation_id": payload.ConversationID,
-			"sender_type":      sender.connType,
-			"sender_id":         sender.id,
-			"status":           payload.Status,
+			"sender_type":     sender.connType,
+			"sender_id":       sender.id,
+			"status":          payload.Status,
 		},
 	}
 	outData, _ := json.Marshal(outgoing)
 
 	if sender.connType == "agent" {
-		if client := hub.GetClient(recipientID); client != nil {
+		// Send status update to ALL user's devices
+		for _, client := range hub.GetClientConns(recipientID) {
 			select {
 			case client.send <- outData:
 			default:

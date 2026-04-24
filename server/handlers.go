@@ -131,10 +131,12 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create connection
+	deviceID := r.URL.Query().Get("device_id")
 	c := &Connection{
 		hub:         hub,
 		connType:    "client",
 		id:          userID,
+		deviceID:    deviceID,
 		conn:        conn,
 		send:        make(chan []byte, 256),
 		connectedAt: time.Now(),
@@ -150,13 +152,17 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	// Replay any offline messages queued for this client
 	go replayOfflineMessages(c)
 
-	// Send welcome message
+	// Send welcome message with device info
+	welcomeData := map[string]string{
+		"user_id":  userID,
+		"status":   "connected",
+	}
+	if deviceID != "" {
+		welcomeData["device_id"] = deviceID
+	}
 	welcome := OutgoingMessage{
 		Type: "connected",
-		Data: map[string]string{
-			"user_id": userID,
-			"status":  "connected",
-		},
+		Data: welcomeData,
 	}
 	data, _ := json.Marshal(welcome)
 	c.send <- data

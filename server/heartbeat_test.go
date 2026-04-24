@@ -146,31 +146,53 @@ func TestClientReconnection(t *testing.T) {
 		hub:         hub,
 		connType:    "client",
 		id:          "reconnect-user",
+		deviceID:    "device-a",
 		send:        make(chan []byte, 10),
 		connectedAt: time.Now(),
 	}
 	hub.register <- conn1
 	time.Sleep(10 * time.Millisecond)
 
-	// Second connection (same user - reconnection)
+	// Second connection (same user, different device - multi-device)
 	conn2 := &Connection{
 		hub:         hub,
 		connType:    "client",
 		id:          "reconnect-user",
+		deviceID:    "device-b",
 		send:        make(chan []byte, 10),
 		connectedAt: time.Now(),
 	}
 	hub.register <- conn2
 	time.Sleep(10 * time.Millisecond)
 
-	if hub.GetClient("reconnect-user") != conn2 {
-		t.Fatal("second client connection should replace the first")
+	// Both connections should be active (multi-device)
+	conns := hub.GetClientConns("reconnect-user")
+	if len(conns) != 2 {
+		t.Fatalf("expected 2 client connections, got %d", len(conns))
 	}
 
-	// Old send channel should be closed
+	// Now reconnect with same device_id (device-a) - should replace
+	conn3 := &Connection{
+		hub:         hub,
+		connType:    "client",
+		id:          "reconnect-user",
+		deviceID:    "device-a",
+		send:        make(chan []byte, 10),
+		connectedAt: time.Now(),
+	}
+	hub.register <- conn3
+	time.Sleep(10 * time.Millisecond)
+
+	// Should still have 2 connections, but conn1's channel should be closed
+	conns = hub.GetClientConns("reconnect-user")
+	if len(conns) != 2 {
+		t.Fatalf("expected 2 client connections after device-a reconnect, got %d", len(conns))
+	}
+
+	// Old device-a connection (conn1) should be closed
 	_, ok := <-conn1.send
 	if ok {
-		t.Fatal("old client connection's send channel should be closed")
+		t.Fatal("old device-a connection's send channel should be closed")
 	}
 }
 
@@ -468,9 +490,9 @@ func TestClientDisconnectCleansUpRouting(t *testing.T) {
 		t.Fatal("timed out waiting for agent ack")
 	}
 
-	// Verify the client is indeed gone
-	if hub.GetClient("dc-user") != nil {
-		t.Fatal("client should be unregistered")
+	// Verify the client has no connections left
+	if len(hub.GetClientConns("dc-user")) != 0 {
+		t.Fatal("client should have no connections")
 	}
 }
 
@@ -541,6 +563,7 @@ func TestAgentAndClientCountMethods(t *testing.T) {
 		hub:         hub,
 		connType:    "client",
 		id:          "count-client-1",
+		deviceID:    "device-1",
 		send:        make(chan []byte, 10),
 		connectedAt: time.Now(),
 	}
@@ -551,7 +574,27 @@ func TestAgentAndClientCountMethods(t *testing.T) {
 		t.Fatalf("expected 2 agents, got %d", hub.AgentCount())
 	}
 	if hub.ClientCount() != 1 {
-		t.Fatalf("expected 1 client, got %d", hub.ClientCount())
+		t.Fatalf("expected 1 unique client user, got %d", hub.ClientCount())
+	}
+
+	// Register same client user on a second device (multi-device)
+	clientConn2 := &Connection{
+		hub:         hub,
+		connType:    "client",
+		id:          "count-client-1",
+		deviceID:    "device-2",
+		send:        make(chan []byte, 10),
+		connectedAt: time.Now(),
+	}
+	hub.register <- clientConn2
+	time.Sleep(10 * time.Millisecond)
+
+	// ClientCount should still be 1 (same user), but ClientConnCount should be 2
+	if hub.ClientCount() != 1 {
+		t.Fatalf("expected 1 unique client user (multi-device), got %d", hub.ClientCount())
+	}
+	if hub.ClientConnCount() != 2 {
+		t.Fatalf("expected 2 total client connections (multi-device), got %d", hub.ClientConnCount())
 	}
 
 	// Unregister one agent

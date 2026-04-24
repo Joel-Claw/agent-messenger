@@ -118,6 +118,12 @@ func main() {
 	// Message endpoints
 	http.HandleFunc("/messages/search", handleSearchMessages)
 
+	http.HandleFunc("/messages/react", handleReact)
+	http.HandleFunc("/messages/reactions", handleGetReactions)
+	http.HandleFunc("/conversations/tags/add", handleAddTag)
+	http.HandleFunc("/conversations/tags/remove", handleRemoveTag)
+	http.HandleFunc("/conversations/tags", handleGetTags)
+
 	// Attachment endpoints
 	http.HandleFunc("/attachments/upload", handleUpload)
 	http.HandleFunc("/attachments/", handleGetAttachment)
@@ -237,6 +243,7 @@ func initSchema(db *sql.DB) error {
 			{3, "message_read_at"},
 			{4, "attachments_table"},
 			{5, "e2e_encryption_tables"},
+			{6, "reactions_and_tags_tables"},
 		}
 		for _, m := range inlineMigrations {
 			if currentDriver == DriverPostgreSQL {
@@ -264,6 +271,42 @@ func initSchema(db *sql.DB) error {
 	for _, m := range migrations_read {
 		db.Exec(m)
 	}
+
+	// Create reactions table
+	if _, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS reactions (
+			id TEXT PRIMARY KEY,
+			message_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
+			emoji TEXT NOT NULL,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(message_id, user_id, emoji),
+			FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		);
+	`); err != nil {
+		return err
+	}
+
+	// Create conversation_tags table
+	if _, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS conversation_tags (
+			id TEXT PRIMARY KEY,
+			conversation_id TEXT NOT NULL,
+			tag TEXT NOT NULL,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(conversation_id, tag),
+			FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+		);
+	`); err != nil {
+		return err
+	}
+
+	// Create index on reactions.message_id for fast lookup
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_reactions_message ON reactions(message_id)")
+
+	// Create index on conversation_tags.conversation_id for fast lookup
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_tags_conversation ON conversation_tags(conversation_id)")
 
 	// Migration: agents table no longer requires api_key_hash.
 	// For existing DBs that have the column, it remains but is no longer used.

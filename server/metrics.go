@@ -17,7 +17,8 @@ type Metrics struct {
 
 	// Gauges (updated via hub)
 	AgentsConnected  func() int
-	ClientsConnected func() int
+	ClientsConnected func() int // unique client users
+	ClientConnsTotal func() int // total client connections (multi-device)
 
 	// Server metadata
 	StartTime time.Time
@@ -34,6 +35,7 @@ func NewMetrics(h *Hub) *Metrics {
 		Version:          "0.1.0",
 		AgentsConnected:  h.AgentCount,
 		ClientsConnected: h.ClientCount,
+		ClientConnsTotal: h.ClientConnCount,
 	}
 }
 
@@ -56,6 +58,7 @@ func (m *Metrics) Snapshot() map[string]interface{} {
 		"connections_total": m.ConnectionsTotal.Load(),
 		"agents_connected":  m.AgentsConnected(),
 		"clients_connected":  m.ClientsConnected(),
+		"client_conns_total": m.ClientConnsTotal(),
 		"errors_total":      m.ErrorsTotal.Load(),
 		"rate_limited":      m.RateLimited.Load(),
 		"goroutines":        runtime.NumGoroutine(),
