@@ -932,6 +932,172 @@ paths:
         '200':
           description: Token unregistered
 
+  /messages/encrypted:
+    post:
+      summary: Store an E2E encrypted message
+      operationId: storeEncryptedMessage
+      tags: [Encryption]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conversation_id, ciphertext, sender_device_id]
+              properties:
+                conversation_id:
+                  type: string
+                ciphertext:
+                  type: string
+                  description: Base64-encoded encrypted message ciphertext
+                sender_device_id:
+                  type: string
+                message_type:
+                  type: integer
+                  description: Signal protocol message type (1=prekey, 2=whisper)
+      responses:
+        '200':
+          description: Encrypted message stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+
+  /messages/encrypted/list:
+    get:
+      summary: Get E2E encrypted messages for a conversation
+      operationId: getEncryptedMessages
+      tags: [Encryption]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conversation_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: device_id
+          in: query
+          schema:
+            type: string
+          description: Filter by recipient device ID
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: after
+          in: query
+          schema:
+            type: string
+          description: Cursor for pagination (message ID)
+      responses:
+        '200':
+          description: List of encrypted messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    conversation_id:
+                      type: string
+                    sender_device_id:
+                      type: string
+                    ciphertext:
+                      type: string
+                    message_type:
+                      type: integer
+                    created_at:
+                      type: string
+                      format: date-time
+
+  /admin/rate-limit/tier:
+    get:
+      summary: Get rate limit tier for a user
+      operationId: getRateLimitTier
+      tags: [Admin]
+      security: []
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: admin_secret
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User rate limit tier info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  tier:
+                    type: string
+                    enum: [free, pro, enterprise]
+                  burst:
+                    type: integer
+                  window_sec:
+                    type: integer
+                  remaining:
+                    type: integer
+        '401':
+          description: Unauthorized (invalid admin secret)
+        '400':
+          description: Missing user_id
+    post:
+      summary: Set rate limit tier for a user
+      operationId: setRateLimitTier
+      tags: [Admin]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [user_id, tier]
+              properties:
+                user_id:
+                  type: string
+                tier:
+                  type: string
+                  enum: [free, pro, enterprise]
+                admin_secret:
+                  type: string
+      responses:
+        '200':
+          description: Tier set successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  user_id:
+                    type: string
+                  tier:
+                    type: string
+        '401':
+          description: Unauthorized
+        '400':
+          description: Missing user_id or tier, or unknown tier name
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1007,3 +1173,57 @@ components:
           type: boolean
         deleted:
           type: boolean
+
+    EncryptedMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        conversation_id:
+          type: string
+        sender_device_id:
+          type: string
+        ciphertext:
+          type: string
+          description: Base64-encoded encrypted ciphertext
+        message_type:
+          type: integer
+          description: Signal protocol message type
+        created_at:
+          type: string
+          format: date-time
+
+    RateLimitTier:
+      type: string
+      enum: [free, pro, enterprise]
+      description: |
+        Rate limit tier:
+        - free: 60 requests/minute
+        - pro: 300 requests/minute
+        - enterprise: 1500 requests/minute
+
+    Reaction:
+      type: object
+      properties:
+        id:
+          type: string
+        message_id:
+          type: string
+        user_id:
+          type: string
+        emoji:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    ConversationTag:
+      type: object
+      properties:
+        id:
+          type: string
+        tag:
+          type: string
+        created_at:
+          type: string
+          format: date-time
