@@ -1,0 +1,1009 @@
+openapi: 3.0.3
+info:
+  title: Agent Messenger API
+  description: Self-hosted messaging server for humans to interact with AI agents
+  version: 0.1.0
+  contact:
+    name: Joel Claw
+    url: https://joelclaw.lu
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+security: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      tags: [System]
+      responses:
+        '200':
+          description: Server health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  uptime:
+                    type: string
+                  version:
+                    type: string
+                  connections:
+                    type: object
+                    properties:
+                      agents:
+                        type: integer
+                      clients:
+                        type: integer
+                  messages_routed:
+                    type: integer
+                  offline_queue_depth:
+                    type: integer
+
+  /metrics:
+    get:
+      summary: Prometheus-compatible metrics
+      operationId: getMetrics
+      tags: [System]
+      responses:
+        '200':
+          description: Metrics in Prometheus exposition format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /auth/login:
+    post:
+      summary: User login
+      operationId: loginUser
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT token
+                  user_id:
+                    type: string
+                  email:
+                    type: string
+        '401':
+          description: Invalid credentials
+
+  /auth/agent:
+    post:
+      summary: Pre-register an agent (requires AGENT_SECRET)
+      operationId: registerAgent
+      tags: [Auth]
+      parameters:
+        - name: X-Agent-Secret
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agent_id]
+              properties:
+                agent_id:
+                  type: string
+                name:
+                  type: string
+                model:
+                  type: string
+                personality:
+                  type: string
+                specialty:
+                  type: string
+      responses:
+        '200':
+          description: Agent registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent_id:
+                    type: string
+                  api_key:
+                    type: string
+                    description: Agent API key for self-registration
+        '401':
+          description: Invalid AGENT_SECRET
+        '429':
+          description: Rate limited
+
+  /auth/user:
+    post:
+      summary: Register a new user
+      operationId: registerUser
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+                display_name:
+                  type: string
+      responses:
+        '200':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  email:
+                    type: string
+                  token:
+                    type: string
+                    description: JWT token
+        '409':
+          description: Email already registered
+
+  /auth/change-password:
+    post:
+      summary: Change user password
+      operationId: changePassword
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [old_password, new_password]
+              properties:
+                old_password:
+                  type: string
+                new_password:
+                  type: string
+                  minLength: 6
+      responses:
+        '200':
+          description: Password changed
+        '401':
+          description: Invalid old password or missing token
+        '400':
+          description: New password too short
+
+  /agent/connect:
+    get:
+      summary: Agent WebSocket connection
+      description: |
+        Upgrades to WebSocket. Query params: agent_id, agent_secret, name, model, personality, specialty.
+        Sub-protocol negotiation via Sec-WebSocket-Protocol header (v0.1 default).
+      operationId: connectAgent
+      tags: [WebSocket]
+      parameters:
+        - name: agent_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: agent_secret
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '101':
+          description: WebSocket upgrade successful
+        '400':
+          description: Missing agent_id
+        '401':
+          description: Invalid agent_secret
+        '429':
+          description: Rate limited (too many connection attempts)
+
+  /client/connect:
+    get:
+      summary: Client WebSocket connection
+      description: |
+        Upgrades to WebSocket. Query params: device_id (optional).
+        JWT token passed as query param or Sec-WebSocket-Protocol header.
+      operationId: connectClient
+      tags: [WebSocket]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+            description: JWT token
+        - name: device_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '101':
+          description: WebSocket upgrade successful
+        '401':
+          description: Invalid token
+
+  /agents:
+    get:
+      summary: List available agents
+      description: Returns all registered agents with live status (for client discovery)
+      operationId: listAgents
+      tags: [Agents]
+      responses:
+        '200':
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Agent'
+
+  /admin/agents:
+    get:
+      summary: Admin list of connected agents
+      operationId: adminListAgents
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Detailed agent list with connection info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    agent_id:
+                      type: string
+                    name:
+                      type: string
+                    model:
+                      type: string
+                    personality:
+                      type: string
+                    specialty:
+                      type: string
+                    status:
+                      type: string
+                      enum: [online, offline, busy, idle]
+                    connected_at:
+                      type: string
+                      format: date-time
+                      nullable: true
+
+  /conversations/create:
+    post:
+      summary: Create a new conversation
+      operationId: createConversation
+      tags: [Conversations]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agent_id]
+              properties:
+                agent_id:
+                  type: string
+                title:
+                  type: string
+      responses:
+        '200':
+          description: Conversation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '401':
+          description: Missing or invalid token
+
+  /conversations/list:
+    get:
+      summary: List user conversations
+      operationId: listConversations
+      tags: [Conversations]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: tag
+          in: query
+          schema:
+            type: string
+            description: Filter by conversation tag
+      responses:
+        '200':
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Conversation'
+
+  /conversations/messages:
+    get:
+      summary: Get conversation messages
+      operationId: getMessages
+      tags: [Messages]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conversation_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: before
+          in: query
+          schema:
+            type: string
+            description: Cursor - message ID to paginate before
+      responses:
+        '200':
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+
+  /conversations/delete:
+    post:
+      summary: Delete a conversation
+      operationId: deleteConversation
+      tags: [Conversations]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conversation_id]
+              properties:
+                conversation_id:
+                  type: string
+      responses:
+        '200':
+          description: Conversation deleted
+        '401':
+          description: Unauthorized (not owner)
+        '404':
+          description: Conversation not found
+
+  /conversations/mark-read:
+    post:
+      summary: Mark messages as read
+      operationId: markRead
+      tags: [Conversations]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conversation_id]
+              properties:
+                conversation_id:
+                  type: string
+      responses:
+        '200':
+          description: Messages marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  marked_count:
+                    type: integer
+
+  /messages/search:
+    get:
+      summary: Search messages
+      operationId: searchMessages
+      tags: [Messages]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+
+  /messages/edit:
+    post:
+      summary: Edit a message
+      operationId: editMessage
+      tags: [Messages]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message_id, content]
+              properties:
+                message_id:
+                  type: string
+                content:
+                  type: string
+      responses:
+        '200':
+          description: Message edited
+
+  /messages/delete:
+    post:
+      summary: Delete a message
+      operationId: deleteMessage
+      tags: [Messages]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message_id]
+              properties:
+                message_id:
+                  type: string
+      responses:
+        '200':
+          description: Message deleted
+
+  /messages/react:
+    post:
+      summary: Add or toggle a reaction
+      description: Same user+message+emoji toggles reaction off
+      operationId: reactToMessage
+      tags: [Reactions]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message_id, emoji]
+              properties:
+                message_id:
+                  type: string
+                emoji:
+                  type: string
+      responses:
+        '200':
+          description: Reaction toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  action:
+                    type: string
+                    enum: [added, removed]
+                  emoji:
+                    type: string
+
+  /messages/reactions:
+    get:
+      summary: Get reactions for a message
+      operationId: getMessageReactions
+      tags: [Reactions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: message_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of reactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    user_id:
+                      type: string
+                    emoji:
+                      type: string
+                    created_at:
+                      type: string
+                      format: date-time
+
+  /conversations/tags/add:
+    post:
+      summary: Add a tag to a conversation
+      operationId: addTag
+      tags: [Tags]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conversation_id, tag]
+              properties:
+                conversation_id:
+                  type: string
+                tag:
+                  type: string
+      responses:
+        '200':
+          description: Tag added
+        '409':
+          description: Tag already exists
+
+  /conversations/tags/remove:
+    post:
+      summary: Remove a tag from a conversation
+      operationId: removeTag
+      tags: [Tags]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conversation_id, tag]
+              properties:
+                conversation_id:
+                  type: string
+                tag:
+                  type: string
+      responses:
+        '200':
+          description: Tag removed
+
+  /conversations/tags:
+    get:
+      summary: List tags for a conversation
+      operationId: getTags
+      tags: [Tags]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conversation_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    tag:
+                      type: string
+                    created_at:
+                      type: string
+                      format: date-time
+
+  /presence:
+    get:
+      summary: Get presence for all agents
+      operationId: getPresence
+      tags: [Presence]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Agent presence map
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    agent_id:
+                      type: string
+                    status:
+                      type: string
+                      enum: [online, offline, busy, idle]
+                    last_seen:
+                      type: string
+                      format: date-time
+                      nullable: true
+
+  /presence/user:
+    get:
+      summary: Get user presence
+      operationId: getUserPresence
+      tags: [Presence]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User presence info
+
+  /attachments/upload:
+    post:
+      summary: Upload a file attachment
+      operationId: uploadAttachment
+      tags: [Attachments]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, conversation_id]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                conversation_id:
+                  type: string
+      responses:
+        '200':
+          description: Upload successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attachment_id:
+                    type: string
+                  filename:
+                    type: string
+                  url:
+                    type: string
+                  size:
+                    type: integer
+                  content_type:
+                    type: string
+
+  /attachments/{id}:
+    get:
+      summary: Download an attachment
+      operationId: getAttachment
+      tags: [Attachments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File content
+        '404':
+          description: Attachment not found
+
+  /messages/attachments:
+    get:
+      summary: List attachments for a message
+      operationId: listAttachments
+      tags: [Attachments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: message_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of attachments
+
+  /keys/upload:
+    post:
+      summary: Upload E2E encryption public key bundle
+      operationId: uploadKeyBundle
+      tags: [Encryption]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identity_key, signed_prekey, prekey_signature, one_time_prekeys]
+              properties:
+                identity_key:
+                  type: string
+                  description: Base64-encoded identity key
+                signed_prekey:
+                  type: string
+                  description: Base64-encoded signed prekey
+                prekey_signature:
+                  type: string
+                  description: Base64-encoded signature
+                one_time_prekeys:
+                  type: array
+                  items:
+                    type: string
+                  description: Base64-encoded one-time prekeys
+      responses:
+        '200':
+          description: Key bundle stored
+
+  /keys/bundle:
+    get:
+      summary: Get E2E encryption key bundle for a user
+      operationId: getKeyBundle
+      tags: [Encryption]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Key bundle
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  identity_key:
+                    type: string
+                  signed_prekey:
+                    type: string
+                  prekey_signature:
+                    type: string
+                  one_time_prekey:
+                    type: string
+                    nullable: true
+
+  /keys/otpk-count:
+    get:
+      summary: List one-time prekey counts
+      operationId: listOTPKCounts
+      tags: [Encryption]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OTPK count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /push/register:
+    post:
+      summary: Register device token for push notifications
+      operationId: registerDeviceToken
+      tags: [Push]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token:
+                  type: string
+                platform:
+                  type: string
+                  enum: [apns, fcm]
+                device_id:
+                  type: string
+      responses:
+        '200':
+          description: Token registered
+
+  /push/unregister:
+    post:
+      summary: Unregister device token
+      operationId: unregisterDeviceToken
+      tags: [Push]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Token unregistered
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Agent:
+      type: object
+      properties:
+        agent_id:
+          type: string
+        name:
+          type: string
+        model:
+          type: string
+        personality:
+          type: string
+        specialty:
+          type: string
+        status:
+          type: string
+          enum: [online, offline, busy, idle]
+
+    Conversation:
+      type: object
+      properties:
+        conversation_id:
+          type: string
+        user_id:
+          type: string
+        agent_id:
+          type: string
+        title:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        last_message:
+          $ref: '#/components/schemas/Message'
+          nullable: true
+        unread_count:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+
+    Message:
+      type: object
+      properties:
+        message_id:
+          type: string
+        conversation_id:
+          type: string
+        sender_type:
+          type: string
+          enum: [user, agent]
+        sender_id:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+        edited:
+          type: boolean
+        deleted:
+          type: boolean
