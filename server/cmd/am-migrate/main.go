@@ -204,6 +204,21 @@ ALTER TABLE messages ADD COLUMN is_deleted BOOLEAN DEFAULT 0;
 -- SQLite doesn't support DROP COLUMN easily; no-op for safety
 `,
 	},
+	{
+		Version: 8,
+		Name:    "rate_limit_tiers_table",
+		UpSQL: `
+CREATE TABLE IF NOT EXISTS user_rate_limit_tiers (
+	user_id TEXT NOT NULL PRIMARY KEY,
+	tier_name TEXT NOT NULL DEFAULT 'free',
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+`,
+		DownSQL: `
+DROP TABLE IF EXISTS user_rate_limit_tiers;
+`,
+	},
 }
 
 func main() {

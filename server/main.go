@@ -109,24 +109,24 @@ func main() {
 	http.HandleFunc("/admin/agents", handleAdminAgents)
 
 	// Conversation endpoints
-	http.HandleFunc("/conversations/create", handleCreateConversation)
-	http.HandleFunc("/conversations/list", handleListConversations)
-	http.HandleFunc("/conversations/messages", handleGetMessages)
-	http.HandleFunc("/conversations/delete", handleDeleteConversation)
-	http.HandleFunc("/conversations/mark-read", handleMarkRead)
+	http.HandleFunc("/conversations/create", tieredRateLimitMiddleware(handleCreateConversation))
+	http.HandleFunc("/conversations/list", tieredRateLimitMiddleware(handleListConversations))
+	http.HandleFunc("/conversations/messages", tieredRateLimitMiddleware(handleGetMessages))
+	http.HandleFunc("/conversations/delete", tieredRateLimitMiddleware(handleDeleteConversation))
+	http.HandleFunc("/conversations/mark-read", tieredRateLimitMiddleware(handleMarkRead))
 
 	// Message endpoints
-	http.HandleFunc("/messages/search", handleSearchMessages)
+	http.HandleFunc("/messages/search", tieredRateLimitMiddleware(handleSearchMessages))
 
-	http.HandleFunc("/messages/edit", handleMessageEdit)
-	http.HandleFunc("/messages/delete", handleMessageDelete)
-	http.HandleFunc("/presence", handleGetPresence)
-	http.HandleFunc("/presence/user", handleGetUserPresence)
-	http.HandleFunc("/messages/react", handleReact)
-	http.HandleFunc("/messages/reactions", handleGetReactions)
-	http.HandleFunc("/conversations/tags/add", handleAddTag)
-	http.HandleFunc("/conversations/tags/remove", handleRemoveTag)
-	http.HandleFunc("/conversations/tags", handleGetTags)
+	http.HandleFunc("/messages/edit", tieredRateLimitMiddleware(handleMessageEdit))
+	http.HandleFunc("/messages/delete", tieredRateLimitMiddleware(handleMessageDelete))
+	http.HandleFunc("/presence", tieredRateLimitMiddleware(handleGetPresence))
+	http.HandleFunc("/presence/user", tieredRateLimitMiddleware(handleGetUserPresence))
+	http.HandleFunc("/messages/react", tieredRateLimitMiddleware(handleReact))
+	http.HandleFunc("/messages/reactions", tieredRateLimitMiddleware(handleGetReactions))
+	http.HandleFunc("/conversations/tags/add", tieredRateLimitMiddleware(handleAddTag))
+	http.HandleFunc("/conversations/tags/remove", tieredRateLimitMiddleware(handleRemoveTag))
+	http.HandleFunc("/conversations/tags", tieredRateLimitMiddleware(handleGetTags))
 
 	// Attachment endpoints
 	http.HandleFunc("/attachments/upload", handleUpload)
@@ -146,6 +146,15 @@ func main() {
 	// Push notification endpoints
 	http.HandleFunc("/push/register", handleRegisterDeviceToken)
 	http.HandleFunc("/push/unregister", handleUnregisterDeviceToken)
+
+	// Admin rate limit tier endpoints
+	http.HandleFunc("/admin/rate-limit/tier", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			handleSetRateLimitTier(w, r)
+		} else {
+			handleGetRateLimitTier(w, r)
+		}
+	})
 
 	// Initialize push notifications
 	initPushNotifications()
@@ -249,6 +258,7 @@ func initSchema(db *sql.DB) error {
 			{5, "e2e_encryption_tables"},
 			{6, "reactions_and_tags_tables"},
 		{7, "message_edit_delete_columns"},
+		{8, "rate_limit_tiers_table"},
 		}
 		for _, m := range inlineMigrations {
 			if currentDriver == DriverPostgreSQL {
@@ -321,6 +331,21 @@ func initSchema(db *sql.DB) error {
 
 	// Create index on conversation_tags.conversation_id for fast lookup
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_tags_conversation ON conversation_tags(conversation_id)")
+
+	// Create user_rate_limit_tiers table for persistent tier storage
+	if _, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS user_rate_limit_tiers (
+			user_id TEXT NOT NULL PRIMARY KEY,
+			tier_name TEXT NOT NULL DEFAULT 'free',
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		);
+	`); err != nil {
+		return err
+	}
+
+	// Load persisted tiers into in-memory limiter
+	loadTiersFromDB(globalTieredLimiter)
 
 	// Migration: agents table no longer requires api_key_hash.
 	// For existing DBs that have the column, it remains but is no longer used.
