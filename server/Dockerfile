@@ -12,7 +12,6 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates wget
 WORKDIR /app
 COPY --from=builder /app/agent-messenger .
-COPY --from=builder /app/deploy/env.example /app/.env.example
 EXPOSE 8080
 VOLUME /data
 ENV DB_DRIVER=sqlite3
