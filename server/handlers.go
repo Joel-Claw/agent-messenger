@@ -313,6 +313,10 @@ func handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	_, err = db.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", userID, username, hash)
 	if err != nil {
+		if isUniqueViolation(err) {
+			writeJSONError(w, http.StatusConflict, "username already exists")
+			return
+		}
 		writeJSONError(w, http.StatusInternalServerError, "failed to register user: "+err.Error())
 		return
 	}

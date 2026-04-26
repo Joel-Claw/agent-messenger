@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -71,6 +72,14 @@ func (rl *RateLimiter) cleanup() {
 }
 
 // writeJSONError writes a JSON error response with the given status code
+// isUniqueViolation checks if the error is a SQLite UNIQUE constraint violation
+func isUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "UNIQUE constraint failed")
+}
+
 func writeJSONError(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
