@@ -18,11 +18,15 @@ export function Login({ onLogin }: LoginProps) {
     setLoading(true);
 
     try {
-      const { login, register } = await import('../services/api');
-      const result = mode === 'login'
-        ? await login(username, password)
-        : await register(username, password);
-      onLogin(result.token, result.user_id);
+      const { login, register: registerUser } = await import('../services/api');
+      if (mode === 'login') {
+        const result = await login(username, password);
+        onLogin(result.token, result.user_id);
+      } else {
+        await registerUser(username, password);
+        const result = await login(username, password);
+        onLogin(result.token, result.user_id);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
