@@ -2,8 +2,10 @@ import React, { useState, useCallback } from 'react';
 import { AgentList } from './components/AgentList';
 import { ChatView } from './components/ChatView';
 import { Login } from './components/Login';
+import { E2ESettings } from './components/E2ESettings';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useConversationHistory } from './hooks/useConversationHistory';
+import { isE2EInitialized } from './services/e2e';
 import type { ServerMessage, Message, Attachment } from './types';
 
 function App() {
@@ -13,6 +15,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [showE2ESettings, setShowE2ESettings] = useState(false);
 
   const handleLogin = (newToken: string, newUserId: string) => {
     setToken(newToken);
@@ -121,9 +124,18 @@ function App() {
       <div style={styles.sidebar}>
         <div style={styles.sidebarHeader}>
           <span style={styles.logo}>Agent Messenger</span>
-          <button onClick={handleLogout} style={styles.logoutButton}>
-            Sign Out
-          </button>
+          <div style={styles.sidebarActions}>
+            <button
+              onClick={() => setShowE2ESettings(true)}
+              style={styles.e2eButton}
+              title="End-to-End Encryption Settings"
+            >
+              {isE2EInitialized() ? '🔒' : '🔓'}
+            </button>
+            <button onClick={handleLogout} style={styles.logoutButton}>
+              Sign Out
+            </button>
+          </div>
         </div>
         <AgentList
           token={token}
@@ -148,6 +160,9 @@ function App() {
           </div>
         )}
       </div>
+      {showE2ESettings && token && (
+        <E2ESettings token={token} onClose={() => setShowE2ESettings(false)} />
+      )}
     </div>
   );
 }
@@ -178,6 +193,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: '0.875rem',
     color: '#58a6ff',
+  },
+  sidebarActions: {
+    display: 'flex',
+    gap: '0.5rem',
+    alignItems: 'center' as const,
+  },
+  e2eButton: {
+    background: 'none',
+    border: 'none',
+    fontSize: '1rem',
+    cursor: 'pointer',
+    padding: '0.125rem 0.25rem',
+    borderRadius: '4px',
   },
   logoutButton: {
     background: 'none',

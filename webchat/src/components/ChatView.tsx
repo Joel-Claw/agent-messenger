@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { AttachmentUpload } from './AttachmentUpload';
 import { AttachmentPreview } from './AttachmentPreview';
 import type { Message, UploadResult } from '../types';
+import { isE2EInitialized } from '../services/e2e';
 
 interface ChatViewProps {
   messages: Message[];
@@ -17,6 +18,7 @@ export function ChatView({ messages, onSend, connected, agentName, isTyping, tok
   const [pendingAttachments, setPendingAttachments] = useState<UploadResult[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [droppedFiles, setDroppedFiles] = useState<File[] | null>(null);
+  const [e2eEnabled, setE2eEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const dropAreaRef = useRef<HTMLDivElement>(null);
 
@@ -84,12 +86,29 @@ export function ChatView({ messages, onSend, connected, agentName, isTyping, tok
     <div style={styles.container}>
       <div style={styles.header}>
         <span style={styles.headerName}>{agentName}</span>
-        <span style={{
-          ...styles.statusText,
-          color: connected ? '#3fb950' : '#f85149',
-        }}>
-          {connected ? '● Connected' : '○ Disconnected'}
-        </span>
+        <div style={styles.headerRight}>
+          {isE2EInitialized() && (
+            <button
+              type="button"
+              onClick={() => setE2eEnabled(v => !v)}
+              style={{
+                ...styles.e2eToggle,
+                backgroundColor: e2eEnabled ? 'rgba(35, 134, 54, 0.2)' : 'transparent',
+                borderColor: e2eEnabled ? '#3fb950' : '#30363d',
+                color: e2eEnabled ? '#3fb950' : '#8b949e',
+              }}
+              title={e2eEnabled ? 'E2E encryption ON' : 'E2E encryption OFF (click to enable)'}
+            >
+              {e2eEnabled ? '🔒' : '🔓'}
+            </button>
+          )}
+          <span style={{
+            ...styles.statusText,
+            color: connected ? '#3fb950' : '#f85149',
+          }}>
+            {connected ? '● Connected' : '○ Disconnected'}
+          </span>
+        </div>
       </div>
 
       <div
@@ -225,6 +244,20 @@ const styles: Record<string, React.CSSProperties> = {
   headerName: {
     fontWeight: 600,
     color: '#e6edf3',
+  },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center' as const,
+    gap: '0.75rem',
+  },
+  e2eToggle: {
+    border: '1px solid',
+    borderRadius: '4px',
+    background: 'none',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    padding: '0.125rem 0.375rem',
+    transition: 'all 0.15s',
   },
   statusText: {
     fontSize: '0.75rem',
