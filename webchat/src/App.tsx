@@ -3,6 +3,7 @@ import { AgentList } from './components/AgentList';
 import { ChatView } from './components/ChatView';
 import { Login } from './components/Login';
 import { E2ESettings } from './components/E2ESettings';
+import { PushSubscription } from './components/PushSubscription';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useConversationHistory } from './hooks/useConversationHistory';
 import { isE2EInitialized } from './services/e2e';
@@ -142,6 +143,10 @@ function App() {
           selectedAgent={selectedAgent}
           onSelectAgent={handleSelectAgent}
         />
+        <div style={styles.sidebarSection}>
+          <div style={styles.sidebarSectionTitle}>Notifications</div>
+          <PushSubscription token={token} />
+        </div>
       </div>
       <div style={styles.main}>
         {selectedAgent ? (
@@ -213,6 +218,18 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#8b949e',
     fontSize: '0.75rem',
     cursor: 'pointer',
+  },
+  sidebarSection: {
+    padding: '0.75rem 1rem',
+    borderTop: '1px solid #30363d',
+  },
+  sidebarSectionTitle: {
+    fontSize: '0.7rem',
+    fontWeight: 600,
+    color: '#6e7681',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+    marginBottom: '0.5rem',
   },
   main: {
     flex: 1,

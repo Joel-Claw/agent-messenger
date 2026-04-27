@@ -224,6 +224,9 @@ func main() {
 	// Push notification endpoints
 	http.HandleFunc("/push/register", handleRegisterDeviceToken)
 	http.HandleFunc("/push/unregister", handleUnregisterDeviceToken)
+	http.HandleFunc("/push/vapid-key", handleGetVAPIDKey)
+	http.HandleFunc("/push/web-subscribe", handleWebPushSubscribe)
+	http.HandleFunc("/push/web-unsubscribe", handleWebPushUnsubscribe)
 
 	// Admin rate limit tier endpoints
 	http.HandleFunc("/admin/rate-limit/tier", func(w http.ResponseWriter, r *http.Request) {
@@ -236,6 +239,12 @@ func main() {
 
 	// Initialize push notifications
 	initPushNotifications()
+
+	// Initialize VAPID public key for web push
+	vapidPublicKey = os.Getenv("VAPID_PUBLIC_KEY")
+	if vapidPublicKey != "" {
+		log.Printf("VAPID public key configured for web push")
+	}
 
 	// Serve WebChat if enabled
 	webchatDir := os.Getenv("WEBCHAT_DIR")

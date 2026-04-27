@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
@@ -361,4 +362,142 @@ func getEnvOrDefault(key, defaultValue string) string {
 		return v
 	}
 	return defaultValue
+}
+
+// --- Web Push (VAPID) Support ---
+
+// vapidPublicKey holds the VAPID public key (set via VAPID_PUBLIC_KEY env)
+var vapidPublicKey string
+
+// handleGetVAPIDKey handles GET /push/vapid-key
+// Returns the VAPID public key for web push subscription
+func handleGetVAPIDKey(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	// Authenticate
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		writeJSONError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+
+	if vapidPublicKey == "" {
+		writeJSONError(w, http.StatusNotFound, "VAPID not configured on server")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"public_key": vapidPublicKey})
+}
+
+// handleWebPushSubscribe handles POST /push/web-subscribe
+// Registers a web push subscription (endpoint + keys) for the authenticated user
+func handleWebPushSubscribe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if len(token) > 7 && token[:7] == "Bearer " {
+		token = token[7:]
+	}
+	claims, err := ValidateJWT(token)
+	if err != nil {
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var req struct {
+		Endpoint string `json:"endpoint"`
+		Keys     struct {
+			P256DH string `json:"p256dh"`
+			Auth   string `json:"auth"`
+		} `json:"keys"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Endpoint == "" || req.Keys.P256DH == "" || req.Keys.Auth == "" {
+		writeJSONError(w, http.StatusBadRequest, "endpoint, p256dh, and auth keys are required")
+		return
+	}
+
+	// Store as a device token with platform "web"
+	// Use endpoint as the token identifier
+	_, err = db.Exec(`
+		INSERT OR REPLACE INTO device_tokens (user_id, device_token, platform, created_at)
+		VALUES (?, ?, 'web', ?)
+	`, claims.UserID, req.Endpoint, time.Now().UTC())
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "failed to store subscription")
+		return
+	}
+
+	// Also store the encryption keys in a separate table for web push
+	// (needed to encrypt payloads with the subscription keys)
+	db.Exec(`CREATE TABLE IF NOT EXISTS web_push_subscriptions (
+		user_id TEXT NOT NULL,
+		endpoint TEXT NOT NULL UNIQUE,
+		p256dh TEXT NOT NULL,
+		auth TEXT NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`)
+
+	_, err = db.Exec(`
+		INSERT OR REPLACE INTO web_push_subscriptions (user_id, endpoint, p256dh, auth, created_at)
+		VALUES (?, ?, ?, ?, ?)
+	`, claims.UserID, req.Endpoint, req.Keys.P256DH, req.Keys.Auth, time.Now().UTC())
+	if err != nil {
+		log.Printf("Warning: failed to store web push keys: %v", err)
+		// Non-fatal — the device token is already registered
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "subscribed"})
+}
+
+// handleWebPushUnsubscribe handles POST /push/web-unsubscribe
+// Removes a web push subscription
+func handleWebPushUnsubscribe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if len(token) > 7 && token[:7] == "Bearer " {
+		token = token[7:]
+	}
+	claims, err := ValidateJWT(token)
+	if err != nil {
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var req struct {
+		Endpoint string `json:"endpoint"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Endpoint == "" {
+		writeJSONError(w, http.StatusBadRequest, "endpoint is required")
+		return
+	}
+
+	db.Exec("DELETE FROM device_tokens WHERE user_id = ? AND device_token = ? AND platform = 'web'", claims.UserID, req.Endpoint)
+	db.Exec("DELETE FROM web_push_subscriptions WHERE user_id = ? AND endpoint = ?", claims.UserID, req.Endpoint)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "unsubscribed"})
 }
