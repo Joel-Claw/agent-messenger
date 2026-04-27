@@ -41,6 +41,9 @@ type Connection struct {
 	send     chan []byte
 	// connectedAt tracks when this connection was established
 	connectedAt time.Time
+	// lastHeartbeat tracks the last time the agent sent a heartbeat message
+	// Only meaningful for agent connections when agent presence heartbeat is enabled
+	lastHeartbeat time.Time
 	// status is the agent's current availability ("online", "busy", "idle")
 	// Only meaningful for agent connections
 	status string
@@ -49,6 +52,15 @@ type Connection struct {
 // Hub manages all active connections
 // offlineQueue buffers messages for disconnected clients/agents.
 var offlineQueue *OfflineQueue
+
+// agentPresenceInterval is how often agents should send heartbeats (configurable via AGENT_HEARTBEAT_INTERVAL env)
+var agentPresenceInterval = 30 * time.Second
+
+// agentPresenceTimeout is how long before an agent without heartbeats is considered stale (configurable via AGENT_HEARTBEAT_TIMEOUT env)
+var agentPresenceTimeout = 90 * time.Second
+
+// agentPresenceEnabled controls whether agent presence heartbeat monitoring is active (configurable via AGENT_HEARTBEAT_ENABLED env)
+var agentPresenceEnabled = false
 
 // Hub manages all active connections
 type Hub struct {
@@ -62,11 +74,14 @@ type Hub struct {
 
 	// counters for metrics
 	messagesRouted int64
+
+	// staleAgents counts how many agents have been disconnected for missed heartbeats
+	staleAgents int64
 }
 
 func newHub() *Hub {
 	offlineQueue = newOfflineQueue(100, 7*24*time.Hour) // 100 msgs per user, 7 day TTL
-	return &Hub{
+	h := &Hub{
 		agents:     make(map[string]*Connection),
 		clientConns: make(map[string][]*Connection),
 		register:   make(chan *Connection),
@@ -74,6 +89,10 @@ func newHub() *Hub {
 		broadcast:  make(chan []byte),
 		done:       make(chan struct{}),
 	}
+	if agentPresenceEnabled {
+		go h.monitorAgentHeartbeats()
+	}
+	return h
 }
 
 func (h *Hub) run() {
@@ -85,6 +104,9 @@ func (h *Hub) run() {
 		case conn := <-h.register:
 			h.mu.Lock()
 			if conn.connType == "agent" {
+				// Set initial heartbeat timestamp on connect
+				conn.lastHeartbeat = time.Now()
+
 				// Replace existing agent connection if any
 				if old, ok := h.agents[conn.id]; ok {
 					log.Printf("Agent %s reconnecting, closing old connection", conn.id)
@@ -172,6 +194,62 @@ func (h *Hub) run() {
 // Stop signals the hub to stop running.
 func (h *Hub) Stop() {
 	close(h.done)
+}
+
+// monitorAgentHeartbeats periodically checks agent connections for stale heartbeats
+// and disconnects agents that haven't sent a heartbeat within the timeout period.
+func (h *Hub) monitorAgentHeartbeats() {
+	if agentPresenceInterval == 0 {
+		return
+	}
+
+	ticker := time.NewTicker(agentPresenceInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-h.done:
+			return
+		case <-ticker.C:
+			h.checkStaleAgents()
+		}
+	}
+}
+
+// checkStaleAgents disconnects agents that have not sent a heartbeat within the timeout.
+// It sends stale connections through the unregister channel for proper cleanup.
+func (h *Hub) checkStaleAgents() {
+	now := time.Now()
+	var staleConns []*Connection
+
+	h.mu.RLock()
+	for id, conn := range h.agents {
+		if now.Sub(conn.lastHeartbeat) > agentPresenceTimeout {
+			log.Printf("Agent %s heartbeat stale (last: %v, timeout: %v), disconnecting", id, conn.lastHeartbeat, agentPresenceTimeout)
+			h.staleAgents++
+			staleConns = append(staleConns, conn)
+		}
+	}
+	h.mu.RUnlock()
+
+	// Unregister stale connections through the hub's normal cleanup path
+	for _, conn := range staleConns {
+		h.unregister <- conn
+	}
+}
+
+// TouchHeartbeat updates the last heartbeat timestamp for a connection.
+func (h *Hub) TouchHeartbeat(conn *Connection) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	conn.lastHeartbeat = time.Now()
+}
+
+// StaleAgentCount returns the total number of agents disconnected for missed heartbeats.
+func (h *Hub) StaleAgentCount() int64 {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.staleAgents
 }
 
 // GetAgent returns a connection for a given agent ID

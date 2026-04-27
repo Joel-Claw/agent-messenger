@@ -70,5 +70,11 @@ func (m *Metrics) Snapshot() map[string]interface{} {
 			}
 			return 0
 		}(),
+		"agent_heartbeat": map[string]interface{}{
+			"enabled":     agentPresenceEnabled,
+			"interval_s":  int(agentPresenceInterval.Seconds()),
+			"timeout_s":   int(agentPresenceTimeout.Seconds()),
+			"stale_agents": hub.StaleAgentCount(),
+		},
 	}
 }

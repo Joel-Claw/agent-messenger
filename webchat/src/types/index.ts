@@ -22,7 +22,31 @@ export interface Message {
   content: string;
   timestamp: string;
   type: 'text' | 'typing' | 'status';
+  attachment_ids?: string[];
+  attachments?: Attachment[];
 }
+
+export interface Attachment {
+  id: string;
+  filename: string;
+  content_type: string;
+  size: number;
+  sha256: string;
+  url: string;
+  created_at: string;
+}
+
+export interface UploadResult {
+  id: string;
+  filename: string;
+  content_type: string;
+  size: number;
+  sha256: string;
+  url: string;
+  created_at: string;
+}
+
+export type UploadStatus = 'idle' | 'uploading' | 'done' | 'error';
 
 export interface ServerMessage {
   type: string;

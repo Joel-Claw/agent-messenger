@@ -16,11 +16,19 @@ import (
 )
 
 const (
-	// MaxUploadSize is the maximum file upload size (50 MB)
+	// MaxUploadSize is the maximum file upload size (default 50 MB, can be overridden via MAX_UPLOAD_SIZE env)
 	MaxUploadSize = 50 << 20
 	// UploadSubdir is the subdirectory under DB_PATH parent for uploads
 	UploadSubdir = "uploads"
 )
+
+// maxUploadSize holds the effective upload size limit (initialized from env in main)
+var maxUploadSize int64 = MaxUploadSize
+
+// getMaxUploadSize returns the effective upload size limit
+func getMaxUploadSize() int64 {
+	return maxUploadSize
+}
 
 // Attachment represents a stored file attachment
 type Attachment struct {
@@ -69,10 +77,10 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Limit request body size
-	r.Body = http.MaxBytesReader(w, r.Body, MaxUploadSize)
+	r.Body = http.MaxBytesReader(w, r.Body, getMaxUploadSize())
 
 	// Parse multipart form
-	if err := r.ParseMultipartForm(MaxUploadSize); err != nil {
+	if err := r.ParseMultipartForm(getMaxUploadSize()); err != nil {
 		writeJSONError(w, http.StatusBadRequest, "file too large or invalid form data")
 		return
 	}
@@ -85,8 +93,8 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	// Validate file size
-	if header.Size > MaxUploadSize {
-		writeJSONError(w, http.StatusBadRequest, fmt.Sprintf("file too large (max %d MB)", MaxUploadSize/(1<<20)))
+	if header.Size > getMaxUploadSize() {
+		writeJSONError(w, http.StatusBadRequest, fmt.Sprintf("file too large (max %d MB)", getMaxUploadSize()/(1<<20)))
 		return
 	}
 

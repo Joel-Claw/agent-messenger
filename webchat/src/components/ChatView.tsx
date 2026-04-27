@@ -1,28 +1,76 @@
-import React, { useState, useRef, useEffect } from 'react';
-import type { Message } from '../types';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { AttachmentUpload } from './AttachmentUpload';
+import { AttachmentPreview } from './AttachmentPreview';
+import type { Message, UploadResult } from '../types';
 
 interface ChatViewProps {
   messages: Message[];
-  onSend: (content: string) => void;
+  onSend: (content: string, attachmentIds?: string[]) => void;
   connected: boolean;
   agentName: string;
   isTyping: boolean;
+  token: string;
 }
 
-export function ChatView({ messages, onSend, connected, agentName, isTyping }: ChatViewProps) {
+export function ChatView({ messages, onSend, connected, agentName, isTyping, token }: ChatViewProps) {
   const [input, setInput] = useState('');
+  const [pendingAttachments, setPendingAttachments] = useState<UploadResult[]>([]);
+  const [dragOver, setDragOver] = useState(false);
+  const [droppedFiles, setDroppedFiles] = useState<File[] | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const dropAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
+  const handleAttachmentUploaded = (result: UploadResult) => {
+    setPendingAttachments(prev => [...prev, result]);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !connected) return;
-    onSend(input.trim());
+    if ((!input.trim() && pendingAttachments.length === 0) || !connected) return;
+
+    const attachmentIds = pendingAttachments.map(a => a.id);
+    onSend(input.trim() || '📎', attachmentIds.length > 0 ? attachmentIds : undefined);
     setInput('');
+    setPendingAttachments([]);
   };
+
+  const handleRemovePendingAttachment = (id: string) => {
+    setPendingAttachments(prev => prev.filter(a => a.id !== id));
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dropAreaRef.current && !dropAreaRef.current.contains(e.relatedTarget as Node)) {
+      setDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+
+    if (!connected) return;
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    setDroppedFiles(Array.from(files));
+  }, [connected]);
+
+  const handleDropsConsumed = useCallback(() => {
+    setDroppedFiles(null);
+  }, []);
 
   const formatTime = (timestamp: string) => {
     try {
@@ -44,7 +92,22 @@ export function ChatView({ messages, onSend, connected, agentName, isTyping }: C
         </span>
       </div>
 
-      <div style={styles.messages}>
+      <div
+        ref={dropAreaRef}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        style={{
+          ...styles.messages,
+          ...(dragOver ? styles.dragOver : {}),
+        }}
+      >
+        {dragOver && (
+          <div style={styles.dropOverlay}>
+            <div style={styles.dropIcon}>📎</div>
+            <div style={styles.dropText}>Drop files to attach</div>
+          </div>
+        )}
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -57,7 +120,20 @@ export function ChatView({ messages, onSend, connected, agentName, isTyping }: C
               ...styles.messageBubble,
               ...(msg.sender === 'user' ? styles.userBubble : styles.agentBubble),
             }}>
-              <div style={styles.messageText}>{msg.content}</div>
+              {msg.attachments && msg.attachments.length > 0 && (
+                <div style={styles.attachmentsContainer}>
+                  {msg.attachments.map(att => (
+                    <AttachmentPreview
+                      key={att.id}
+                      attachment={att}
+                      token={token}
+                    />
+                  ))}
+                </div>
+              )}
+              {msg.content && msg.content !== '📎' && (
+                <div style={styles.messageText}>{msg.content}</div>
+              )}
               <div style={styles.messageTime}>{formatTime(msg.timestamp)}</div>
             </div>
           </div>
@@ -76,7 +152,37 @@ export function ChatView({ messages, onSend, connected, agentName, isTyping }: C
         <div ref={messagesEndRef} />
       </div>
 
+      {pendingAttachments.length > 0 && (
+        <div style={styles.pendingBar}>
+          {pendingAttachments.map(att => (
+            <div key={att.id} style={styles.pendingChip}>
+              <span style={styles.pendingChipIcon}>
+                {att.content_type.startsWith('image/') ? '🖼' : '📎'}
+              </span>
+              <span style={styles.pendingChipName}>
+                {att.filename.length > 12 ? att.filename.slice(0, 10) + '…' : att.filename}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRemovePendingAttachment(att.id)}
+                style={styles.pendingChipRemove}
+                aria-label="Remove attachment"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} style={styles.inputBar}>
+        <AttachmentUpload
+          token={token}
+          onUploaded={handleAttachmentUploaded}
+          disabled={!connected}
+          droppedFiles={droppedFiles}
+          onDropsConsumed={handleDropsConsumed}
+        />
         <input
           type="text"
           value={input}
@@ -87,10 +193,10 @@ export function ChatView({ messages, onSend, connected, agentName, isTyping }: C
         />
         <button
           type="submit"
-          disabled={!connected || !input.trim()}
+          disabled={!connected || (!input.trim() && pendingAttachments.length === 0)}
           style={{
             ...styles.sendButton,
-            opacity: connected && input.trim() ? 1 : 0.5,
+            opacity: connected && (input.trim() || pendingAttachments.length > 0) ? 1 : 0.5,
           }}
         >
           Send
@@ -130,6 +236,31 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '0.5rem',
+    position: 'relative' as const,
+  },
+  dragOver: {
+    backgroundColor: 'rgba(88, 166, 255, 0.05)',
+  },
+  dropOverlay: {
+    position: 'absolute' as const,
+    inset: 0,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    backgroundColor: 'rgba(13, 17, 23, 0.85)',
+    borderRadius: '8px',
+    zIndex: 10,
+    pointerEvents: 'none' as const,
+  },
+  dropIcon: {
+    fontSize: '2.5rem',
+    marginBottom: '0.5rem',
+  },
+  dropText: {
+    fontSize: '1rem',
+    color: '#58a6ff',
+    fontWeight: 500,
   },
   messageRow: {
     display: 'flex',
@@ -152,6 +283,9 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#e6edf3',
     borderBottomLeftRadius: '4px',
   },
+  attachmentsContainer: {
+    marginBottom: '0.25rem',
+  },
   messageText: {
     whiteSpace: 'pre-wrap' as const,
   },
@@ -171,8 +305,46 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#8b949e',
     animation: 'blink 1.4s infinite both',
   },
+  pendingBar: {
+    display: 'flex',
+    gap: '0.375rem',
+    padding: '0.5rem 0.75rem',
+    borderTop: '1px solid #30363d',
+    backgroundColor: '#161b22',
+    flexWrap: 'wrap' as const,
+  },
+  pendingChip: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.25rem',
+    padding: '0.25rem 0.5rem',
+    backgroundColor: '#21262d',
+    borderRadius: '12px',
+    fontSize: '0.75rem',
+    color: '#e6edf3',
+    border: '1px solid #30363d',
+  },
+  pendingChipIcon: {
+    fontSize: '0.75rem',
+  },
+  pendingChipName: {
+    maxWidth: '80px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis' as const,
+    whiteSpace: 'nowrap' as const,
+  },
+  pendingChipRemove: {
+    background: 'none',
+    border: 'none',
+    color: '#8b949e',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    padding: '0 0.125rem',
+    lineHeight: 1,
+  },
   inputBar: {
     display: 'flex',
+    alignItems: 'center',
     gap: '0.5rem',
     padding: '0.75rem',
     borderTop: '1px solid #30363d',

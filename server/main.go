@@ -10,6 +10,8 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -19,6 +21,46 @@ import (
 
 // serverDBPath holds the database path for use by other modules (e.g. upload dir)
 var serverDBPath string
+
+// parseSize parses a human-readable size string (e.g., "50MB", "100M", "1GB") into bytes.
+// Supports B, KB, MB, GB, TB suffixes (case-insensitive). Bare numbers are treated as bytes.
+func parseSize(s string) (int64, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0, fmt.Errorf("empty size")
+	}
+
+	upper := strings.ToUpper(s)
+
+	// Try to parse as plain number (bytes)
+	if v, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return v, nil
+	}
+
+	multipliers := []struct {
+		suffix string
+		mult   int64
+	}{
+		{"TB", 1 << 40},
+		{"GB", 1 << 30},
+		{"MB", 1 << 20},
+		{"KB", 1 << 10},
+		{"B", 1},
+	}
+
+	for _, m := range multipliers {
+		if strings.HasSuffix(upper, m.suffix) {
+			numStr := strings.TrimSpace(strings.TrimSuffix(upper, m.suffix))
+			v, err := strconv.ParseFloat(numStr, 64)
+			if err != nil {
+				return 0, fmt.Errorf("invalid size: %s", s)
+			}
+			return int64(v * float64(m.mult)), nil
+		}
+	}
+
+	return 0, fmt.Errorf("invalid size format: %s (use B, KB, MB, GB, TB)", s)
+}
 
 func main() {
 	// Command-line flags
@@ -84,6 +126,42 @@ func main() {
 	// Create tables
 	if err := initSchema(db); err != nil {
 		log.Fatal(err)
+	}
+
+	// Configure max upload size from environment
+	if v := os.Getenv("MAX_UPLOAD_SIZE"); v != "" {
+		size, err := parseSize(v)
+		if err != nil {
+			log.Printf("Invalid MAX_UPLOAD_SIZE %q, using default %d MB: %v", v, MaxUploadSize/(1<<20), err)
+		} else {
+			maxUploadSize = size
+			log.Printf("Max upload size set to %d MB", maxUploadSize/(1<<20))
+		}
+	}
+
+	// Configure agent presence heartbeat from environment (before hub init)
+	if os.Getenv("AGENT_HEARTBEAT_ENABLED") == "true" {
+		agentPresenceEnabled = true
+		if v := os.Getenv("AGENT_HEARTBEAT_INTERVAL"); v != "" {
+			if d, err := time.ParseDuration(v); err == nil && d > 0 {
+				agentPresenceInterval = d
+			} else {
+				log.Printf("Invalid AGENT_HEARTBEAT_INTERVAL %q, using default %v", v, agentPresenceInterval)
+			}
+		}
+		if v := os.Getenv("AGENT_HEARTBEAT_TIMEOUT"); v != "" {
+			if d, err := time.ParseDuration(v); err == nil && d > 0 {
+				agentPresenceTimeout = d
+			} else {
+				log.Printf("Invalid AGENT_HEARTBEAT_TIMEOUT %q, using default %v", v, agentPresenceTimeout)
+			}
+		}
+		// Timeout must be >= 2x interval to avoid false positives
+		if agentPresenceTimeout < agentPresenceInterval*2 {
+			agentPresenceTimeout = agentPresenceInterval * 2
+			log.Printf("AGENT_HEARTBEAT_TIMEOUT too low, adjusted to %v (2x interval)", agentPresenceTimeout)
+		}
+		log.Printf("Agent presence heartbeat enabled: interval=%v, timeout=%v", agentPresenceInterval, agentPresenceTimeout)
 	}
 
 	// Initialize hub

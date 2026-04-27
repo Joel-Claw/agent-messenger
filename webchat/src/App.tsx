@@ -4,7 +4,7 @@ import { ChatView } from './components/ChatView';
 import { Login } from './components/Login';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useConversationHistory } from './hooks/useConversationHistory';
-import type { ServerMessage, Message } from './types';
+import type { ServerMessage, Message, Attachment } from './types';
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('am_token'));
@@ -54,6 +54,7 @@ function App() {
           content: msg.content || '',
           timestamp: msg.timestamp || new Date().toISOString(),
           type: 'text',
+          ...(msg.data?.attachments ? { attachments: msg.data.attachments as Attachment[] } : {}),
         }]);
         break;
       case 'typing':
@@ -84,7 +85,7 @@ function App() {
     setConversationId(null);
   };
 
-  const handleSend = (content: string) => {
+  const handleSend = (content: string, attachmentIds?: string[]) => {
     if (!selectedAgent) return;
 
     const localMsg: Message = {
@@ -94,6 +95,7 @@ function App() {
       content,
       timestamp: new Date().toISOString(),
       type: 'text',
+      ...(attachmentIds && attachmentIds.length > 0 ? { attachment_ids: attachmentIds } : {}),
     };
     setMessages(prev => [...prev, localMsg]);
 
@@ -103,6 +105,7 @@ function App() {
         agent_id: selectedAgent,
         content,
         ...(conversationId ? { conversation_id: conversationId } : {}),
+        ...(attachmentIds && attachmentIds.length > 0 ? { attachment_ids: attachmentIds } : {}),
       },
     });
 
@@ -136,6 +139,7 @@ function App() {
             connected={connected}
             agentName={selectedAgent}
             isTyping={isTyping}
+            token={token}
           />
         ) : (
           <div style={styles.empty}>

@@ -3,16 +3,18 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"time"
 )
 
 // Message types
 const (
-	MsgTypeMessage  = "message"
-	MsgTypeTyping   = "typing"
+	MsgTypeMessage   = "message"
+	MsgTypeTyping    = "typing"
 	MsgTypeStatus   = "status"
 	MsgTypeError    = "error"
 	MsgTypeHistReq  = "history_request"
 	MsgTypeHistResp = "history_response"
+	MsgTypeHeartbeat = "heartbeat"
 )
 
 // RoutedMessage is the internal message structure for routing
@@ -48,6 +50,8 @@ func routeMessage(sender *Connection, raw []byte) {
 		routeTypingIndicator(sender, msg.Data)
 	case MsgTypeStatus:
 		routeStatusUpdate(sender, msg.Data)
+	case MsgTypeHeartbeat:
+		routeHeartbeat(sender)
 	default:
 		log.Printf("Unknown message type %q from %s %s", msg.Type, sender.connType, sender.id)
 		sendError(sender, "unknown message type: "+msg.Type)
@@ -319,4 +323,28 @@ func truncate(s string, maxLen int) string {
 		return s[:maxLen]
 	}
 	return s[:maxLen-3] + "..."
+}
+
+// routeHeartbeat handles a heartbeat message from an agent.
+// It updates the agent's lastHeartbeat timestamp and sends an ack back.
+// Clients can also send heartbeats (they are accepted but only agent
+// heartbeats are monitored for stale disconnection).
+func routeHeartbeat(sender *Connection) {
+	sender.hub.TouchHeartbeat(sender)
+
+	// Send heartbeat acknowledgment
+	ack := OutgoingMessage{
+		Type: "heartbeat_ack",
+		Data: map[string]interface{}{
+			"server_time":  time.Now().UTC().Format(time.RFC3339Nano),
+			"interval_s":   int(agentPresenceInterval.Seconds()),
+			"timeout_s":    int(agentPresenceTimeout.Seconds()),
+			"monitoring":   agentPresenceEnabled,
+		},
+	}
+	ackData, _ := json.Marshal(ack)
+	select {
+	case sender.send <- ackData:
+	default:
+	}
 }
