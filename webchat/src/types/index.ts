@@ -7,12 +7,20 @@ export interface Agent {
   status: 'online' | 'offline' | 'busy' | 'idle';
 }
 
+export interface LastMessage {
+  content: string;
+  sender_type: string;
+  created_at: string;
+}
+
 export interface Conversation {
   id: string;
   user_id: string;
   agent_id: string;
   created_at: string;
   updated_at: string;
+  last_message?: LastMessage;
+  unread_count?: number;
 }
 
 export interface Reaction {

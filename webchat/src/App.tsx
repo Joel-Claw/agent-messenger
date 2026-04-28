@@ -1,22 +1,57 @@
 import React, { useState, useCallback } from 'react';
 import { AgentList } from './components/AgentList';
 import { ChatView } from './components/ChatView';
+import { ConversationList } from './components/ConversationList';
 import { Login } from './components/Login';
 import { E2ESettings } from './components/E2ESettings';
 import { PushSubscription } from './components/PushSubscription';
 import { useWebSocket } from './hooks/useWebSocket';
-import { useConversationHistory } from './hooks/useConversationHistory';
+import { getConversations, getMessages } from './services/api';
 import { isE2EInitialized } from './services/e2e';
-import type { ServerMessage, Message, Attachment } from './types';
+import type { ServerMessage, Message, Agent, Reaction, Conversation, Attachment } from './types';
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('am_token'));
   const [userId, setUserId] = useState<string | null>(localStorage.getItem('am_user_id'));
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [showE2ESettings, setShowE2ESettings] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+
+  const refreshConversations = useCallback(async () => {
+    if (!token) return;
+    try {
+      const convs = await getConversations(token);
+      setConversations(convs || []);
+    } catch {
+      // silently ignore
+    }
+  }, [token]);
+
+  const loadConversationMessages = useCallback(async (convId: string) => {
+    if (!token) return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rawMsgs: any[] = await getMessages(token, convId);
+      setMessages(rawMsgs.map((m: any): Message => ({
+        id: m.id as string,
+        conversation_id: (m.conversation_id as string) || '',
+        sender: (m.sender_type === 'client' ? 'user' : 'agent') as Message['sender'],
+        content: (m.content as string) || '',
+        timestamp: (m.created_at as string) || (m.timestamp as string) || '',
+        type: 'text' as const,
+        edited_at: (m.edited_at as string) || undefined,
+        is_deleted: (m.is_deleted as boolean) || undefined,
+        read_at: (m.read_at as string) || undefined,
+        reactions: (m.reactions as Reaction[]) || undefined,
+      })));
+    } catch {
+      // silently ignore
+    }
+  }, [token]);
 
   const handleLogin = (newToken: string, newUserId: string) => {
     setToken(newToken);
@@ -31,16 +66,10 @@ function App() {
     setSelectedAgent(null);
     setMessages([]);
     setConversationId(null);
+    setConversations([]);
     localStorage.removeItem('am_token');
     localStorage.removeItem('am_user_id');
   };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _ = useConversationHistory({
-    token,
-    selectedAgent,
-    connected: false,
-  });
 
   const handleMessage = useCallback((msg: ServerMessage) => {
     switch (msg.type) {
@@ -48,6 +77,27 @@ function App() {
         if (msg.conversation_id) {
           setConversationId(msg.conversation_id);
         }
+        // Update local message with server-assigned ID and timestamp
+        if (msg.message_id) {
+          setMessages(prev => {
+            // Find the last user message that still has a local ID
+            const idx = [...prev].reverse().findIndex(m => m.sender === 'user' && m.id.startsWith('user-'));
+            if (idx !== -1) {
+              const realIdx = prev.length - 1 - idx;
+              const updated = [...prev];
+              updated[realIdx] = {
+                ...updated[realIdx],
+                id: msg.message_id!,
+                timestamp: msg.timestamp || updated[realIdx].timestamp,
+                conversation_id: msg.conversation_id || updated[realIdx].conversation_id,
+              };
+              return updated;
+            }
+            return prev;
+          });
+        }
+        // Refresh conversation list after new message
+        refreshConversations();
         break;
       case 'agent_message':
         setIsTyping(false);
@@ -60,6 +110,7 @@ function App() {
           type: 'text',
           ...(msg.data?.attachments ? { attachments: msg.data.attachments as Attachment[] } : {}),
         }]);
+        refreshConversations();
         break;
       case 'typing':
         setIsTyping(msg.data?.typing as boolean ?? false);
@@ -68,6 +119,7 @@ function App() {
         if (msg.conversation_id) {
           setConversationId(msg.conversation_id);
         }
+        refreshConversations();
         break;
       case 'reaction_added': {
         const rxA = msg.data as { message_id: string; emoji: string; user_id: string };
@@ -133,12 +185,13 @@ function App() {
         break;
       case 'connected':
         console.log('[WebChat] Connected to server');
+        refreshConversations();
         break;
       case 'error':
         console.error('[WebChat] Server error:', msg.data);
         break;
     }
-  }, []);
+  }, [refreshConversations]);
 
   const { connected, send } = useWebSocket({
     token,
@@ -149,6 +202,12 @@ function App() {
     setSelectedAgent(agentId);
     setMessages([]);
     setConversationId(null);
+  };
+
+  const handleSelectConversation = (convId: string, agentId: string) => {
+    setSelectedAgent(agentId);
+    setConversationId(convId);
+    loadConversationMessages(convId);
   };
 
   const handleSend = (content: string, attachmentIds?: string[]) => {
@@ -205,7 +264,17 @@ function App() {
           token={token}
           selectedAgent={selectedAgent}
           onSelectAgent={handleSelectAgent}
+          onAgentsLoaded={setAgents}
         />
+        <div style={styles.sidebarSection}>
+          <div style={styles.sidebarSectionTitle}>Chats</div>
+          <ConversationList
+            token={token}
+            agents={agents}
+            selectedConversationId={conversationId}
+            onSelectConversation={handleSelectConversation}
+          />
+        </div>
         <div style={styles.sidebarSection}>
           <div style={styles.sidebarSectionTitle}>Notifications</div>
           <PushSubscription token={token} />
@@ -249,7 +318,7 @@ const styles: Record<string, React.CSSProperties> = {
   sidebar: {
     display: 'flex',
     flexDirection: 'column' as const,
-    width: '240px',
+    width: '280px',
     backgroundColor: '#161b22',
     borderRight: '1px solid #30363d',
   },
@@ -286,7 +355,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   sidebarSection: {
-    padding: '0.75rem 1rem',
+    padding: '0.5rem 1rem 0.75rem',
     borderTop: '1px solid #30363d',
   },
   sidebarSectionTitle: {
@@ -295,7 +364,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#6e7681',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.5px',
-    marginBottom: '0.5rem',
+    marginBottom: '0.25rem',
   },
   main: {
     flex: 1,

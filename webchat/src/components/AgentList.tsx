@@ -6,9 +6,10 @@ interface AgentListProps {
   token: string;
   selectedAgent: string | null;
   onSelectAgent: (agentId: string) => void;
+  onAgentsLoaded?: (agents: Agent[]) => void;
 }
 
-export function AgentList({ token, selectedAgent, onSelectAgent }: AgentListProps) {
+export function AgentList({ token, selectedAgent, onSelectAgent, onAgentsLoaded }: AgentListProps) {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [presence, setPresence] = useState<Record<string, AgentPresence>>({});
   const [loading, setLoading] = useState(true);
@@ -19,6 +20,7 @@ export function AgentList({ token, selectedAgent, onSelectAgent }: AgentListProp
       try {
         const data = await getAgents(token);
         setAgents(data);
+        onAgentsLoaded?.(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load agents');
       } finally {
