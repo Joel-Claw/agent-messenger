@@ -25,16 +25,17 @@ const (
 
 // StoredMessage represents a persisted message
 type StoredMessage struct {
-	ID             string     `json:"id"`
-	ConversationID string     `json:"conversation_id"`
-	SenderType     string     `json:"sender_type"`
-	SenderID       string     `json:"sender_id"`
-	Content        string     `json:"content"`
-	Metadata       string     `json:"metadata,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
-	ReadAt         *time.Time `json:"read_at,omitempty"`
-	EditedAt       *time.Time `json:"edited_at,omitempty"`
-	IsDeleted      bool       `json:"is_deleted"`
+	ID             string           `json:"id"`
+	ConversationID string           `json:"conversation_id"`
+	SenderType     string           `json:"sender_type"`
+	SenderID       string           `json:"sender_id"`
+	Content        string           `json:"content"`
+	Metadata       string           `json:"metadata,omitempty"`
+	CreatedAt      time.Time        `json:"created_at"`
+	ReadAt         *time.Time       `json:"read_at,omitempty"`
+	EditedAt       *time.Time       `json:"edited_at,omitempty"`
+	IsDeleted      bool             `json:"is_deleted"`
+	Reactions      []MessageReaction `json:"reactions,omitempty"`
 }
 
 // getConversation fetches a conversation by ID
@@ -99,6 +100,11 @@ func getConversationMessages(convID string, limit int) ([]StoredMessage, error) 
 		var m StoredMessage
 		if err := rows.Scan(&m.ID, &m.ConversationID, &m.SenderType, &m.SenderID, &m.Content, &m.Metadata, &m.CreatedAt, &m.ReadAt, &m.EditedAt, &m.IsDeleted); err != nil {
 			return nil, err
+		}
+		// Load reactions for this message
+		reactions, err := getMessageReactions(m.ID)
+		if err == nil && len(reactions) > 0 {
+			m.Reactions = reactions
 		}
 		messages = append(messages, m)
 	}

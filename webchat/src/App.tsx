@@ -35,12 +35,12 @@ function App() {
     localStorage.removeItem('am_user_id');
   };
 
-  const { conversations, activeConversationId, loadHistory, loading: historyLoading } =
-    useConversationHistory({
-      token,
-      selectedAgent,
-      connected: false, // will be set below
-    });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _ = useConversationHistory({
+    token,
+    selectedAgent,
+    connected: false,
+  });
 
   const handleMessage = useCallback((msg: ServerMessage) => {
     switch (msg.type) {
@@ -69,6 +69,68 @@ function App() {
           setConversationId(msg.conversation_id);
         }
         break;
+      case 'reaction_added': {
+        const rxA = msg.data as { message_id: string; emoji: string; user_id: string };
+        if (rxA?.message_id) {
+          setMessages(prev => prev.map(m => {
+            if (m.id !== rxA.message_id) return m;
+            const reactions = [...(m.reactions || [])];
+            const existingIdx = reactions.findIndex(r => r.user_id === rxA.user_id && r.emoji === rxA.emoji);
+            if (existingIdx === -1) {
+              reactions.push({
+                id: `rxn-${Date.now()}`,
+                message_id: rxA.message_id,
+                user_id: rxA.user_id,
+                emoji: rxA.emoji,
+                created_at: new Date().toISOString(),
+              });
+            }
+            return { ...m, reactions };
+          }));
+        }
+        break;
+      }
+      case 'reaction_removed': {
+        const rxR = msg.data as { message_id: string; emoji: string; user_id: string };
+        if (rxR?.message_id) {
+          setMessages(prev => prev.map(m => {
+            if (m.id !== rxR.message_id) return m;
+            const reactions = (m.reactions || []).filter(r => !(r.user_id === rxR.user_id && r.emoji === rxR.emoji));
+            return { ...m, reactions };
+          }));
+        }
+        break;
+      }
+      case 'message_edited': {
+        const edit = msg.data as { message_id: string; content: string; edited_at: string };
+        if (edit?.message_id) {
+          setMessages(prev => prev.map(m =>
+            m.id === edit.message_id ? { ...m, content: edit.content, edited_at: edit.edited_at } : m
+          ));
+        }
+        break;
+      }
+      case 'message_deleted': {
+        const del = msg.data as { message_id: string };
+        if (del?.message_id) {
+          setMessages(prev => prev.map(m =>
+            m.id === del.message_id ? { ...m, content: '[deleted]', is_deleted: true } : m
+          ));
+        }
+        break;
+      }
+      case 'read_receipt': {
+        const receipt = msg.data as { message_id: string; conversation_id: string };
+        if (receipt?.message_id) {
+          setMessages(prev => prev.map(m =>
+            m.id === receipt.message_id ? { ...m, read_at: new Date().toISOString() } : m
+          ));
+        }
+        break;
+      }
+      case 'presence_update':
+        // Handled by AgentList component via polling
+        break;
       case 'connected':
         console.log('[WebChat] Connected to server');
         break;
@@ -92,8 +154,9 @@ function App() {
   const handleSend = (content: string, attachmentIds?: string[]) => {
     if (!selectedAgent) return;
 
+    const localId = `user-${Date.now()}`;
     const localMsg: Message = {
-      id: `user-${Date.now()}`,
+      id: localId,
       conversation_id: conversationId || '',
       sender: 'user',
       content,
@@ -157,6 +220,9 @@ function App() {
             agentName={selectedAgent}
             isTyping={isTyping}
             token={token}
+            userId={userId}
+            conversationId={conversationId}
+            onMessagesChange={setMessages}
           />
         ) : (
           <div style={styles.empty}>

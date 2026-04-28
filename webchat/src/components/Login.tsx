@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import type { Agent } from '../types';
 
 interface LoginProps {
   onLogin: (token: string, userId: string) => void;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getConversations, getMessages } from '../services/api';
-import type { Conversation, Message } from '../types';
+import type { Conversation, Message, Reaction } from '../types';
 
 interface UseConversationHistoryOptions {
   token: string | null;
@@ -39,8 +39,20 @@ export function useConversationHistory({
       const existing = convs.find(c => c.agent_id === selectedAgent);
       if (existing) {
         setActiveConversationId(existing.id);
-        const msgs = await getMessages(token, existing.id);
-        setMessages(msgs);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawMsgs: any[] = await getMessages(token, existing.id);
+        setMessages(rawMsgs.map((m: any): Message => ({
+          id: m.id as string,
+          conversation_id: (m.conversation_id as string) || '',
+          sender: (m.sender_type === 'client' ? 'user' : 'agent') as Message['sender'],
+          content: (m.content as string) || '',
+          timestamp: (m.created_at as string) || (m.timestamp as string) || '',
+          type: 'text' as const,
+          edited_at: (m.edited_at as string) || undefined,
+          is_deleted: (m.is_deleted as boolean) || undefined,
+          read_at: (m.read_at as string) || undefined,
+          reactions: (m.reactions as Reaction[]) || undefined,
+        })));
       } else {
         setActiveConversationId(null);
         setMessages([]);

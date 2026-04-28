@@ -15,6 +15,14 @@ export interface Conversation {
   updated_at: string;
 }
 
+export interface Reaction {
+  id: string;
+  message_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+}
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -24,6 +32,10 @@ export interface Message {
   type: 'text' | 'typing' | 'status';
   attachment_ids?: string[];
   attachments?: Attachment[];
+  edited_at?: string;
+  is_deleted?: boolean;
+  read_at?: string;
+  reactions?: Reaction[];
 }
 
 export interface Attachment {
@@ -56,11 +68,20 @@ export interface ServerMessage {
   agent_id?: string;
   message_id?: string;
   timestamp?: string;
+  emoji?: string;
 }
 
 export interface AuthResponse {
   token: string;
   user_id: string;
+}
+
+export interface AgentPresence {
+  id: string;
+  name: string;
+  online: boolean;
+  status: string;
+  last_seen?: string;
 }
 
 export interface AgentListResponse {
