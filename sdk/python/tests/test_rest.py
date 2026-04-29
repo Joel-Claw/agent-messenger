@@ -276,8 +276,36 @@ class TestPush:
             _mock_response({"status": "unregistered"}),
         ]
         client = RestClient("http://localhost:8080", "token")
-        client.register_device_token(RegisterPushRequest(token="device-123", platform="fcm"))
-        client.unregister_device_token(UnregisterPushRequest(token="device-123"))
+        client.register_device_token(RegisterPushRequest(device_token="device-123", platform="android"))
+        client.unregister_device_token(UnregisterPushRequest(device_token="device-123"))
+
+    @patch("agent_messenger.rest.urlopen")
+    def test_get_vapid_key(self, mock_urlopen):
+        mock_urlopen.return_value = _mock_response({"public_key": "BPxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"})
+        client = RestClient("http://localhost:8080", "token")
+        result = client.get_vapid_key()
+        assert result.public_key == "BPxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+    @patch("agent_messenger.rest.urlopen")
+    def test_web_push_subscribe(self, mock_urlopen):
+        mock_urlopen.return_value = _mock_response({"status": "subscribed"})
+        client = RestClient("http://localhost:8080", "token")
+        from agent_messenger.types import WebPushSubscribeRequest
+        result = client.web_push_subscribe(WebPushSubscribeRequest(
+            endpoint="https://push.example.com/sub/123",
+            keys={"p256dh": "key1", "auth": "auth1"},
+        ))
+        assert result.status == "subscribed"
+
+    @patch("agent_messenger.rest.urlopen")
+    def test_web_push_unsubscribe(self, mock_urlopen):
+        mock_urlopen.return_value = _mock_response({"status": "unsubscribed"})
+        client = RestClient("http://localhost:8080", "token")
+        from agent_messenger.types import WebPushUnsubscribeRequest
+        result = client.web_push_unsubscribe(WebPushUnsubscribeRequest(
+            endpoint="https://push.example.com/sub/123",
+        ))
+        assert result.status == "unsubscribed"
 
 
 class TestHealth:

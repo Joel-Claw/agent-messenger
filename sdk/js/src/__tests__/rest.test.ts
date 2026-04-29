@@ -296,8 +296,47 @@ describe('RestClient', () => {
       ]);
       (client as any).fetchImpl = mockFn;
 
-      await client.registerDeviceToken({ token: 'device-token-123', platform: 'fcm' });
-      await client.unregisterDeviceToken({ token: 'device-token-123' });
+      await client.registerDeviceToken({ device_token: 'device-token-123', platform: 'android' });
+      await client.unregisterDeviceToken({ device_token: 'device-token-123' });
+    });
+
+    it('should get VAPID key', async () => {
+      const { fetch: mockFn, calls } = mockFetch([
+        { status: 200, body: JSON.stringify({ public_key: 'BPxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' }) },
+      ]);
+      (client as any).fetchImpl = mockFn;
+
+      const result = await client.getVAPIDKey();
+      expect(result.public_key).toBe('BPxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+      expect(calls[0].method).toBe('GET');
+      expect(calls[0].url).toContain('/push/vapid-key');
+    });
+
+    it('should subscribe to web push', async () => {
+      const { fetch: mockFn, calls } = mockFetch([
+        { status: 200, body: JSON.stringify({ status: 'subscribed' }) },
+      ]);
+      (client as any).fetchImpl = mockFn;
+
+      const result = await client.webPushSubscribe({
+        endpoint: 'https://push.example.com/sub/123',
+        keys: { p256dh: 'key1', auth: 'auth1' },
+      });
+      expect(result.status).toBe('subscribed');
+      expect(calls[0].method).toBe('POST');
+      expect(calls[0].url).toContain('/push/web-subscribe');
+    });
+
+    it('should unsubscribe from web push', async () => {
+      const { fetch: mockFn, calls } = mockFetch([
+        { status: 200, body: JSON.stringify({ status: 'unsubscribed' }) },
+      ]);
+      (client as any).fetchImpl = mockFn;
+
+      const result = await client.webPushUnsubscribe({ endpoint: 'https://push.example.com/sub/123' });
+      expect(result.status).toBe('unsubscribed');
+      expect(calls[0].method).toBe('POST');
+      expect(calls[0].url).toContain('/push/web-unsubscribe');
     });
   });
 

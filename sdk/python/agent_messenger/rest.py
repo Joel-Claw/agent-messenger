@@ -41,6 +41,11 @@ from .types import (
     UploadKeyBundleRequest,
     UnregisterPushRequest,
     RegisterPushRequest,
+    VAPIDKeyResponse,
+    WebPushSubscribeRequest,
+    WebPushSubscribeResponse,
+    WebPushUnsubscribeRequest,
+    WebPushUnsubscribeResponse,
 )
 
 
@@ -345,11 +350,32 @@ class RestClient:
 
     def register_device_token(self, req: RegisterPushRequest) -> Dict[str, Any]:
         """Register a device token for push notifications."""
-        return self._post("/push/register", {"token": req.token, "platform": req.platform})
+        payload = {"device_token": req.device_token, "platform": req.platform}
+        if req.device_id:
+            payload["device_id"] = req.device_id
+        return self._post("/push/register", payload)
 
     def unregister_device_token(self, req: UnregisterPushRequest) -> Dict[str, Any]:
         """Unregister a device token."""
-        return self._post("/push/unregister", {"token": req.token})
+        return self._post("/push/unregister", {"device_token": req.device_token})
+
+    def get_vapid_key(self) -> VAPIDKeyResponse:
+        """Get the VAPID public key for web push subscription."""
+        data = self._get("/push/vapid-key")
+        return VAPIDKeyResponse(public_key=data["public_key"])
+
+    def web_push_subscribe(self, req: WebPushSubscribeRequest) -> WebPushSubscribeResponse:
+        """Subscribe to web push notifications."""
+        data = self._post("/push/web-subscribe", {
+            "endpoint": req.endpoint,
+            "keys": req.keys,
+        })
+        return WebPushSubscribeResponse(status=data["status"])
+
+    def web_push_unsubscribe(self, req: WebPushUnsubscribeRequest) -> WebPushUnsubscribeResponse:
+        """Unsubscribe from web push notifications."""
+        data = self._post("/push/web-unsubscribe", {"endpoint": req.endpoint})
+        return WebPushUnsubscribeResponse(status=data["status"])
 
     # ─── Admin ─────────────────────────────────────────────────────────────
 

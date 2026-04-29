@@ -232,13 +232,43 @@ class EncryptedMessage:
 
 @dataclass
 class RegisterPushRequest:
-    token: str
-    platform: str  # "apns" or "fcm"
+    device_token: str
+    platform: str  # "ios", "android", or "web"
+    device_id: Optional[str] = None
 
 
 @dataclass
 class UnregisterPushRequest:
-    token: str
+    device_token: str
+
+
+# ─── Web Push ────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class WebPushSubscribeRequest:
+    endpoint: str
+    keys: Dict[str, str]  # {"p256dh": "...", "auth": "..."}
+
+
+@dataclass
+class WebPushUnsubscribeRequest:
+    endpoint: str
+
+
+@dataclass
+class VAPIDKeyResponse:
+    public_key: str
+
+
+@dataclass
+class WebPushSubscribeResponse:
+    status: str
+
+
+@dataclass
+class WebPushUnsubscribeResponse:
+    status: str
 
 
 # ─── Rate Limiting ────────────────────────────────────────────────────────────

@@ -31,6 +31,11 @@ import type {
   Tag,
   TagRequest,
   UnregisterPushRequest,
+  VAPIDKeyResponse,
+  WebPushSubscribeRequest,
+  WebPushSubscribeResponse,
+  WebPushUnsubscribeRequest,
+  WebPushUnsubscribeResponse,
   UploadAttachmentResponse,
   UploadKeyBundleRequest,
 } from './types';
@@ -296,6 +301,24 @@ export class RestClient {
   /** Unregister a device token */
   async unregisterDeviceToken(req: UnregisterPushRequest): Promise<{ status: string }> {
     const res = await this.request('POST', '/push/unregister', JSON.stringify(req), { 'Content-Type': 'application/json' });
+    return res.json();
+  }
+
+  /** Get the VAPID public key for web push subscription */
+  async getVAPIDKey(): Promise<VAPIDKeyResponse> {
+    const res = await this.request('GET', '/push/vapid-key');
+    return res.json();
+  }
+
+  /** Subscribe to web push notifications */
+  async webPushSubscribe(req: WebPushSubscribeRequest): Promise<WebPushSubscribeResponse> {
+    const res = await this.request('POST', '/push/web-subscribe', JSON.stringify(req), { 'Content-Type': 'application/json' });
+    return res.json();
+  }
+
+  /** Unsubscribe from web push notifications */
+  async webPushUnsubscribe(req: WebPushUnsubscribeRequest): Promise<WebPushUnsubscribeResponse> {
+    const res = await this.request('POST', '/push/web-unsubscribe', JSON.stringify(req), { 'Content-Type': 'application/json' });
     return res.json();
   }
 

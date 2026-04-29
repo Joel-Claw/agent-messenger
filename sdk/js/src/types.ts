@@ -199,13 +199,39 @@ export interface StoreEncryptedMessageRequest {
 // ─── Push ───────────────────────────────────────────────────────────────────
 
 export interface RegisterPushRequest {
-  token: string;
-  platform: 'apns' | 'fcm';
+  device_token: string;
+  platform: 'ios' | 'android' | 'web';
   device_id?: string;
 }
 
 export interface UnregisterPushRequest {
-  token: string;
+  device_token: string;
+}
+
+// ─── Web Push ────────────────────────────────────────────────────────────────
+
+export interface WebPushSubscribeRequest {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
+export interface WebPushUnsubscribeRequest {
+  endpoint: string;
+}
+
+export interface VAPIDKeyResponse {
+  public_key: string;
+}
+
+export interface WebPushSubscribeResponse {
+  status: string;
+}
+
+export interface WebPushUnsubscribeResponse {
+  status: string;
 }
 
 // ─── Rate Limiting ──────────────────────────────────────────────────────────
