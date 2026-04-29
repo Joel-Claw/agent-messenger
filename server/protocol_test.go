@@ -145,3 +145,41 @@ func TestUpgradeWithProtocolHeader(t *testing.T) {
 		t.Fatalf("expected Sec-WebSocket-Protocol 'v1', got %q", header)
 	}
 }
+
+func TestWebSocketOriginCheckAllowedOrigin(t *testing.T) {
+	originalOrigins := corsAllowedOrigins
+	corsAllowedOrigins = "https://app.example.com,https://chat.example.com"
+	defer func() { corsAllowedOrigins = originalOrigins }()
+
+	// Allowed origin
+	req := httptest.NewRequest(http.MethodGet, "/agent/connect", nil)
+	req.Header.Set("Origin", "https://app.example.com")
+	if !upgrader.CheckOrigin(req) {
+		t.Error("Expected allowed origin to pass CheckOrigin")
+	}
+
+	// Disallowed origin
+	req2 := httptest.NewRequest(http.MethodGet, "/agent/connect", nil)
+	req2.Header.Set("Origin", "https://evil.example.com")
+	if upgrader.CheckOrigin(req2) {
+		t.Error("Expected disallowed origin to fail CheckOrigin")
+	}
+
+	// No Origin header (non-browser client)
+	req3 := httptest.NewRequest(http.MethodGet, "/agent/connect", nil)
+	if !upgrader.CheckOrigin(req3) {
+		t.Error("Expected no Origin header to pass CheckOrigin")
+	}
+}
+
+func TestWebSocketOriginCheckWildcard(t *testing.T) {
+	originalOrigins := corsAllowedOrigins
+	corsAllowedOrigins = "*"
+	defer func() { corsAllowedOrigins = originalOrigins }()
+
+	req := httptest.NewRequest(http.MethodGet, "/agent/connect", nil)
+	req.Header.Set("Origin", "https://any.example.com")
+	if !upgrader.CheckOrigin(req) {
+		t.Error("Expected wildcard to allow any origin")
+	}
+}

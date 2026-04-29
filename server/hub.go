@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -26,8 +27,20 @@ const (
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		// TODO: Restrict origins in production
-		return true
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return true // Non-browser clients (no Origin header) are allowed
+		}
+		if corsAllowedOrigins == "*" {
+			return true
+		}
+		for _, allowed := range strings.Split(corsAllowedOrigins, ",") {
+			allowed = strings.TrimSpace(allowed)
+			if allowed == origin || allowed == "*" {
+				return true
+			}
+		}
+		return false
 	},
 }
 

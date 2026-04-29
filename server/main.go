@@ -22,6 +22,9 @@ import (
 // serverDBPath holds the database path for use by other modules (e.g. upload dir)
 var serverDBPath string
 
+// ServerVersion is the current server version, included in health/metrics responses.
+var ServerVersion = "0.1.0"
+
 // parseSize parses a human-readable size string (e.g., "50MB", "100M", "1GB") into bytes.
 // Supports B, KB, MB, GB, TB suffixes (case-insensitive). Bare numbers are treated as bytes.
 func parseSize(s string) (int64, error) {

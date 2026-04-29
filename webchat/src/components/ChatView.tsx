@@ -42,6 +42,16 @@ export function ChatView({
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [emojiPickerMsgId, setEmojiPickerMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
+
+  // Track whether user is near bottom of the chat
+  const handleScroll = useCallback(() => {
+    const el = dropAreaRef.current;
+    if (el) {
+      const threshold = 80;
+      isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+    }
+  }, []);
   const dropAreaRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -68,7 +78,10 @@ export function ChatView({
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Only auto-scroll if user is near the bottom
+    if (isNearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, isTyping]);
 
   const handleAttachmentUploaded = (result: UploadResult) => {
@@ -83,6 +96,7 @@ export function ChatView({
     onSend(input.trim() || '📎', attachmentIds.length > 0 ? attachmentIds : undefined);
     setInput('');
     setPendingAttachments([]);
+    isNearBottomRef.current = true; // Force scroll after sending
   };
 
   const handleRemovePendingAttachment = (id: string) => {
@@ -259,6 +273,7 @@ export function ChatView({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onScroll={handleScroll}
         style={{
           ...styles.messages,
           ...(dragOver ? styles.dragOver : {}),

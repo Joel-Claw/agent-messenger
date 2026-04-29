@@ -169,6 +169,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 		snapshot = make(map[string]interface{})
 	}
 	snapshot["status"] = "ok"
+	snapshot["version"] = ServerVersion
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(snapshot)
