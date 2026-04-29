@@ -27,6 +27,26 @@ export function PushSubscription({ token }: PushSubscriptionProps) {
         setSubscribed(!!sub);
       }).catch(() => {});
     }
+
+    // Listen for push subscription change events from service worker
+    const handleSWMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'push-subscription-change') {
+        // The subscription changed, try to re-subscribe
+        setSubscribed(false);
+        // Auto-re-subscribe after a short delay
+        setTimeout(() => subscribe(), 1000);
+      }
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSWMessage);
+    }
+
+    return () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+      }
+    };
   }, []);
 
   const subscribe = useCallback(async () => {

@@ -898,15 +898,18 @@ paths:
           application/json:
             schema:
               type: object
-              required: [token, platform]
+              required: [device_token, platform]
               properties:
-                token:
+                device_token:
                   type: string
+                  description: Device push notification token (APNs device token or FCM registration token)
                 platform:
                   type: string
-                  enum: [apns, fcm]
+                  enum: [ios, android, web]
+                  description: Target platform for push routing
                 device_id:
                   type: string
+                  description: Optional device identifier for multi-device support
       responses:
         '200':
           description: Token registered
@@ -931,6 +934,107 @@ paths:
       responses:
         '200':
           description: Token unregistered
+
+  /push/vapid-key:
+    get:
+      summary: Get VAPID public key for web push subscription
+      operationId: getVAPIDKey
+      tags: [Push]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: VAPID public key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  public_key:
+                    type: string
+                    description: Base64-encoded VAPID public key
+        '404':
+          description: VAPID not configured on server
+        '401':
+          description: Unauthorized
+
+  /push/web-subscribe:
+    post:
+      summary: Subscribe to web push notifications
+      operationId: webPushSubscribe
+      tags: [Push]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint, keys]
+              properties:
+                endpoint:
+                  type: string
+                  description: Push subscription endpoint URL
+                keys:
+                  type: object
+                  required: [p256dh, auth]
+                  properties:
+                    p256dh:
+                      type: string
+                      description: Client public key for ECDH key agreement
+                    auth:
+                      type: string
+                      description: Auth secret for payload encryption
+      responses:
+        '200':
+          description: Subscription registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: subscribed
+        '400':
+          description: Missing required fields
+        '401':
+          description: Unauthorized
+
+  /push/web-unsubscribe:
+    post:
+      summary: Unsubscribe from web push notifications
+      operationId: webPushUnsubscribe
+      tags: [Push]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint]
+              properties:
+                endpoint:
+                  type: string
+                  description: Push subscription endpoint URL to remove
+      responses:
+        '200':
+          description: Subscription removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: unsubscribed
+        '400':
+          description: Missing endpoint
+        '401':
+          description: Unauthorized
 
   /messages/encrypted:
     post:

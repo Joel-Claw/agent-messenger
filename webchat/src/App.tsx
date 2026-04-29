@@ -6,7 +6,8 @@ import { Login } from './components/Login';
 import { E2ESettings } from './components/E2ESettings';
 import { PushSubscription } from './components/PushSubscription';
 import { useWebSocket } from './hooks/useWebSocket';
-import { getConversations, getMessages } from './services/api';
+import { getConversations, getMessages, markConversationRead } from './services/api';
+import { playNotificationSound, showDesktopNotification } from './services/notify';
 import { isE2EInitialized } from './services/e2e';
 import type { ServerMessage, Message, Agent, Reaction, Conversation, Attachment } from './types';
 
@@ -101,6 +102,13 @@ function App() {
         break;
       case 'agent_message':
         setIsTyping(false);
+        // Play notification sound and show desktop notification
+        playNotificationSound();
+        showDesktopNotification(
+          'Agent Messenger',
+          msg.content ? msg.content.slice(0, 80) + (msg.content.length > 80 ? '…' : '') : 'New message',
+          msg.conversation_id || undefined
+        );
         setMessages(prev => [...prev, {
           id: msg.message_id || `agent-${Date.now()}`,
           conversation_id: msg.conversation_id || '',
@@ -208,6 +216,10 @@ function App() {
     setSelectedAgent(agentId);
     setConversationId(convId);
     loadConversationMessages(convId);
+    // Mark conversation as read immediately on selection
+    if (token) {
+      markConversationRead(token, convId).catch(() => {});
+    }
   };
 
   const handleSend = (content: string, attachmentIds?: string[]) => {

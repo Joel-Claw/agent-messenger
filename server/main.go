@@ -172,70 +172,72 @@ func main() {
 	ServerMetrics = NewMetrics(hub)
 
 	// Set up routes
+	// WebSocket endpoints (no CORS — handled by upgrade protocol)
 	http.HandleFunc("/agent/connect", handleAgentConnect)
 	http.HandleFunc("/client/connect", handleClientConnect)
-	http.HandleFunc("/health", handleHealth)
-	http.HandleFunc("/metrics", handleMetrics)
+
+	// REST endpoints (with CORS middleware for WebChat/SDK cross-origin access)
+	http.HandleFunc("/health", corsMiddleware(handleHealth))
+	http.HandleFunc("/metrics", corsMiddleware(handleMetrics))
 
 	// Auth endpoints
-	http.HandleFunc("/auth/login", handleLogin)
-	http.HandleFunc("/auth/agent", handleRegisterAgent)
-	http.HandleFunc("/auth/user", handleRegisterUser)
+	http.HandleFunc("/auth/login", corsMiddleware(handleLogin))
+	http.HandleFunc("/auth/agent", corsMiddleware(handleRegisterAgent))
+	http.HandleFunc("/auth/user", corsMiddleware(handleRegisterUser))
 
 	// Agent endpoints
-	http.HandleFunc("/agents", handleListAgents)
-	http.HandleFunc("/admin/agents", handleAdminAgents)
+	http.HandleFunc("/agents", corsMiddleware(handleListAgents))
+	http.HandleFunc("/admin/agents", corsMiddleware(handleAdminAgents))
 
 	// Conversation endpoints
-	http.HandleFunc("/conversations/create", tieredRateLimitMiddleware(handleCreateConversation))
-	http.HandleFunc("/conversations/list", tieredRateLimitMiddleware(handleListConversations))
-	http.HandleFunc("/conversations/messages", tieredRateLimitMiddleware(handleGetMessages))
-	http.HandleFunc("/conversations/delete", tieredRateLimitMiddleware(handleDeleteConversation))
-	http.HandleFunc("/conversations/mark-read", tieredRateLimitMiddleware(handleMarkRead))
+	http.HandleFunc("/conversations/create", corsMiddleware(tieredRateLimitMiddleware(handleCreateConversation)))
+	http.HandleFunc("/conversations/list", corsMiddleware(tieredRateLimitMiddleware(handleListConversations)))
+	http.HandleFunc("/conversations/messages", corsMiddleware(tieredRateLimitMiddleware(handleGetMessages)))
+	http.HandleFunc("/conversations/delete", corsMiddleware(tieredRateLimitMiddleware(handleDeleteConversation)))
+	http.HandleFunc("/conversations/mark-read", corsMiddleware(tieredRateLimitMiddleware(handleMarkRead)))
 
 	// Message endpoints
-	http.HandleFunc("/messages/search", tieredRateLimitMiddleware(handleSearchMessages))
-
-	http.HandleFunc("/messages/edit", tieredRateLimitMiddleware(handleMessageEdit))
-	http.HandleFunc("/messages/delete", tieredRateLimitMiddleware(handleMessageDelete))
-	http.HandleFunc("/presence", tieredRateLimitMiddleware(handleGetPresence))
-	http.HandleFunc("/presence/user", tieredRateLimitMiddleware(handleGetUserPresence))
-	http.HandleFunc("/messages/react", tieredRateLimitMiddleware(handleReact))
-	http.HandleFunc("/messages/reactions", tieredRateLimitMiddleware(handleGetReactions))
-	http.HandleFunc("/conversations/tags/add", tieredRateLimitMiddleware(handleAddTag))
-	http.HandleFunc("/conversations/tags/remove", tieredRateLimitMiddleware(handleRemoveTag))
-	http.HandleFunc("/conversations/tags", tieredRateLimitMiddleware(handleGetTags))
+	http.HandleFunc("/messages/search", corsMiddleware(tieredRateLimitMiddleware(handleSearchMessages)))
+	http.HandleFunc("/messages/edit", corsMiddleware(tieredRateLimitMiddleware(handleMessageEdit)))
+	http.HandleFunc("/messages/delete", corsMiddleware(tieredRateLimitMiddleware(handleMessageDelete)))
+	http.HandleFunc("/presence", corsMiddleware(tieredRateLimitMiddleware(handleGetPresence)))
+	http.HandleFunc("/presence/user", corsMiddleware(tieredRateLimitMiddleware(handleGetUserPresence)))
+	http.HandleFunc("/messages/react", corsMiddleware(tieredRateLimitMiddleware(handleReact)))
+	http.HandleFunc("/messages/reactions", corsMiddleware(tieredRateLimitMiddleware(handleGetReactions)))
+	http.HandleFunc("/conversations/tags/add", corsMiddleware(tieredRateLimitMiddleware(handleAddTag)))
+	http.HandleFunc("/conversations/tags/remove", corsMiddleware(tieredRateLimitMiddleware(handleRemoveTag)))
+	http.HandleFunc("/conversations/tags", corsMiddleware(tieredRateLimitMiddleware(handleGetTags)))
 
 	// Attachment endpoints
-	http.HandleFunc("/attachments/upload", handleUpload)
-	http.HandleFunc("/attachments/", handleGetAttachment)
-	http.HandleFunc("/messages/attachments", handleListAttachments)
+	http.HandleFunc("/attachments/upload", corsMiddleware(handleUpload))
+	http.HandleFunc("/attachments/", corsMiddleware(handleGetAttachment))
+	http.HandleFunc("/messages/attachments", corsMiddleware(handleListAttachments))
 
 	// E2E encryption endpoints
-	http.HandleFunc("/keys/upload", handleUploadPublicKey)
-	http.HandleFunc("/keys/bundle", handleGetKeyBundle)
-	http.HandleFunc("/keys/otpk-count", handleListOneTimePreKeys)
-	http.HandleFunc("/messages/encrypted", handleStoreEncryptedMessage)
-	http.HandleFunc("/messages/encrypted/list", handleGetEncryptedMessages)
+	http.HandleFunc("/keys/upload", corsMiddleware(handleUploadPublicKey))
+	http.HandleFunc("/keys/bundle", corsMiddleware(handleGetKeyBundle))
+	http.HandleFunc("/keys/otpk-count", corsMiddleware(handleListOneTimePreKeys))
+	http.HandleFunc("/messages/encrypted", corsMiddleware(handleStoreEncryptedMessage))
+	http.HandleFunc("/messages/encrypted/list", corsMiddleware(handleGetEncryptedMessages))
 
 	// Auth endpoints (extended)
-	http.HandleFunc("/auth/change-password", handleChangePassword)
+	http.HandleFunc("/auth/change-password", corsMiddleware(handleChangePassword))
 
 	// Push notification endpoints
-	http.HandleFunc("/push/register", handleRegisterDeviceToken)
-	http.HandleFunc("/push/unregister", handleUnregisterDeviceToken)
-	http.HandleFunc("/push/vapid-key", handleGetVAPIDKey)
-	http.HandleFunc("/push/web-subscribe", handleWebPushSubscribe)
-	http.HandleFunc("/push/web-unsubscribe", handleWebPushUnsubscribe)
+	http.HandleFunc("/push/register", corsMiddleware(handleRegisterDeviceToken))
+	http.HandleFunc("/push/unregister", corsMiddleware(handleUnregisterDeviceToken))
+	http.HandleFunc("/push/vapid-key", corsMiddleware(handleGetVAPIDKey))
+	http.HandleFunc("/push/web-subscribe", corsMiddleware(handleWebPushSubscribe))
+	http.HandleFunc("/push/web-unsubscribe", corsMiddleware(handleWebPushUnsubscribe))
 
 	// Admin rate limit tier endpoints
-	http.HandleFunc("/admin/rate-limit/tier", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/admin/rate-limit/tier", corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			handleSetRateLimitTier(w, r)
 		} else {
 			handleGetRateLimitTier(w, r)
 		}
-	})
+	}))
 
 	// Initialize push notifications
 	initPushNotifications()

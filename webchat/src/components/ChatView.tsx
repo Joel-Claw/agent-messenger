@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { AttachmentUpload } from './AttachmentUpload';
 import { AttachmentPreview } from './AttachmentPreview';
 import { toggleReaction, editMessage, deleteMessage, markConversationRead } from '../services/api';
+import { playNotificationSound, showDesktopNotification } from '../services/notify';
 import type { Message, UploadResult } from '../types';
 import { isE2EInitialized } from '../services/e2e';
 
@@ -182,6 +183,33 @@ export function ChatView({
     }
   };
 
+  const formatDateSeparator = (timestamp: string): string | null => {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const diffDays = Math.floor((today.getTime() - messageDate.getTime()) / (86400000));
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Yesterday';
+      return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    } catch {
+      return null;
+    }
+  };
+
+  const shouldShowDateSeparator = (messages: Message[], index: number): string | null => {
+    if (index === 0) {
+      return formatDateSeparator(messages[0].timestamp);
+    }
+    const prevDate = new Date(messages[index - 1].timestamp).toDateString();
+    const currDate = new Date(messages[index].timestamp).toDateString();
+    if (prevDate !== currDate) {
+      return formatDateSeparator(messages[index].timestamp);
+    }
+    return null;
+  };
+
   const groupReactions = (reactions: Message['reactions']) => {
     if (!reactions || reactions.length === 0) return [];
     const map = new Map<string, { emoji: string; count: number; includesMe: boolean }>();
@@ -242,18 +270,24 @@ export function ChatView({
             <div style={styles.dropText}>Drop files to attach</div>
           </div>
         )}
-        {messages.map((msg) => {
+        {messages.map((msg, idx) => {
           const reactionGroups = groupReactions(msg.reactions);
           const isEditing = editingMessageId === msg.id;
+          const dateSeparator = shouldShowDateSeparator(messages, idx);
 
           return (
-            <div
-              key={msg.id}
-              style={{
-                ...styles.messageRow,
-                justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-              }}
-            >
+            <React.Fragment key={msg.id}>
+              {dateSeparator && (
+                <div style={styles.dateSeparator}>
+                  <span style={styles.dateSeparatorText}>{dateSeparator}</span>
+                </div>
+              )}
+              <div
+                style={{
+                  ...styles.messageRow,
+                  justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                }}
+              >
               <div
                 style={{
                   ...styles.messageBubble,
@@ -353,6 +387,7 @@ export function ChatView({
                 </div>
               )}
             </div>
+            </React.Fragment>
           );
         })}
         {isTyping && (
@@ -555,6 +590,21 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'flex-start' as const,
     gap: '0.25rem',
     position: 'relative' as const,
+  },
+  dateSeparator: {
+    display: 'flex',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    margin: '0.75rem 0',
+    gap: '0.75rem',
+  },
+  dateSeparatorText: {
+    fontSize: '0.7rem',
+    color: '#6e7681',
+    backgroundColor: '#0d1117',
+    padding: '0.125rem 0.5rem',
+    borderRadius: '8px',
+    border: '1px solid #21262d',
   },
   messageBubble: {
     maxWidth: '70%',

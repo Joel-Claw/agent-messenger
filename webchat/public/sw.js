@@ -48,15 +48,14 @@ self.addEventListener('notificationclick', (event) => {
 
 self.addEventListener('pushsubscriptionchange', (event) => {
   // Re-subscribe when subscription changes (e.g., VAPID key rotation)
-  event.waitUntil(
-    self.registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: self.registration.pushManager,
-    }).then(() => {
-      // The app will need to re-register with server on next visit
-      console.log('[SW] Push subscription renewed');
-    }).catch((err) => {
-      console.error('[SW] Failed to renew push subscription:', err);
-    })
-  );
+  // We can't re-subscribe here without the VAPID key, so we just
+  // notify the client app to re-register. The app will handle
+  // re-subscription on next visit.
+  console.log('[SW] Push subscription changed, client app should re-register');
+  // Notify all clients that the subscription changed
+  self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    for (const client of clientList) {
+      client.postMessage({ type: 'push-subscription-change' });
+    }
+  });
 });
