@@ -34,7 +34,7 @@ Your AI assistant gets its own dedicated app. Users open Agent Messenger, pick a
 
 ### Server (Go)
 
-WebSocket server with SQLite persistence. 101 tests passing.
+WebSocket server with SQLite persistence. 279 tests passing.
 
 - JWT user authentication (register, login, token validation)
 - Shared AGENT_SECRET authentication for agents (self-register on connect)
@@ -42,13 +42,23 @@ WebSocket server with SQLite persistence. 101 tests passing.
 - Conversation management (create, list, message history with pagination)
 - Multi-agent support (agents register with name, model, personality, specialty)
 - Agent status tracking (online, busy, idle, offline)
-- Push notifications via APNs (iOS) and FCM (Android)
-- Rate limiting (messages per minute)
+- Push notifications via APNs (iOS), FCM (Android), and Web Push (VAPID)
+- CORS middleware for cross-origin requests (configurable origins)
+- Rate limiting tiers (free/pro/enterprise, per-user, DB-persisted)
+- Message edit/delete with soft delete and edit tracking
+- Emoji reactions on messages (toggle, list, WebSocket events)
+- Conversation tags (add/remove/list)
+- User presence (online/offline/last-seen, WebSocket events)
+- WebSocket sub-protocol versioning
+- Multi-device sync (same user, multiple connections)
+- E2E encryption support (X3DH key exchange, AES-256-GCM)
+- File attachments with configurable upload size
 - Health check and Prometheus-compatible metrics endpoints
 - Graceful shutdown (SIGINT/SIGTERM with 10s drain)
 - WebChat serving (WEBCHAT_ENABLED + WEBCHAT_DIR)
 - Admin CLI for agent/user management
 - Graceful reconnection with connection replacement
+- Agent presence heartbeat with configurable interval/timeout
 
 ### OpenClaw Plugin (TypeScript)
 
@@ -67,9 +77,19 @@ Native channel plugin for OpenClaw. Agents register as contacts, messages flow b
 Browser-based client for desktop users.
 
 - Login form with JWT storage
-- Agent list with status indicators
-- Chat view with message bubbles and typing indicator
-- Conversation history loading
+- Agent list with status indicators and presence polling
+- Chat view with message bubbles, typing indicator, date separators
+- Conversation list sidebar with unread badges and message preview
+- Message edit/delete with context menu
+- Emoji reactions with picker and reaction chips
+- E2E encryption toggle (X25519 key exchange, AES-256-GCM)
+- File attachment upload with drag-and-drop and preview
+- Push notification subscription (VAPID web push)
+- Notification sounds on agent messages (Web Audio API)
+- Desktop notification support
+- Smart auto-scroll (only scrolls when near bottom)
+- Read receipts (✓/✓✓) and auto mark-as-read on selection
+- Conversation tags
 - Dark mode (CoreScope theme)
 
 ### iOS App (Swift + SwiftUI)
@@ -178,7 +198,9 @@ Agents connect via WebSocket to `/agent/connect?agent_id=<id>&agent_secret=<secr
 
 | Component | Tests | Status |
 |-----------|-------|--------|
-| Go server | 101 | All passing |
+| Go server | 279 | All passing |
+| JS SDK | 43 | All passing |
+| Python SDK | 50 | All passing |
 | Linux app (Python) | 40 unit + 17 integration | All passing |
 | OpenClaw plugin (TS) | 50 | All passing |
 | Android (Kotlin) | 13 unit | All passing |
@@ -203,10 +225,14 @@ Server starts on `:8080` by default. SQLite database is created automatically.
 | `JWT_SECRET` | (required) | Secret for JWT signing |
 | `WEBCHAT_ENABLED` | `false` | Enable serving the web client |
 | `WEBCHAT_DIR` | `../webchat/build` | Path to WebChat build directory |
+| `CORS_ALLOWED_ORIGINS` | `*` | Comma-separated allowed origins (use `*` for dev) |
+| `MAX_UPLOAD_SIZE` | `10MB` | Max file upload size (supports B/KB/MB/GB/TB) |
 | `APNS_KEY_PATH` | (optional) | Path to APNs .p8 key file |
 | `APNS_KEY_ID` | (optional) | APNs key ID |
 | `APNS_TEAM_ID` | (optional) | APNs team ID |
 | `FCM_SERVICE_ACCOUNT` | (optional) | Path to FCM service account JSON |
+| `VAPID_PUBLIC_KEY` | (optional) | VAPID public key for web push |
+| `VAPID_PRIVATE_KEY` | (optional) | VAPID private key for web push |
 
 ## Deployment
 
@@ -257,6 +283,10 @@ See `deploy/Caddyfile` and `deploy/nginx.conf` for example configurations. Caddy
 agent-messenger/
 ├── server/           # Go backend
 │   └── cmd/am-admin/ # Admin CLI
+│   └── cmd/am-migrate/ # DB migration CLI
+├── sdk/
+│   ├── js/           # JavaScript/TypeScript SDK
+│   └── python/       # Python SDK
 ├── mobile/
 │   ├── ios/          # Swift/SwiftUI iOS app
 │   └── android/      # Kotlin/Compose Android app
@@ -264,9 +294,11 @@ agent-messenger/
 ├── webchat/          # React web client
 ├── plugins/
 │   └── openclaw/     # OpenClaw channel plugin
-├── deploy/           # Docker, systemd, reverse proxy configs
+├── deploy/
+│   ├── helm/         # Helm chart for Kubernetes
+│   └── ...          # Docker, systemd, reverse proxy configs
 ├── protocol/         # Message format spec
-├── docs/             # Architecture and deployment docs
+├── docs/             # Architecture, deployment, OpenAPI spec
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── Makefile
