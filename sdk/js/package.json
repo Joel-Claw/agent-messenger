@@ -1,6 +1,6 @@
 {
   "name": "@anthropic/agent-messenger",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Client SDK for Agent Messenger — self-hosted messaging between humans and AI agents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

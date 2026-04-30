@@ -47,6 +47,9 @@ func TestHealthEndpoint(t *testing.T) {
 	if _, ok := result["goroutines"]; !ok {
 		t.Error("health response missing goroutines")
 	}
+	if _, ok := result["db"]; !ok {
+		t.Error("health response missing db connectivity status")
+	}
 }
 
 func TestHealthRejectsPost(t *testing.T) {
@@ -196,8 +199,8 @@ func TestMetricsSnapshotVersion(t *testing.T) {
 	if !ok {
 		t.Fatalf("version is not string, got %T", snapshot["version"])
 	}
-	if version != "0.1.0" {
-		t.Errorf("version = %q, want 0.1.0", version)
+	if version != "0.2.0" {
+		t.Errorf("version = %q, want 0.2.0", version)
 	}
 }
 

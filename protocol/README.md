@@ -1,6 +1,6 @@
 # Agent Messenger Protocol
 
-Version: 0.1.0 (draft)
+Version: 0.2.0
 
 ## Overview
 

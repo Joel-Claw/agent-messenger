@@ -162,6 +162,16 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check database connectivity
+	dbStatus := "ok"
+	if db != nil {
+		if err := db.Ping(); err != nil {
+			dbStatus = "error: " + err.Error()
+		}
+	} else {
+		dbStatus = "not initialized"
+	}
+
 	var snapshot map[string]interface{}
 	if ServerMetrics != nil {
 		snapshot = ServerMetrics.Snapshot()
@@ -170,6 +180,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	snapshot["status"] = "ok"
 	snapshot["version"] = ServerVersion
+	snapshot["db"] = dbStatus
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(snapshot)

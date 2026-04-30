@@ -334,15 +334,13 @@ func TestMessagesRoutedCounter(t *testing.T) {
 	hub.register <- conn
 	time.Sleep(10 * time.Millisecond)
 
-	initialCount := hub.messagesRouted
+	initialCount := hub.messagesRouted.Load()
 
-	// Simulate a message being routed (normally done in readPump)
-	hub.mu.Lock()
-	hub.messagesRouted++
-	hub.mu.Unlock()
+	// Simulate a message being routed (normally done in readPump via atomic.Add)
+	hub.messagesRouted.Add(1)
 
-	if hub.messagesRouted != initialCount+1 {
-		t.Fatalf("expected messages_routed to increment, got %d", hub.messagesRouted)
+	if hub.messagesRouted.Load() != initialCount+1 {
+		t.Fatalf("expected messages_routed to increment, got %d", hub.messagesRouted.Load())
 	}
 }
 

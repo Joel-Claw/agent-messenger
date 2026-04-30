@@ -1,7 +1,8 @@
 package main
 
 import (
-	"database/sql"
+	"crypto/subtle"
+"database/sql"
 	"errors"
 	"log"
 	"os"
@@ -13,7 +14,7 @@ import (
 )
 
 // JWT signing key - in production this should come from config/env
-var jwtSecret = []byte("agent-messenger-dev-secret-change-me")
+var jwtSecret = []byte(getEnvOrDefault("JWT_SECRET", "agent-messenger-dev-secret-change-me"))
 
 // AGENT_SECRET is the shared secret for agent authentication.
 // Set via AGENT_SECRET env var. All agents authenticate with this secret.
@@ -101,7 +102,7 @@ func ValidateAgentSecret(agentID string, secret string) error {
 		log.Printf("Rate limited: too many connection attempts from agent %s", agentID)
 		return errors.New("rate limited: too many connection attempts")
 	}
-	if secret != agentSecret {
+	if subtle.ConstantTimeCompare([]byte(secret), []byte(agentSecret)) != 1 {
 		log.Printf("Auth failed: invalid secret for agent %s", agentID)
 		return errors.New("invalid agent secret")
 	}

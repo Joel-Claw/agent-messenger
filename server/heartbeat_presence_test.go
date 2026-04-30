@@ -267,8 +267,8 @@ func TestStaleAgentDisconnected(t *testing.T) {
 	// Agent should be disconnected
 	hub.mu.RLock()
 	_, stillConnected := hub.agents["stale-agent"]
-	staleCount := hub.staleAgents
 	hub.mu.RUnlock()
+	staleCount := hub.staleAgents.Load()
 
 	if stillConnected {
 		t.Error("Stale agent should have been disconnected")
@@ -592,8 +592,8 @@ func TestCheckStaleAgentsNoStale(t *testing.T) {
 
 	hub.mu.RLock()
 	_, ok := hub.agents["fresh-check-agent"]
-	staleCount := hub.staleAgents
 	hub.mu.RUnlock()
+	staleCount := hub.staleAgents.Load()
 
 	if !ok {
 		t.Error("Fresh agent should not be disconnected")

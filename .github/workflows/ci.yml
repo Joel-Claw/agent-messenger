@@ -26,8 +26,9 @@ jobs:
       - name: Test
         run: go test -count=1 ./...
 
-      # TODO: fix data races and re-enable -race flag
-      # Races in hub.go (concurrent map access), connection tracking, status updates
+      # TODO: fix remaining data races in hub.go and re-enable -race as blocking
+      # Races: concurrent map access in broadcastPresence (called inside run() lock),
+      # connection tracking edge cases, status updates without hub lock
       - name: Race Check (non-blocking)
         run: go test -race -count=1 ./... 2>&1 || true
         continue-on-error: true
@@ -48,11 +49,49 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Lint
-        run: npx tsc --noEmit || true
+      - name: Type Check
+        run: npx tsc --noEmit
 
       - name: Build
-        run: npm run build || echo "WebChat build has TS issues, not blocking"
+        run: npm run build
+
+  sdk-js:
+    name: JS SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/js
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+  sdk-python:
+    name: Python SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/python
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install
+        run: pip install -e ".[dev]" || pip install pytest pytest-asyncio websockets
+
+      - name: Test
+        run: python3 -m pytest tests/ -x
 
   plugin:
     name: OpenClaw Plugin
@@ -71,7 +110,7 @@ jobs:
         run: npm ci || npm install
 
       - name: Test
-        run: npm test || true
+        run: npm test
 
   docker:
     name: Docker Build
@@ -83,7 +122,7 @@ jobs:
         run: docker build -t agent-messenger:ci -f server/Dockerfile server/
 
   linux-client:
-    name: Linux Client Lint
+    name: Linux Client
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -99,7 +138,7 @@ jobs:
         run: pip install -r requirements.txt 2>/dev/null || pip install pytest websocket-client || true
 
       - name: Test
-        run: python3 -m pytest tests/ -x || echo "Linux client tests need local deps"
+        run: python3 -m pytest tests/ -x || echo "Linux client tests need local GTK deps"
 
   gosec:
     name: Go Security

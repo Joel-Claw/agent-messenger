@@ -33,7 +33,7 @@ func handleMetrics(w http.ResponseWriter, r *http.Request) {
 	writeMetric("errors_total", "counter", "Total errors", snapshot["errors_total"])
 	writeMetric("rate_limited_total", "counter", "Total rate-limited messages", snapshot["rate_limited"])
 	writeMetric("uptime_seconds", "gauge", "Server uptime in seconds", snapshot["uptime_seconds"])
-	writeMetric("version", "gauge", "Server version (encoded as 1=\"0.1.0\")", 1)
+	writeMetric("version", "gauge", "Server version (encoded as 1=\"0.2.0\")", 1)
 	writeMetric("goroutines", "gauge", "Number of goroutines", snapshot["goroutines"])
 	writeMetric("memory_alloc_bytes", "gauge", "Allocated memory in bytes",
 		fmt.Sprintf("%.0f", snapshot["memory_alloc_mb"].(float64)*1024*1024))

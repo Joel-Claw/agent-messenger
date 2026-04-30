@@ -1,6 +1,6 @@
 {
   "name": "@joel-claw/openclaw-agent-messenger",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Agent Messenger channel plugin for OpenClaw",
   "type": "module",
   "main": "./index.js",

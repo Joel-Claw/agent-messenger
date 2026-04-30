@@ -32,7 +32,7 @@ var ServerMetrics *Metrics
 func NewMetrics(h *Hub) *Metrics {
 	return &Metrics{
 		StartTime:        time.Now(),
-		Version:          "0.1.0",
+		Version:          "0.2.0",
 		AgentsConnected:  h.AgentCount,
 		ClientsConnected: h.ClientCount,
 		ClientConnsTotal: h.ClientConnCount,

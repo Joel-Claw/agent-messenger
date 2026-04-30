@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -86,10 +87,10 @@ type Hub struct {
 	done            chan struct{}
 
 	// counters for metrics
-	messagesRouted int64
+	messagesRouted atomic.Int64
 
 	// staleAgents counts how many agents have been disconnected for missed heartbeats
-	staleAgents int64
+	staleAgents atomic.Int64
 }
 
 func newHub() *Hub {
@@ -239,7 +240,7 @@ func (h *Hub) checkStaleAgents() {
 	for id, conn := range h.agents {
 		if now.Sub(conn.lastHeartbeat) > agentPresenceTimeout {
 			log.Printf("Agent %s heartbeat stale (last: %v, timeout: %v), disconnecting", id, conn.lastHeartbeat, agentPresenceTimeout)
-			h.staleAgents++
+			h.staleAgents.Add(1)
 			staleConns = append(staleConns, conn)
 		}
 	}
@@ -260,9 +261,7 @@ func (h *Hub) TouchHeartbeat(conn *Connection) {
 
 // StaleAgentCount returns the total number of agents disconnected for missed heartbeats.
 func (h *Hub) StaleAgentCount() int64 {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return h.staleAgents
+	return h.staleAgents.Load()
 }
 
 // GetAgent returns a connection for a given agent ID
@@ -308,6 +307,8 @@ func (h *Hub) ClientCount() int {
 }
 
 // broadcastPresence sends a presence_update event to all connected clients
+// broadcastPresence sends a presence_update event to all connected clients.
+// MUST be called with h.mu held (called from run() under Lock).
 func (h *Hub) broadcastPresence(id string, connType string, online bool) {
 	event := OutgoingMessage{
 		Type: "presence_update",
@@ -320,6 +321,7 @@ func (h *Hub) broadcastPresence(id string, connType string, online bool) {
 	data, _ := json.Marshal(event)
 
 	// Broadcast to all connected clients
+	// No lock needed: caller (run()) holds h.mu.Lock()
 	for _, conns := range h.clientConns {
 		for _, client := range conns {
 			select {
@@ -402,10 +404,8 @@ func (c *Connection) readPump() {
 			break
 		}
 
-		c.hub.mu.Lock()
-		c.hub.messagesRouted++
+		c.hub.messagesRouted.Add(1)
 		if ServerMetrics != nil { ServerMetrics.MessagesIn.Add(1) }
-		c.hub.mu.Unlock()
 
 		log.Printf("Received from %s %s: %s", c.connType, c.id, string(message))
 		routeMessage(c, message)

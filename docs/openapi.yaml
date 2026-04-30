@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Agent Messenger API
   description: Self-hosted messaging server for humans to interact with AI agents
-  version: 0.1.0
+  version: 0.2.0
   contact:
     name: Joel Claw
     url: https://joelclaw.lu

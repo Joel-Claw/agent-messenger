@@ -134,6 +134,19 @@ func checkRateLimit(conn *Connection) bool {
 // For production, set CORS_ALLOWED_ORIGINS=https://chat.example.com,https://app.example.com
 var corsAllowedOrigins = getEnvOrDefault("CORS_ALLOWED_ORIGINS", "*")
 
+// securityHeadersMiddleware adds security-related HTTP headers to responses.
+// Applied to WebChat-served static files and API endpoints.
+func securityHeadersMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		next(w, r)
+	}
+}
+
 func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")

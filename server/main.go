@@ -23,7 +23,7 @@ import (
 var serverDBPath string
 
 // ServerVersion is the current server version, included in health/metrics responses.
-var ServerVersion = "0.1.0"
+var ServerVersion = "0.2.0"
 
 // parseSize parses a human-readable size string (e.g., "50MB", "100M", "1GB") into bytes.
 // Supports B, KB, MB, GB, TB suffixes (case-insensitive). Bare numbers are treated as bytes.
@@ -102,7 +102,7 @@ func main() {
 	serverDBPath = dbPathVal
 
 	if *showVersion {
-		fmt.Println("Agent Messenger v0.1.0")
+		fmt.Println("Agent Messenger v0.2.0")
 		os.Exit(0)
 	}
 
@@ -125,6 +125,21 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	// Security warnings for default/insecure configurations
+	jwtSecretVal := os.Getenv("JWT_SECRET")
+	agentSecretVal := os.Getenv("AGENT_SECRET")
+	adminSecretVal := os.Getenv("ADMIN_SECRET")
+
+	if jwtSecretVal == "" {
+		log.Println("⚠️  WARNING: JWT_SECRET not set, using insecure default. Set JWT_SECRET in production!")
+	}
+	if agentSecretVal == "" || agentSecretVal == "dev-agent-secret-change-me" {
+		log.Println("⚠️  WARNING: AGENT_SECRET not set or using dev default. Set AGENT_SECRET in production!")
+	}
+	if adminSecretVal == "" || adminSecretVal == "admin-dev-secret" {
+		log.Println("⚠️  WARNING: ADMIN_SECRET not set or using dev default. Set ADMIN_SECRET in production!")
+	}
 
 	// Create tables
 	if err := initSchema(db); err != nil {
@@ -180,8 +195,8 @@ func main() {
 	http.HandleFunc("/client/connect", handleClientConnect)
 
 	// REST endpoints (with CORS middleware for WebChat/SDK cross-origin access)
-	http.HandleFunc("/health", corsMiddleware(handleHealth))
-	http.HandleFunc("/metrics", corsMiddleware(handleMetrics))
+	http.HandleFunc("/health", securityHeadersMiddleware(corsMiddleware(handleHealth)))
+	http.HandleFunc("/metrics", securityHeadersMiddleware(corsMiddleware(handleMetrics)))
 
 	// Auth endpoints
 	http.HandleFunc("/auth/login", corsMiddleware(handleLogin))
