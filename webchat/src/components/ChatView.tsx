@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { AttachmentUpload } from './AttachmentUpload';
 import { AttachmentPreview } from './AttachmentPreview';
 import { toggleReaction, editMessage, deleteMessage, markConversationRead } from '../services/api';
-import { playNotificationSound, showDesktopNotification } from '../services/notify';
 import type { Message, UploadResult } from '../types';
 import { isE2EInitialized } from '../services/e2e';
 

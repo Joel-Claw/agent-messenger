@@ -28,7 +28,7 @@ export function AgentList({ token, selectedAgent, onSelectAgent, onAgentsLoaded 
       }
     };
     fetchAgents();
-  }, [token]);
+  }, [token, onAgentsLoaded]);
 
   // Poll presence every 15 seconds
   useEffect(() => {

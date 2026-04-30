@@ -20,7 +20,7 @@ function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [showE2ESettings, setShowE2ESettings] = useState(false);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [, setConversations] = useState<Conversation[]>([]);
 
   const refreshConversations = useCallback(async () => {
     if (!token) return;

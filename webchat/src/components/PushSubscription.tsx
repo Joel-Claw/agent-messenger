@@ -47,7 +47,7 @@ export function PushSubscription({ token }: PushSubscriptionProps) {
         navigator.serviceWorker.removeEventListener('message', handleSWMessage);
       }
     };
-  }, []);
+  }, [subscribe]);
 
   const subscribe = useCallback(async () => {
     if (!supported) return;
