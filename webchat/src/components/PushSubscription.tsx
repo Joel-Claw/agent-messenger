@@ -28,26 +28,22 @@ export function PushSubscription({ token }: PushSubscriptionProps) {
       }).catch(() => {});
     }
 
-    // Listen for push subscription change events from service worker
+  // Listen for push subscription change events from service worker
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
     const handleSWMessage = (event: MessageEvent) => {
       if (event.data?.type === 'push-subscription-change') {
-        // The subscription changed, try to re-subscribe
         setSubscribed(false);
-        // Auto-re-subscribe after a short delay
-        setTimeout(() => subscribe(), 1000);
+        // Will re-subscribe via the subscribe callback when user interacts
       }
     };
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', handleSWMessage);
-    }
-
+    navigator.serviceWorker.addEventListener('message', handleSWMessage);
     return () => {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.removeEventListener('message', handleSWMessage);
-      }
+      navigator.serviceWorker.removeEventListener('message', handleSWMessage);
     };
-  }, [subscribe]);
+  }, []);
 
   const subscribe = useCallback(async () => {
     if (!supported) return;
