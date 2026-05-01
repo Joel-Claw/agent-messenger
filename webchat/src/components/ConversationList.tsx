@@ -14,6 +14,7 @@ export function ConversationList({
 }: ConversationListProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchFilter, setSearchFilter] = useState('');
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -52,6 +53,15 @@ export function ConversationList({
     }
   };
 
+  const filteredConversations = searchFilter.trim()
+    ? conversations.filter(conv => {
+        const agentName = getAgentName(conv.agent_id).toLowerCase();
+        const lastMsg = conv.last_message?.content?.toLowerCase() || '';
+        const q = searchFilter.toLowerCase();
+        return agentName.includes(q) || lastMsg.includes(q);
+      })
+    : conversations;
+
   if (loading) {
     return <div style={styles.loading}>Loading...</div>;
   }
@@ -63,7 +73,19 @@ export function ConversationList({
   return (
     <div style={styles.container}>
       <div style={styles.heading}>Chats</div>
-      {conversations.map((conv) => (
+      {conversations.length > 3 && (
+        <input
+          type="text"
+          placeholder="Search conversations..."
+          value={searchFilter}
+          onChange={e => setSearchFilter(e.target.value)}
+          style={styles.searchInput}
+        />
+      )}
+      {filteredConversations.length === 0 && searchFilter && (
+        <div style={styles.noResults}>No conversations match "{searchFilter}"</div>
+      )}
+      {filteredConversations.map((conv) => (
         <button
           key={conv.id}
           onClick={() => onSelectConversation(conv.id, conv.agent_id)}
@@ -164,6 +186,23 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0.0625rem 0.375rem',
     borderRadius: '8px',
     minWidth: '1rem',
+    textAlign: 'center' as const,
+  },
+  searchInput: {
+    width: '100%',
+    padding: '0.375rem 0.5rem',
+    fontSize: '0.8rem',
+    backgroundColor: '#0d1117',
+    color: '#e6edf3',
+    border: '1px solid #30363d',
+    borderRadius: '6px',
+    marginBottom: '0.5rem',
+    outline: 'none',
+  },
+  noResults: {
+    padding: '0.5rem',
+    fontSize: '0.75rem',
+    color: '#8b949e',
     textAlign: 'center' as const,
   },
 };
