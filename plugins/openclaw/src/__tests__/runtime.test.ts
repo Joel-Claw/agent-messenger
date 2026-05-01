@@ -54,7 +54,7 @@ function makeMockAccount() {
   return {
     accountId: 'default',
     serverUrl: 'ws://localhost:8080',
-    apiKey: 'test-key',
+    agentSecret: 'test-secret',
     agentId: 'test-agent',
     agentName: 'Test Agent',
     agentModel: 'test-model',

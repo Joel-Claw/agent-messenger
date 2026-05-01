@@ -55,7 +55,7 @@ function makeMockAccount() {
   return {
     accountId: 'default',
     serverUrl: 'ws://localhost:8080',
-    apiKey: 'test-key',
+    agentSecret: 'test-secret',
     agentId: 'test-agent',
     agentName: 'Test Agent',
     agentModel: 'test-model',
@@ -108,7 +108,7 @@ describe('Agent Messenger Plugin - Auto-Connect Lifecycle', () => {
       channels: {
         'agent-messenger': {
           serverUrl: 'ws://localhost:8080',
-          apiKey: 'test-key',
+          agentSecret: 'test-secret',
           agentId: 'test-agent',
         },
       },
@@ -116,7 +116,7 @@ describe('Agent Messenger Plugin - Auto-Connect Lifecycle', () => {
 
     const account = agentMessengerPlugin.setup!.resolveAccount(validConfig, undefined);
     expect(account.serverUrl).toBe('ws://localhost:8080');
-    expect(account.apiKey).toBe('test-key');
+    expect(account.agentSecret).toBe('test-secret');
     expect(account.agentId).toBe('test-agent');
   });
 
@@ -241,7 +241,7 @@ describe('Agent Messenger Plugin - Retry on Startup Failure', () => {
       channels: {
         'agent-messenger': {
           serverUrl: 'ws://localhost:8080',
-          apiKey: 'test-key',
+          agentSecret: 'test-secret',
           agentId: 'test-agent',
         },
       },
@@ -262,7 +262,7 @@ describe('Agent Messenger Plugin - Retry on Startup Failure', () => {
       channels: {
         'agent-messenger': {
           serverUrl: 'ws://localhost:8080',
-          apiKey: 'test-key',
+          agentSecret: 'test-secret',
           agentId: 'test-agent',
         },
       },
