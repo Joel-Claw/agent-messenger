@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -800,7 +801,16 @@ func handleGetMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	messages, err := getConversationMessages(convID, 50)
+	// Pagination: before (cursor — ISO timestamp or message ID) and limit
+	limit := 50
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 200 {
+			limit = parsed
+		}
+	}
+	before := r.URL.Query().Get("before")
+
+	messages, err := getConversationMessages(convID, limit, before)
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "internal error")
 		return

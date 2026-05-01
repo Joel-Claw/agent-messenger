@@ -17,6 +17,9 @@ interface ChatViewProps {
   userId: string | null;
   conversationId: string | null;
   onMessagesChange: (msgs: Message[]) => void;
+  loadOlderMessages: () => Promise<void>;
+  hasOlderMessages: boolean;
+  loadingOlder: boolean;
 }
 
 interface ContextMenuState {
@@ -29,7 +32,7 @@ interface ContextMenuState {
 }
 
 export function ChatView({
-  messages, onSend, connected, agentName, isTyping, token, userId, conversationId, onMessagesChange
+  messages, onSend, connected, agentName, isTyping, token, userId, conversationId, onMessagesChange, loadOlderMessages, hasOlderMessages, loadingOlder
 }: ChatViewProps) {
   const [input, setInput] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState<UploadResult[]>([]);
@@ -49,8 +52,23 @@ export function ChatView({
     if (el) {
       const threshold = 80;
       isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+
+      // Load older messages when scrolled to top
+      if (el.scrollTop < 50 && hasOlderMessages && !loadingOlder) {
+        // Save scroll height before loading
+        const prevScrollHeight = el.scrollHeight;
+        loadOlderMessages().then(() => {
+          // After prepending messages, restore scroll position
+          requestAnimationFrame(() => {
+            const newScrollHeight = dropAreaRef.current?.scrollHeight ?? 0;
+            if (dropAreaRef.current) {
+              dropAreaRef.current.scrollTop = newScrollHeight - prevScrollHeight;
+            }
+          });
+        });
+      }
     }
-  }, []);
+  }, [hasOlderMessages, loadingOlder, loadOlderMessages]);
   const dropAreaRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -283,6 +301,29 @@ export function ChatView({
             <div style={styles.dropIcon}>📎</div>
             <div style={styles.dropText}>Drop files to attach</div>
           </div>
+        )}
+        {loadingOlder && (
+          <div style={styles.loadingOlder}>Loading older messages...</div>
+        )}
+        {!loadingOlder && hasOlderMessages && messages.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              const el = dropAreaRef.current;
+              const prevScrollHeight = el?.scrollHeight ?? 0;
+              loadOlderMessages().then(() => {
+                requestAnimationFrame(() => {
+                  const newScrollHeight = dropAreaRef.current?.scrollHeight ?? 0;
+                  if (dropAreaRef.current) {
+                    dropAreaRef.current.scrollTop = newScrollHeight - prevScrollHeight;
+                  }
+                });
+              });
+            }}
+            style={styles.loadOlderButton}
+          >
+            ↑ Load older messages
+          </button>
         )}
         {messages.map((msg, idx) => {
           const reactionGroups = groupReactions(msg.reactions);
@@ -597,6 +638,23 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '1rem',
     color: '#58a6ff',
     fontWeight: 500,
+  },
+  loadOlderButton: {
+    display: 'block',
+    margin: '8px auto',
+    padding: '6px 16px',
+    fontSize: '0.8rem',
+    color: '#58a6ff',
+    background: 'rgba(88, 166, 255, 0.1)',
+    border: '1px solid rgba(88, 166, 255, 0.3)',
+    borderRadius: '12px',
+    cursor: 'pointer' as const,
+  },
+  loadingOlder: {
+    textAlign: 'center' as const,
+    padding: '8px',
+    fontSize: '0.8rem',
+    color: '#8b949e',
   },
   messageRow: {
     display: 'flex',

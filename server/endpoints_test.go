@@ -431,7 +431,7 @@ func TestMarkMessagesRead(t *testing.T) {
 	}
 
 	// Verify messages now have read_at set
-	messages, err := getConversationMessages(convID, 0)
+	messages, err := getConversationMessages(convID, 0, "")
 	if err != nil {
 		t.Fatal(err)
 	}

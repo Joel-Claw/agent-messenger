@@ -81,15 +81,24 @@ func storeMessage(msg RoutedMessage) error {
 	return nil
 }
 
-// getConversationMessages retrieves messages for a conversation, ordered by time
-func getConversationMessages(convID string, limit int) ([]StoredMessage, error) {
+// getConversationMessages retrieves messages for a conversation, ordered by time.
+// If before is non-empty, only messages with created_at < before are returned (cursor pagination).
+func getConversationMessages(convID string, limit int, before string) ([]StoredMessage, error) {
 	if limit <= 0 {
 		limit = 50
 	}
-	rows, err := db.Query(
-		"SELECT id, conversation_id, sender_type, sender_id, content, COALESCE(metadata, ''), created_at, read_at, edited_at, COALESCE(is_deleted, 0) FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?",
-		convID, limit,
-	)
+
+	var rows *sql.Rows
+	var err error
+	if before != "" {
+		rows, err = db.Query(
+				"SELECT id, conversation_id, sender_type, sender_id, content, COALESCE(metadata, ''), created_at, read_at, edited_at, COALESCE(is_deleted, 0) FROM messages WHERE conversation_id = ? AND created_at < ? ORDER BY created_at DESC LIMIT ?",
+				convID, before, limit)
+	} else {
+		rows, err = db.Query(
+				"SELECT id, conversation_id, sender_type, sender_id, content, COALESCE(metadata, ''), created_at, read_at, edited_at, COALESCE(is_deleted, 0) FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?",
+				convID, limit)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -108,6 +117,15 @@ func getConversationMessages(convID string, limit int) ([]StoredMessage, error) 
 		}
 		messages = append(messages, m)
 	}
+
+	// When using cursor pagination, results come in DESC order (newest first).
+	// Reverse to get chronological order.
+	if before != "" && len(messages) > 0 {
+		for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
+			messages[i], messages[j] = messages[j], messages[i]
+		}
+	}
+
 	return messages, rows.Err()
 }
 

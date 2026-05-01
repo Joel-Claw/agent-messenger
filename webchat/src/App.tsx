@@ -54,6 +54,45 @@ function App() {
     }
   }, [token]);
 
+  const [hasOlderMessages, setHasOlderMessages] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+
+  const loadOlderMessages = useCallback(async () => {
+    if (!token || !conversationId || loadingOlder || messages.length === 0) return;
+    const oldestTimestamp = messages[0]?.timestamp;
+    if (!oldestTimestamp) return;
+
+    setLoadingOlder(true);
+    try {
+      const olderMsgs: any[] = await getMessages(token, conversationId, { before: oldestTimestamp, limit: 50 });
+      if (olderMsgs.length === 0) {
+        setHasOlderMessages(false);
+        return;
+      }
+      const mapped = olderMsgs.map((m: any): Message => ({
+        id: m.id as string,
+        conversation_id: (m.conversation_id as string) || '',
+        sender: (m.sender_type === 'client' ? 'user' : 'agent') as Message['sender'],
+        content: (m.content as string) || '',
+        timestamp: (m.created_at as string) || (m.timestamp as string) || '',
+        type: 'text' as const,
+        edited_at: (m.edited_at as string) || undefined,
+        is_deleted: (m.is_deleted as boolean) || undefined,
+        read_at: (m.read_at as string) || undefined,
+        reactions: (m.reactions as Reaction[]) || undefined,
+      }));
+
+      const existingIds = new Set(messages.map(m => m.id));
+      const newMessages = mapped.filter(m => !existingIds.has(m.id));
+      setHasOlderMessages(newMessages.length >= olderMsgs.length);
+      setMessages(prev => [...newMessages, ...prev]);
+    } catch {
+      // silently ignore
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [token, conversationId, loadingOlder, messages]);
+
   const handleLogin = (newToken: string, newUserId: string) => {
     setToken(newToken);
     setUserId(newUserId);
@@ -304,6 +343,9 @@ function App() {
             userId={userId}
             conversationId={conversationId}
             onMessagesChange={setMessages}
+            loadOlderMessages={loadOlderMessages}
+            hasOlderMessages={hasOlderMessages}
+            loadingOlder={loadingOlder}
           />
         ) : (
           <div style={styles.empty}>

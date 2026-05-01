@@ -54,8 +54,11 @@ export async function getConversations(token: string): Promise<Conversation[]> {
   return res.json();
 }
 
-export async function getMessages(token: string, conversationId: string): Promise<Message[]> {
-  const res = await fetch(`${API_BASE}/conversations/${conversationId}/messages`, {
+export async function getMessages(token: string, conversationId: string, options?: { before?: string; limit?: number }): Promise<Message[]> {
+  const params = new URLSearchParams({ conversation_id: conversationId });
+  if (options?.before) params.set('before', options.before);
+  if (options?.limit) params.set('limit', String(options.limit));
+  const res = await fetch(`${API_BASE}/conversations/messages?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Failed to fetch messages');

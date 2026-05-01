@@ -535,7 +535,7 @@ func TestStoreAndGetMessages(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	messages, err := getConversationMessages(conv.ID, 10)
+	messages, err := getConversationMessages(conv.ID, 10, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -575,7 +575,7 @@ func TestGetMessagesPagination(t *testing.T) {
 	}
 
 	// Limit to 3
-	messages, err := getConversationMessages(conv.ID, 3)
+	messages, err := getConversationMessages(conv.ID, 3, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -584,7 +584,7 @@ func TestGetMessagesPagination(t *testing.T) {
 	}
 
 	// Default limit (0 -> 50)
-	all, err := getConversationMessages(conv.ID, 0)
+	all, err := getConversationMessages(conv.ID, 0, "")
 	if err != nil {
 		t.Fatal(err)
 	}
