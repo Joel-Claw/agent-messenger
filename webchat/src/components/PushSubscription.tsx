@@ -27,6 +27,7 @@ export function PushSubscription({ token }: PushSubscriptionProps) {
         setSubscribed(!!sub);
       }).catch(() => {});
     }
+  }, []);
 
   // Listen for push subscription change events from service worker
   useEffect(() => {
