@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -134,6 +136,61 @@ func checkRateLimit(conn *Connection) bool {
 // For production, set CORS_ALLOWED_ORIGINS=https://chat.example.com,https://app.example.com
 var corsAllowedOrigins = getEnvOrDefault("CORS_ALLOWED_ORIGINS", "*")
 
+// requestIDMiddleware adds a unique request ID to each request for correlation.
+// If the client sends an X-Request-ID header, it is preserved; otherwise a new
+// UUID-style ID is generated. The ID is added to the response header and can be
+// used by downstream handlers and loggers via r.Header.Get("X-Request-ID").
+var requestIDCounter uint64
+
+func requestIDMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		requestID := r.Header.Get("X-Request-ID")
+		if requestID == "" {
+			requestID = fmt.Sprintf("req-%d-%d", time.Now().UnixNano(), atomic.AddUint64(&requestIDCounter, 1))
+		}
+		// Set on both the request (for downstream handlers) and response (for clients)
+		r.Header.Set("X-Request-ID", requestID)
+		w.Header().Set("X-Request-ID", requestID)
+		next(w, r)
+	}
+}
+
+// accessLogMiddleware logs each HTTP request using the structured logger.
+// Logs method, path, status code, duration, and request ID.
+func accessLogMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		requestID := r.Header.Get("X-Request-ID")
+
+		// Wrap ResponseWriter to capture status code
+		wrapped := &responseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
+
+		next(wrapped, r)
+
+		duration := time.Since(start)
+		DefaultLogger.Info("http_request", map[string]interface{}{
+			"method":      r.Method,
+			"path":        r.URL.Path,
+			"status":      wrapped.statusCode,
+			"duration_ms":  duration.Milliseconds(),
+			"request_id":  requestID,
+			"remote_addr": r.RemoteAddr,
+			"user_agent":  r.UserAgent(),
+		})
+	}
+}
+
+// responseWriterWrapper wraps http.ResponseWriter to capture the status code.
+type responseWriterWrapper struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (w *responseWriterWrapper) WriteHeader(code int) {
+	w.statusCode = code
+	w.ResponseWriter.WriteHeader(code)
+}
+
 // securityHeadersMiddleware adds security-related HTTP headers to responses.
 // Applied to WebChat-served static files and API endpoints.
 func securityHeadersMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -177,4 +234,66 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		next(w, r)
 	}
+}
+
+// ipRateLimiter tracks per-IP request rates for HTTP API endpoints.
+// 300 requests per minute per IP by default, configurable via IP_RATE_LIMIT env.
+var ipRateLimiter = NewRateLimiter(300, time.Minute)
+
+// authIPLimiter applies a stricter rate limit (30/min) to auth endpoints.
+var authIPLimiter = NewRateLimiter(30, time.Minute)
+
+// ipRateLimitMiddleware limits requests per IP address for HTTP API endpoints.
+// This protects against brute force attacks, credential stuffing, and general abuse.
+func ipRateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ip := extractIP(r)
+		if !ipRateLimiter.Allow(ip) {
+			if ServerMetrics != nil {
+				ServerMetrics.RateLimited.Add(1)
+			}
+			w.Header().Set("Retry-After", "60")
+			writeJSONError(w, http.StatusTooManyRequests, "rate limit exceeded: too many requests from this IP")
+			return
+		}
+		next(w, r)
+	}
+}
+
+// authRateLimitMiddleware applies a stricter per-IP rate limit on auth endpoints.
+func authRateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ip := extractIP(r)
+		if !authIPLimiter.Allow(ip) {
+			if ServerMetrics != nil {
+				ServerMetrics.RateLimited.Add(1)
+			}
+			w.Header().Set("Retry-After", "60")
+			writeJSONError(w, http.StatusTooManyRequests, "rate limit exceeded: too many auth attempts from this IP")
+			return
+		}
+		next(w, r)
+	}
+}
+
+// extractIP returns the client IP from the request, considering X-Forwarded-For
+// and X-Real-IP headers for reverse proxy setups.
+func extractIP(r *http.Request) string {
+	// Check X-Forwarded-For header (may contain multiple IPs, use first)
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// First IP in the list is the original client
+		if idx := strings.Index(xff, ","); idx != -1 {
+			return strings.TrimSpace(xff[:idx])
+		}
+		return strings.TrimSpace(xff)
+	}
+	// Check X-Real-IP header
+	if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		return strings.TrimSpace(xri)
+	}
+	// Fall back to RemoteAddr (strip port)
+	if idx := strings.LastIndex(r.RemoteAddr, ":"); idx != -1 {
+		return r.RemoteAddr[:idx]
+	}
+	return r.RemoteAddr
 }

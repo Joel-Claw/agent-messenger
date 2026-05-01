@@ -39,6 +39,7 @@ func routeMessage(sender *Connection, raw []byte) {
 	var msg IncomingMessage
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		log.Printf("Invalid message from %s %s: %v", sender.connType, sender.id, err)
+		DefaultLogger.Warn("invalid_message", map[string]interface{}{"conn_type": sender.connType, "id": sender.id, "error": err.Error()})
 		sendError(sender, "invalid message format")
 		return
 	}
@@ -54,6 +55,7 @@ func routeMessage(sender *Connection, raw []byte) {
 		routeHeartbeat(sender)
 	default:
 		log.Printf("Unknown message type %q from %s %s", msg.Type, sender.connType, sender.id)
+		DefaultLogger.Warn("unknown_message_type", map[string]interface{}{"type": msg.Type, "conn_type": sender.connType, "id": sender.id})
 		sendError(sender, "unknown message type: "+msg.Type)
 	}
 }
@@ -116,6 +118,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 	// Persist message
 	if err := storeMessage(msg); err != nil {
 		log.Printf("Error storing message: %v", err)
+		DefaultLogger.Error("message_store_error", map[string]interface{}{"error": err.Error()})
 		sendError(sender, "failed to store message")
 		return
 	}
@@ -138,6 +141,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 					delivered++
 				default:
 					log.Printf("Client %s (device %s) send buffer full, dropping message", recipientID, client.deviceID)
+					DefaultLogger.Warn("client_buffer_full", map[string]interface{}{"user_id": recipientID, "device_id": client.deviceID})
 				}
 			}
 			if delivered == 0 {
@@ -157,6 +161,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 			case agent.send <- outgoing:
 			default:
 				log.Printf("Agent %s send buffer full, dropping message", recipientID)
+				DefaultLogger.Warn("agent_buffer_full", map[string]interface{}{"agent_id": recipientID})
 			}
 		} else {
 			// Agent is offline, queue message for later delivery

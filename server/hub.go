@@ -53,6 +53,11 @@ type Connection struct {
 	deviceID string // device_id identifying this specific device/session (multi-device)
 	conn     *websocket.Conn
 	send     chan []byte
+	// writeMu protects concurrent writes to the WebSocket connection.
+	// gorilla/websocket.Conn is not goroutine-safe: the ping ticker and
+	// message sends in writePump can overlap if c.send receives while
+	// a ping write is in progress.
+	writeMu sync.Mutex
 	// connectedAt tracks when this connection was established
 	connectedAt time.Time
 	// lastHeartbeat tracks the last time the agent sent a heartbeat message
@@ -124,10 +129,12 @@ func (h *Hub) run() {
 				// Replace existing agent connection if any
 				if old, ok := h.agents[conn.id]; ok {
 					log.Printf("Agent %s reconnecting, closing old connection", conn.id)
+				DefaultLogger.Info("agent_reconnect", map[string]interface{}{"agent_id": conn.id})
 					close(old.send)
 				}
 				h.agents[conn.id] = conn
 				log.Printf("Agent connected: %s", conn.id)
+				DefaultLogger.Info("agent_connected", map[string]interface{}{"agent_id": conn.id})
 				if ServerMetrics != nil { ServerMetrics.ConnectionsTotal.Add(1) }
 				// Broadcast presence: agent online
 				h.broadcastPresence(conn.id, "agent", true)
@@ -138,6 +145,7 @@ func (h *Hub) run() {
 				for i, existing := range h.clientConns[conn.id] {
 					if existing.deviceID == conn.deviceID && conn.deviceID != "" {
 						log.Printf("Client %s device %s reconnecting, closing old connection", conn.id, conn.deviceID)
+					DefaultLogger.Info("client_device_reconnect", map[string]interface{}{"user_id": conn.id, "device_id": conn.deviceID})
 						close(existing.send)
 						h.clientConns[conn.id][i] = conn
 						didReplace = true
@@ -148,6 +156,7 @@ func (h *Hub) run() {
 					h.clientConns[conn.id] = append(h.clientConns[conn.id], conn)
 				}
 				log.Printf("Client connected: %s (device: %s, total devices: %d)", conn.id, conn.deviceID, len(h.clientConns[conn.id]))
+				DefaultLogger.Info("client_connected", map[string]interface{}{"user_id": conn.id, "device_id": conn.deviceID, "total_devices": len(h.clientConns[conn.id])})
 				if ServerMetrics != nil { ServerMetrics.ConnectionsTotal.Add(1) }
 			}
 			h.mu.Unlock()
@@ -159,6 +168,7 @@ func (h *Hub) run() {
 					delete(h.agents, conn.id)
 					close(conn.send)
 					log.Printf("Agent disconnected: %s", conn.id)
+				DefaultLogger.Info("agent_disconnected", map[string]interface{}{"agent_id": conn.id})
 					// Broadcast presence: agent offline
 					h.broadcastPresence(conn.id, "agent", false)
 				}
@@ -180,6 +190,7 @@ func (h *Hub) run() {
 				}
 				close(conn.send)
 				log.Printf("Client disconnected: %s (device: %s, remaining devices: %d)", conn.id, conn.deviceID, len(conns))
+				DefaultLogger.Info("client_disconnected", map[string]interface{}{"user_id": conn.id, "device_id": conn.deviceID, "remaining_devices": len(conns)})
 			}
 			h.mu.Unlock()
 
@@ -415,6 +426,10 @@ func (c *Connection) readPump() {
 // writePump writes messages to the WebSocket connection.
 // It sends pings on a ticker to keep the connection alive.
 // If a write fails or the send channel is closed, the connection is cleaned up.
+//
+// All writes to c.conn are protected by c.writeMu because gorilla/websocket.Conn
+// is not goroutine-safe. The ping ticker and message sends both write to the same
+// connection, so we must serialize access.
 func (c *Connection) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
@@ -425,26 +440,33 @@ func (c *Connection) writePump() {
 	for {
 		select {
 		case message, ok := <-c.send:
+			c.writeMu.Lock()
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// Channel closed by hub (unregister or replace), close connection
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				c.writeMu.Unlock()
 				return
 			}
 
 			if ServerMetrics != nil { ServerMetrics.MessagesOut.Add(1) }
 			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
+				c.writeMu.Unlock()
 				log.Printf("Error writing to %s %s: %v", c.connType, c.id, err)
 				return
 			}
+			c.writeMu.Unlock()
 
 		case <-ticker.C:
 			// Send ping to keep connection alive
+			c.writeMu.Lock()
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				c.writeMu.Unlock()
 				log.Printf("Error sending ping to %s %s: %v", c.connType, c.id, err)
 				return
 			}
+			c.writeMu.Unlock()
 		}
 	}
 }
