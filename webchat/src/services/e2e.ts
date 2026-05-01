@@ -249,6 +249,7 @@ export async function initializeE2E(token: string): Promise<void> {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      'X-Requested-With': 'XMLHttpRequest',
     },
     body: JSON.stringify({
       key_type: 'identity',
@@ -337,6 +338,7 @@ export async function sendEncryptedMessage(
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      'X-Requested-With': 'XMLHttpRequest',
     },
     body: JSON.stringify({
       conversation_id: conversationId,

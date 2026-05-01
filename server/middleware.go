@@ -130,6 +130,72 @@ func checkRateLimit(conn *Connection) bool {
 	return true
 }
 
+// csrfMiddleware validates that state-changing requests (POST, PUT, DELETE)
+// originate from the same origin. For browser-based requests, this prevents
+// cross-site request forgery by requiring one of:
+//   - Valid Origin header matching CORS_ALLOWED_ORIGINS
+//   - X-Requested-With: XMLHttpRequest header (common SPA pattern)
+//   - X-CSRF-Token header (custom token approach)
+// GET, HEAD, OPTIONS requests are allowed through (they should be side-effect-free).
+func csrfMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Safe methods don't need CSRF protection
+		if r.Method == "GET" || r.Method == "HEAD" || r.Method == "OPTIONS" {
+			next(w, r)
+			return
+		}
+
+		// Check for X-Requested-With header (standard SPA anti-CSRF)
+		if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+			next(w, r)
+			return
+		}
+
+		// Check for custom CSRF token header
+		if r.Header.Get("X-CSRF-Token") != "" {
+			next(w, r)
+			return
+		}
+
+		// Check Origin header matches allowed origins
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			if isOriginAllowed(origin) {
+				next(w, r)
+				return
+			}
+		}
+
+		// Also allow requests with Authorization header (API clients)
+		if r.Header.Get("Authorization") != "" {
+			next(w, r)
+			return
+		}
+
+		// Also allow requests with X-Agent-Secret header (agent connections)
+		if r.Header.Get("X-Agent-Secret") != "" {
+			next(w, r)
+			return
+		}
+
+		writeJSONError(w, http.StatusForbidden, "CSRF validation failed: missing Origin, X-Requested-With, X-CSRF-Token, or Authorization header")
+	}
+}
+
+// isOriginAllowed checks if the given origin is in the CORS_ALLOWED_ORIGINS list.
+func isOriginAllowed(origin string) bool {
+	if corsAllowedOrigins == "*" {
+		return true
+	}
+	for _, allowed := range strings.Split(corsAllowedOrigins, ",") {
+		allowed = strings.TrimSpace(allowed)
+		if allowed == origin || allowed == "*" {
+			return true
+		}
+	}
+	return false
+}
+
 // corsMiddleware adds CORS headers for cross-origin requests (WebChat, SDKs).
 // Allowed origins are configurable via CORS_ALLOWED_ORIGINS env var (comma-separated).
 // Defaults to "*" (allow all) if not set, which is fine for development.
@@ -200,6 +266,18 @@ func securityHeadersMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		w.Header().Set("X-XSS-Protection", "1; mode=block")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		// Content-Security-Policy for WebChat-served pages
+		// Allows same-origin scripts, styles, WebSocket connections, and inline styles
+		w.Header().Set("Content-Security-Policy",
+			"default-src 'self'; "+
+				"script-src 'self' 'unsafe-inline' 'unsafe-eval'; "+
+				"style-src 'self' 'unsafe-inline'; "+
+				"img-src 'self' data: blob:; "+
+				"connect-src 'self' ws: wss:; "+
+				"font-src 'self'; "+
+				"frame-ancestors 'none'; "+
+				"form-action 'self'; "+
+				"base-uri 'self'")
 		next(w, r)
 	}
 }

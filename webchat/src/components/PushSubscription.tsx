@@ -91,6 +91,7 @@ export function PushSubscription({ token }: PushSubscriptionProps) {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: JSON.stringify({
           endpoint: subJson.endpoint,
@@ -130,6 +131,7 @@ export function PushSubscription({ token }: PushSubscriptionProps) {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
+            'X-Requested-With': 'XMLHttpRequest',
           },
           body: JSON.stringify({ endpoint: sub.endpoint }),
         });

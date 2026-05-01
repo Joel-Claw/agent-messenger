@@ -213,53 +213,53 @@ func main() {
 	http.HandleFunc("/health", accessLogMiddleware(requestIDMiddleware(securityHeadersMiddleware(corsMiddleware(handleHealth)))))
 	http.HandleFunc("/metrics", accessLogMiddleware(requestIDMiddleware(securityHeadersMiddleware(corsMiddleware(handleMetrics)))))
 
-	// Auth endpoints — stricter per-IP rate limit to prevent brute force
-	http.HandleFunc("/auth/login", accessLogMiddleware(requestIDMiddleware(authRateLimitMiddleware(corsMiddleware(handleLogin)))))
-	http.HandleFunc("/auth/agent", accessLogMiddleware(requestIDMiddleware(authRateLimitMiddleware(corsMiddleware(handleRegisterAgent)))))
-	http.HandleFunc("/auth/user", accessLogMiddleware(requestIDMiddleware(authRateLimitMiddleware(corsMiddleware(handleRegisterUser)))))
-	http.HandleFunc("/auth/change-password", accessLogMiddleware(requestIDMiddleware(authRateLimitMiddleware(corsMiddleware(handleChangePassword)))))
+	// Auth endpoints — stricter per-IP rate limit + CSRF protection
+	http.HandleFunc("/auth/login", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(authRateLimitMiddleware(corsMiddleware(handleLogin))))))
+	http.HandleFunc("/auth/agent", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(authRateLimitMiddleware(corsMiddleware(handleRegisterAgent))))))
+	http.HandleFunc("/auth/user", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(authRateLimitMiddleware(corsMiddleware(handleRegisterUser))))))
+	http.HandleFunc("/auth/change-password", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(authRateLimitMiddleware(corsMiddleware(handleChangePassword))))))
 
 	// Agent endpoints
 	http.HandleFunc("/agents", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleListAgents))))
 	http.HandleFunc("/admin/agents", accessLogMiddleware(requestIDMiddleware(adminAuthMiddleware(corsMiddleware(handleAdminAgents)))))
 
-	// Conversation endpoints
-	http.HandleFunc("/conversations/create", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleCreateConversation)))))
+	// Conversation endpoints (POST endpoints get CSRF protection)
+	http.HandleFunc("/conversations/create", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleCreateConversation))))))
 	http.HandleFunc("/conversations/list", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleListConversations)))))
 	http.HandleFunc("/conversations/messages", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleGetMessages)))))
-	http.HandleFunc("/conversations/delete", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleDeleteConversation)))))
-	http.HandleFunc("/conversations/mark-read", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleMarkRead)))))
+	http.HandleFunc("/conversations/delete", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleDeleteConversation))))))
+	http.HandleFunc("/conversations/mark-read", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleMarkRead))))))
 
 	// Message endpoints
 	http.HandleFunc("/messages/search", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleSearchMessages)))))
-	http.HandleFunc("/messages/edit", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleMessageEdit)))))
-	http.HandleFunc("/messages/delete", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleMessageDelete)))))
+	http.HandleFunc("/messages/edit", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleMessageEdit))))))
+	http.HandleFunc("/messages/delete", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleMessageDelete))))))
 	http.HandleFunc("/presence", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleGetPresence)))))
 	http.HandleFunc("/presence/user", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleGetUserPresence)))))
-	http.HandleFunc("/messages/react", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleReact)))))
+	http.HandleFunc("/messages/react", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleReact))))))
 	http.HandleFunc("/messages/reactions", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleGetReactions)))))
-	http.HandleFunc("/conversations/tags/add", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleAddTag)))))
-	http.HandleFunc("/conversations/tags/remove", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleRemoveTag)))))
+	http.HandleFunc("/conversations/tags/add", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleAddTag))))))
+	http.HandleFunc("/conversations/tags/remove", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleRemoveTag))))))
 	http.HandleFunc("/conversations/tags", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleGetTags)))))
 
-	// Attachment endpoints
-	http.HandleFunc("/attachments/upload", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleUpload))))
+	// Attachment endpoints (upload is POST)
+	http.HandleFunc("/attachments/upload", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(handleUpload)))))
 	http.HandleFunc("/attachments/", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleGetAttachment))))
 	http.HandleFunc("/messages/attachments", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleListAttachments))))
 
-	// E2E encryption endpoints
-	http.HandleFunc("/keys/upload", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleUploadPublicKey))))
+	// E2E encryption endpoints (POST endpoints get CSRF protection)
+	http.HandleFunc("/keys/upload", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(handleUploadPublicKey)))))
 	http.HandleFunc("/keys/bundle", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleGetKeyBundle))))
 	http.HandleFunc("/keys/otpk-count", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleListOneTimePreKeys))))
-	http.HandleFunc("/messages/encrypted", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleStoreEncryptedMessage))))
+	http.HandleFunc("/messages/encrypted", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(handleStoreEncryptedMessage)))))
 	http.HandleFunc("/messages/encrypted/list", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleGetEncryptedMessages))))
 
 	// Push notification endpoints
-	http.HandleFunc("/push/register", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleRegisterDeviceToken))))
-	http.HandleFunc("/push/unregister", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleUnregisterDeviceToken))))
+	http.HandleFunc("/push/register", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(handleRegisterDeviceToken)))))
+	http.HandleFunc("/push/unregister", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(handleUnregisterDeviceToken)))))
 	http.HandleFunc("/push/vapid-key", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleGetVAPIDKey))))
-	http.HandleFunc("/push/web-subscribe", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleWebPushSubscribe))))
-	http.HandleFunc("/push/web-unsubscribe", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleWebPushUnsubscribe))))
+	http.HandleFunc("/push/web-subscribe", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(handleWebPushSubscribe)))))
+	http.HandleFunc("/push/web-unsubscribe", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(handleWebPushUnsubscribe)))))
 
 	// Admin rate limit tier endpoints — require admin auth
 	http.HandleFunc("/admin/rate-limit/tier", accessLogMiddleware(requestIDMiddleware(adminAuthMiddleware(corsMiddleware(handleAdminRateLimitTier)))))

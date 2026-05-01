@@ -5,10 +5,16 @@ const API_BASE = process.env.REACT_APP_API_URL || `http://${window.location.host
 
 export { WS_BASE, API_BASE };
 
+// CSRF protection: all state-changing requests must include X-Requested-With header.
+// This prevents cross-site request forgery for browser-based clients.
+const CSRF_HEADERS: Record<string, string> = {
+  'X-Requested-With': 'XMLHttpRequest',
+};
+
 export async function login(username: string, password: string): Promise<{ token: string; user_id: string; username: string }> {
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...CSRF_HEADERS },
     body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
   });
   if (!res.ok) {
@@ -21,7 +27,7 @@ export async function login(username: string, password: string): Promise<{ token
 export async function register(username: string, password: string): Promise<{ user_id: string; username: string }> {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...CSRF_HEADERS },
     body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
   });
   if (!res.ok) {
@@ -90,6 +96,7 @@ export async function uploadAttachment(token: string, file: File, onProgress?: (
 
     xhr.open('POST', `${API_BASE}/attachments/upload`);
     xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.send(formData);
   });
 }
@@ -113,6 +120,7 @@ export async function toggleReaction(token: string, messageId: string, emoji: st
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/x-www-form-urlencoded',
+      ...CSRF_HEADERS,
     },
     body: `message_id=${encodeURIComponent(messageId)}&emoji=${encodeURIComponent(emoji)}`,
   });
@@ -139,6 +147,7 @@ export async function editMessage(token: string, messageId: string, content: str
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/x-www-form-urlencoded',
+      ...CSRF_HEADERS,
     },
     body: `message_id=${encodeURIComponent(messageId)}&content=${encodeURIComponent(content)}`,
   });
@@ -155,6 +164,7 @@ export async function deleteMessage(token: string, messageId: string): Promise<{
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/x-www-form-urlencoded',
+      ...CSRF_HEADERS,
     },
     body: `message_id=${encodeURIComponent(messageId)}`,
   });
@@ -173,6 +183,7 @@ export async function markConversationRead(token: string, conversationId: string
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/x-www-form-urlencoded',
+      ...CSRF_HEADERS,
     },
     body: `conversation_id=${encodeURIComponent(conversationId)}`,
   });
