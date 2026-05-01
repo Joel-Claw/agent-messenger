@@ -276,6 +276,25 @@ func authRateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// adminAuthMiddleware requires a valid X-Admin-Secret header for admin endpoints.
+// Uses constant-time comparison to prevent timing attacks.
+func adminAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		secret := r.Header.Get("X-Admin-Secret")
+		if secret == "" {
+			secret = r.FormValue("admin_secret")
+		}
+		if secret == "" {
+			secret = r.URL.Query().Get("admin_secret")
+		}
+		if err := ValidateAdminSecret(secret); err != nil {
+			writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		next(w, r)
+	}
+}
+
 // extractIP returns the client IP from the request, considering X-Forwarded-For
 // and X-Real-IP headers for reverse proxy setups.
 func extractIP(r *http.Request) string {

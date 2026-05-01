@@ -278,11 +278,11 @@ func handleSetRateLimitTier(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adminSecret := r.Header.Get("X-Admin-Secret")
-	if adminSecret == "" {
-		adminSecret = r.FormValue("admin_secret")
+	adminSecretVal := r.Header.Get("X-Admin-Secret")
+	if adminSecretVal == "" {
+		adminSecretVal = r.FormValue("admin_secret")
 	}
-	if adminSecret != getEnvOrDefault("ADMIN_SECRET", "admin-dev-secret") {
+	if err := ValidateAdminSecret(adminSecretVal); err != nil {
 		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
@@ -331,11 +331,11 @@ func handleGetRateLimitTier(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adminSecret := r.Header.Get("X-Admin-Secret")
-	if adminSecret == "" {
-		adminSecret = r.URL.Query().Get("admin_secret")
+	adminSecretVal := r.Header.Get("X-Admin-Secret")
+	if adminSecretVal == "" {
+		adminSecretVal = r.URL.Query().Get("admin_secret")
 	}
-	if adminSecret != getEnvOrDefault("ADMIN_SECRET", "admin-dev-secret") {
+	if err := ValidateAdminSecret(adminSecretVal); err != nil {
 		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
@@ -387,5 +387,14 @@ func writeJSONResponse(w http.ResponseWriter, code int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(data)
+}
+
+// handleAdminRateLimitTier routes POST to handleSetRateLimitTier and GET to handleGetRateLimitTier.
+func handleAdminRateLimitTier(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		handleSetRateLimitTier(w, r)
+	} else {
+		handleGetRateLimitTier(w, r)
+	}
 }
 

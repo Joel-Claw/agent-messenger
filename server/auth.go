@@ -30,6 +30,28 @@ func getAgentSecret() string {
 	return s
 }
 
+// ADMIN_SECRET is the secret for admin endpoints (rate limit tiers, agent listing, etc).
+// Set via ADMIN_SECRET env var. Separate from AGENT_SECRET for least-privilege.
+var adminSecret = getAdminSecret()
+
+func getAdminSecret() string {
+	s := os.Getenv("ADMIN_SECRET")
+	if s == "" {
+		s = "admin-dev-secret"
+		log.Println("WARNING: ADMIN_SECRET not set, using dev default. Set ADMIN_SECRET in production!")
+	}
+	return s
+}
+
+// ValidateAdminSecret checks the provided secret against ADMIN_SECRET using
+// constant-time comparison to prevent timing attacks.
+func ValidateAdminSecret(secret string) error {
+	if subtle.ConstantTimeCompare([]byte(secret), []byte(adminSecret)) != 1 {
+		return errors.New("unauthorized: invalid admin secret")
+	}
+	return nil
+}
+
 // Rate limiter for agent connections
 var agentRateLimiter = &rateLimiter{
 	attempts: make(map[string]*rateLimitEntry),

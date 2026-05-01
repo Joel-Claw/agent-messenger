@@ -221,7 +221,7 @@ func main() {
 
 	// Agent endpoints
 	http.HandleFunc("/agents", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleListAgents))))
-	http.HandleFunc("/admin/agents", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleAdminAgents))))
+	http.HandleFunc("/admin/agents", accessLogMiddleware(requestIDMiddleware(adminAuthMiddleware(corsMiddleware(handleAdminAgents)))))
 
 	// Conversation endpoints
 	http.HandleFunc("/conversations/create", accessLogMiddleware(requestIDMiddleware(corsMiddleware(tieredRateLimitMiddleware(handleCreateConversation)))))
@@ -261,14 +261,8 @@ func main() {
 	http.HandleFunc("/push/web-subscribe", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleWebPushSubscribe))))
 	http.HandleFunc("/push/web-unsubscribe", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleWebPushUnsubscribe))))
 
-	// Admin rate limit tier endpoints
-	http.HandleFunc("/admin/rate-limit/tier", accessLogMiddleware(requestIDMiddleware(corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			handleSetRateLimitTier(w, r)
-		} else {
-			handleGetRateLimitTier(w, r)
-		}
-	}))))
+	// Admin rate limit tier endpoints — require admin auth
+	http.HandleFunc("/admin/rate-limit/tier", accessLogMiddleware(requestIDMiddleware(adminAuthMiddleware(corsMiddleware(handleAdminRateLimitTier)))))
 
 	// Initialize push notifications
 	initPushNotifications()
