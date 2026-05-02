@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import './responsive.css';
 import { AgentList } from './components/AgentList';
 import { ChatView } from './components/ChatView';
 import { ConversationList } from './components/ConversationList';
@@ -21,6 +22,25 @@ function App() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [showE2ESettings, setShowE2ESettings] = useState(false);
   const [, setConversations] = useState<Conversation[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // On mobile, controls sidebar visibility
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(true); // Auto-show sidebar on desktop
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Auto-open sidebar on mobile when no agent is selected
+  useEffect(() => {
+    if (isMobile && !selectedAgent) {
+      setSidebarOpen(true);
+    }
+  }, [isMobile, selectedAgent]);
 
   const refreshConversations = useCallback(async () => {
     if (!token) return;
@@ -249,6 +269,7 @@ function App() {
     setSelectedAgent(agentId);
     setMessages([]);
     setConversationId(null);
+    setSidebarOpen(false); // Close sidebar on mobile after selecting
   };
 
   const handleSelectConversation = (convId: string, agentId: string) => {
@@ -259,6 +280,7 @@ function App() {
     if (token) {
       markConversationRead(token, convId).catch(() => {});
     }
+    setSidebarOpen(false); // Close sidebar on mobile after selecting
   };
 
   const handleSend = (content: string, attachmentIds?: string[]) => {
@@ -294,9 +316,44 @@ function App() {
   }
 
   return (
-    <div style={styles.app}>
-      <div style={styles.sidebar}>
-        <div style={styles.sidebarHeader}>
+    <div className="am-app" style={styles.app}>
+      {/* Mobile header bar — visible only on small screens */}
+      <div className="am-mobile-header" style={styles.mobileHeader}>
+        {!sidebarOpen && selectedAgent ? (
+          <button onClick={() => setSidebarOpen(true)} style={styles.hamburgerButton} aria-label="Open sidebar">
+            ☰
+          </button>
+        ) : (
+          <span style={styles.mobileLogo}>Agent Messenger</span>
+        )}
+      </div>
+
+      {/* Sidebar overlay backdrop on mobile */}
+      {isMobile && sidebarOpen && (
+        <div style={styles.sidebarBackdrop} onClick={() => setSidebarOpen(false)} />
+      )}
+
+      <div
+        className={`am-sidebar${sidebarOpen ? ' am-sidebar-open' : ''}`}
+        style={styles.sidebar}
+      >
+        <div className="am-sidebar-desktop-header" style={styles.sidebarHeader}>
+          <span style={styles.logo}>Agent Messenger</span>
+          <div style={styles.sidebarActions}>
+            <button
+              onClick={() => setShowE2ESettings(true)}
+              style={styles.e2eButton}
+              title="End-to-End Encryption Settings"
+            >
+              {isE2EInitialized() ? '🔒' : '🔓'}
+            </button>
+            <button onClick={handleLogout} style={styles.logoutButton}>
+              Sign Out
+            </button>
+          </div>
+        </div>
+        {/* Mobile sidebar header — shows on small screens */}
+        <div className="am-mobile-header" style={styles.mobileSidebarHeader}>
           <span style={styles.logo}>Agent Messenger</span>
           <div style={styles.sidebarActions}>
             <button
@@ -317,7 +374,7 @@ function App() {
           onSelectAgent={handleSelectAgent}
           onAgentsLoaded={setAgents}
         />
-        <div style={styles.sidebarSection}>
+        <div className="am-conv-list" style={styles.sidebarSection}>
           <div style={styles.sidebarSectionTitle}>Chats</div>
           <ConversationList
             token={token}
@@ -331,7 +388,7 @@ function App() {
           <PushSubscription token={token} />
         </div>
       </div>
-      <div style={styles.main}>
+      <div className="am-main" style={styles.main}>
         {selectedAgent ? (
           <ChatView
             messages={messages}
@@ -346,6 +403,7 @@ function App() {
             loadOlderMessages={loadOlderMessages}
             hasOlderMessages={hasOlderMessages}
             loadingOlder={loadingOlder}
+            onBack={() => setSidebarOpen(true)}
           />
         ) : (
           <div style={styles.empty}>
@@ -369,12 +427,51 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#e6edf3',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },
+  mobileHeader: {
+    display: 'none', // Hidden on desktop, shown via CSS on mobile
+    alignItems: 'center',
+    justifyContent: 'space-between' as const,
+    padding: '0.5rem 0.75rem',
+    backgroundColor: '#161b22',
+    borderBottom: '1px solid #30363d',
+    position: 'sticky' as const,
+    top: 0,
+    zIndex: 40,
+  },
+  mobileSidebarHeader: {
+    display: 'none', // Hidden on desktop, shown via CSS on mobile
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    padding: '0.75rem 1rem',
+    borderBottom: '1px solid #30363d',
+  },
+  hamburgerButton: {
+    background: 'none',
+    border: 'none',
+    color: '#e6edf3',
+    fontSize: '1.25rem',
+    cursor: 'pointer',
+    padding: '0.25rem 0.5rem',
+    borderRadius: '4px',
+  },
+  mobileLogo: {
+    fontWeight: 600,
+    fontSize: '0.875rem',
+    color: '#58a6ff',
+  },
+  sidebarBackdrop: {
+    position: 'fixed' as const,
+    inset: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 45,
+  },
   sidebar: {
     display: 'flex',
     flexDirection: 'column' as const,
     width: '280px',
     backgroundColor: '#161b22',
     borderRight: '1px solid #30363d',
+    flexShrink: 0,
   },
   sidebarHeader: {
     display: 'flex',

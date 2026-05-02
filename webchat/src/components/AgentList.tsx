@@ -69,7 +69,7 @@ export function AgentList({ token, selectedAgent, onSelectAgent, onAgentsLoaded 
   if (error) return <div style={styles.error}>{error}</div>;
 
   return (
-    <div style={styles.container}>
+    <div className="am-agent-list" style={styles.container}>
       <h3 style={styles.heading}>Agents</h3>
       {agents.length === 0 && (
         <div style={styles.empty}>No agents online</div>
@@ -81,6 +81,7 @@ export function AgentList({ token, selectedAgent, onSelectAgent, onAgentsLoaded 
           <button
             key={agent.id}
             onClick={() => onSelectAgent(agent.id)}
+            className="am-agent-card"
             style={{
               ...styles.agentCard,
               ...(selectedAgent === agent.id ? styles.agentSelected : {}),
@@ -127,10 +128,8 @@ function formatLastSeen(iso: string): string {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    width: '240px',
     backgroundColor: '#161b22',
-    borderRight: '1px solid #30363d',
-    padding: '1rem',
+    padding: '0.5rem',
     overflowY: 'auto',
   },
   heading: {

@@ -71,7 +71,7 @@ export function ConversationList({
   }
 
   return (
-    <div style={styles.container}>
+    <div className="am-conv-list" style={styles.container}>
       <div style={styles.heading}>Chats</div>
       {conversations.length > 3 && (
         <input
@@ -89,6 +89,7 @@ export function ConversationList({
         <button
           key={conv.id}
           onClick={() => onSelectConversation(conv.id, conv.agent_id)}
+          className="am-conv-card"
           style={{
             ...styles.convCard,
             ...(selectedConversationId === conv.id ? styles.convSelected : {}),

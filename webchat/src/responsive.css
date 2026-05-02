@@ -1,0 +1,243 @@
+/* Agent Messenger WebChat — Responsive styles for mobile browsers */
+
+/* ===== Viewport & base resets ===== */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Use dvh with vh fallback for mobile browsers with address bars */
+.am-app {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.am-app > .am-main {
+  /* Ensure chat container fills available height on mobile */
+}
+
+/* Main container should also use dvh */
+.am-app .am-main > div:first-child {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ===== Mobile breakpoint: sidebar becomes a full-screen overlay ===== */
+@media (max-width: 768px) {
+  /* App layout: single-column stack */
+  .am-app {
+    flex-direction: column !important;
+  }
+
+  /* Sidebar: full-height overlay, slides in/out */
+  .am-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    border-right: none !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .am-sidebar.am-sidebar-open {
+    transform: translateX(0);
+  }
+
+  /* Main content: full width */
+  .am-main {
+    width: 100vw !important;
+    min-width: 0 !important;
+  }
+
+  /* Mobile header bar (shown on mobile only) */
+  .am-mobile-header {
+    display: flex !important;
+  }
+
+  /* Hide desktop sidebar header on mobile (replaced by mobile header) */
+  .am-sidebar-desktop-header {
+    display: none !important;
+  }
+
+  /* Chat header: add back button on mobile */
+  .am-chat-back-btn {
+    display: inline-flex !important;
+  }
+
+  /* Agent list: full width on mobile */
+  .am-agent-list {
+    width: 100% !important;
+    border-right: none !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  /* Conversation list: no extra padding conflict */
+  .am-conv-list {
+    padding: 0.5rem 1rem !important;
+  }
+
+  /* Message bubbles: wider on mobile (more screen real estate) */
+  .am-message-bubble {
+    max-width: 85% !important;
+  }
+
+  /* Attachments: constrain to screen */
+  .am-attachment-image {
+    max-width: 100% !important;
+  }
+
+  .am-attachment-video {
+    max-width: 100% !important;
+  }
+
+  .am-attachment-audio {
+    width: 100% !important;
+    max-width: 260px !important;
+  }
+
+  .am-attachment-file {
+    max-width: 100% !important;
+  }
+
+  /* Context menu: prevent off-screen overflow on mobile */
+  .am-context-menu {
+    left: 50% !important;
+    top: auto !important;
+    bottom: 80px !important;
+    transform: translateX(-50%);
+  }
+
+  /* Emoji picker: position below message on mobile */
+  .am-emoji-picker {
+    position: fixed !important;
+    left: 50% !important;
+    transform: translateX(-50%);
+    bottom: 80px;
+    top: auto !important;
+  }
+
+  /* E2E settings modal: full-width on small screens */
+  .am-e2e-panel {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+
+  /* Input bar: ensure no overflow on narrow screens */
+  .am-input-bar {
+    flex-wrap: wrap !important;
+    padding: 0.5rem !important;
+  }
+
+  .am-input-bar input[type="text"] {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+
+  .am-send-btn {
+    flex-shrink: 0;
+  }
+
+  /* Pending attachment bar */
+  .am-pending-bar {
+    padding: 0.375rem 0.5rem !important;
+  }
+
+  /* Date separators */
+  .am-date-separator {
+    margin: 0.5rem 0 !important;
+  }
+
+  /* Load older messages button */
+  .am-load-older-btn {
+    font-size: 0.75rem !important;
+  }
+
+  /* Drop overlay */
+  .am-drop-overlay {
+    padding: 1rem;
+  }
+}
+
+/* ===== Small phones (≤ 380px) ===== */
+@media (max-width: 380px) {
+  .am-message-bubble {
+    max-width: 92% !important;
+    font-size: 0.8125rem !important;
+  }
+
+  .am-input-bar {
+    gap: 0.25rem !important;
+  }
+
+  .am-send-btn {
+    padding: 0.625rem 1rem !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+/* ===== Landscape phones (short height) ===== */
+@media (max-width: 768px) and (max-height: 500px) {
+  .am-sidebar {
+    padding-top: 0 !important;
+  }
+
+  .am-mobile-header {
+    padding: 0.375rem 0.75rem !important;
+  }
+}
+
+/* ===== Touch targets: ensure 44px minimum for interactive elements ===== */
+@media (pointer: coarse) {
+  .am-agent-card,
+  .am-conv-card {
+    min-height: 44px;
+  }
+
+  .am-emoji-btn,
+  .am-react-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .am-context-menu-item {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* ===== Safe area insets (notch phones) ===== */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .am-input-bar {
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+
+  .am-sidebar {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ===== Desktop: hide mobile-only elements ===== */
+@media (min-width: 769px) {
+  .am-mobile-header {
+    display: none !important;
+  }
+
+  .am-chat-back-btn {
+    display: none !important;
+  }
+}

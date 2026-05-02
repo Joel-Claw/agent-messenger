@@ -20,6 +20,7 @@ interface ChatViewProps {
   loadOlderMessages: () => Promise<void>;
   hasOlderMessages: boolean;
   loadingOlder: boolean;
+  onBack?: () => void;
 }
 
 interface ContextMenuState {
@@ -32,7 +33,7 @@ interface ContextMenuState {
 }
 
 export function ChatView({
-  messages, onSend, connected, agentName, isTyping, token, userId, conversationId, onMessagesChange, loadOlderMessages, hasOlderMessages, loadingOlder
+  messages, onSend, connected, agentName, isTyping, token, userId, conversationId, onMessagesChange, loadOlderMessages, hasOlderMessages, loadingOlder, onBack
 }: ChatViewProps) {
   const [input, setInput] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState<UploadResult[]>([]);
@@ -259,7 +260,17 @@ export function ChatView({
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <span style={styles.headerName}>{agentName}</span>
+        <div style={styles.headerLeft}>
+          <button
+            className="am-chat-back-btn"
+            onClick={onBack}
+            style={{ ...styles.backButton, display: onBack ? 'inline-flex' : 'none' }}
+            aria-label="Back to sidebar"
+          >
+            ←
+          </button>
+          <span style={styles.headerName}>{agentName}</span>
+        </div>
         <div style={styles.headerRight}>
           {isE2EInitialized() && (
             <button
@@ -297,7 +308,7 @@ export function ChatView({
         }}
       >
         {dragOver && (
-          <div style={styles.dropOverlay}>
+          <div style={styles.dropOverlay} className="am-drop-overlay">
             <div style={styles.dropIcon}>📎</div>
             <div style={styles.dropText}>Drop files to attach</div>
           </div>
@@ -320,6 +331,7 @@ export function ChatView({
                 });
               });
             }}
+            className="am-load-older-btn"
             style={styles.loadOlderButton}
           >
             ↑ Load older messages
@@ -333,7 +345,7 @@ export function ChatView({
           return (
             <React.Fragment key={msg.id}>
               {dateSeparator && (
-                <div style={styles.dateSeparator}>
+                <div className="am-date-separator" style={styles.dateSeparator}>
                   <span style={styles.dateSeparatorText}>{dateSeparator}</span>
                 </div>
               )}
@@ -349,6 +361,7 @@ export function ChatView({
                   ...(msg.sender === 'user' ? styles.userBubble : styles.agentBubble),
                   ...(msg.is_deleted ? styles.deletedBubble : {}),
                 }}
+                className="am-message-bubble"
                 onContextMenu={(e) => handleContextMenu(e, msg)}
               >
                 {msg.attachments && msg.attachments.length > 0 && (
@@ -423,13 +436,14 @@ export function ChatView({
                 <button
                   onClick={() => setEmojiPickerMsgId(emojiPickerMsgId === msg.id ? null : msg.id)}
                   style={styles.reactButton}
+                  className="am-react-btn"
                   title="React"
                 >
                   😊
                 </button>
               )}
               {emojiPickerMsgId === msg.id && (
-                <div ref={emojiPickerRef} style={styles.emojiPicker}>
+                <div ref={emojiPickerRef} className="am-emoji-picker" style={styles.emojiPicker}>
                   {QUICK_EMOJIS.map(emoji => (
                     <button
                       key={emoji}
@@ -460,7 +474,7 @@ export function ChatView({
       </div>
 
       {pendingAttachments.length > 0 && (
-        <div style={styles.pendingBar}>
+        <div className="am-pending-bar" style={styles.pendingBar}>
           {pendingAttachments.map(att => (
             <div key={att.id} style={styles.pendingChip}>
               <span style={styles.pendingChipIcon}>
@@ -482,7 +496,7 @@ export function ChatView({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={styles.inputBar}>
+      <form onSubmit={handleSubmit} className="am-input-bar" style={styles.inputBar}>
         <AttachmentUpload
           token={token}
           onUploaded={handleAttachmentUploaded}
@@ -500,6 +514,7 @@ export function ChatView({
         />
         <button
           type="submit"
+          className="am-send-btn"
           disabled={!connected || (!input.trim() && pendingAttachments.length === 0)}
           style={{
             ...styles.sendButton,
@@ -514,6 +529,7 @@ export function ChatView({
       {contextMenu && (
         <div
           ref={contextMenuRef}
+          className="am-context-menu"
           style={{
             ...styles.contextMenu,
             left: contextMenu.x,
@@ -523,6 +539,7 @@ export function ChatView({
           {!contextMenu.isDeleted && (
             <>
               <button
+                className="am-context-menu-item"
                 onClick={() => {
                   setEmojiPickerMsgId(contextMenu.messageId);
                   setContextMenu(null);
@@ -534,6 +551,7 @@ export function ChatView({
               {contextMenu.sender === 'user' && (
                 <>
                   <button
+                    className="am-context-menu-item"
                     onClick={() => {
                       const msg = messages.find(m => m.id === contextMenu.messageId);
                       if (msg) handleEdit(contextMenu.messageId, msg.content);
@@ -543,6 +561,7 @@ export function ChatView({
                     ✏️ Edit
                   </button>
                   <button
+                    className="am-context-menu-item"
                     onClick={() => handleDelete(contextMenu.messageId)}
                     style={{ ...styles.contextMenuItem, color: '#f85149' }}
                   >
@@ -551,6 +570,7 @@ export function ChatView({
                 </>
               )}
               <button
+                className="am-context-menu-item"
                 onClick={() => {
                   navigator.clipboard.writeText(
                     messages.find(m => m.id === contextMenu.messageId)?.content || ''
@@ -584,6 +604,21 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0.75rem 1rem',
     borderBottom: '1px solid #30363d',
     backgroundColor: '#161b22',
+  },
+  headerLeft: {
+    display: 'flex',
+    alignItems: 'center' as const,
+    gap: '0.5rem',
+  },
+  backButton: {
+    background: 'none',
+    border: 'none',
+    color: '#58a6ff',
+    fontSize: '1.25rem',
+    cursor: 'pointer',
+    padding: '0.125rem 0.375rem',
+    borderRadius: '4px',
+    lineHeight: 1,
   },
   headerName: {
     fontWeight: 600,

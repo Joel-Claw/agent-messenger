@@ -63,7 +63,7 @@ export function E2ESettings({ token, onClose }: E2ESettingsProps) {
 
   return (
     <div style={styles.overlay}>
-      <div style={styles.panel}>
+      <div className="am-e2e-panel" style={styles.panel}>
         <div style={styles.header}>
           <span style={styles.title}>🔒 End-to-End Encryption</span>
           <button onClick={onClose} style={styles.closeButton}>×</button>

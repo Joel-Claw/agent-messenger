@@ -18,6 +18,7 @@ export function AttachmentPreview({ attachment, token }: AttachmentPreviewProps)
           <img
             src={authUrl}
             alt={attachment.filename}
+            className="am-attachment-image"
             style={styles.image}
             loading="lazy"
           />
@@ -33,7 +34,7 @@ export function AttachmentPreview({ attachment, token }: AttachmentPreviewProps)
   if (isAudioContentType(attachment.content_type)) {
     return (
       <div style={styles.container}>
-        <audio controls style={styles.audio} preload="metadata">
+        <audio controls className="am-attachment-audio" style={styles.audio} preload="metadata">
           <source src={authUrl} type={attachment.content_type} />
         </audio>
         <div style={styles.caption}>
@@ -47,7 +48,7 @@ export function AttachmentPreview({ attachment, token }: AttachmentPreviewProps)
   if (isVideoContentType(attachment.content_type)) {
     return (
       <div style={styles.container}>
-        <video controls style={styles.video} preload="metadata">
+        <video controls className="am-attachment-video" style={styles.video} preload="metadata">
           <source src={authUrl} type={attachment.content_type} />
         </video>
         <div style={styles.caption}>
@@ -65,6 +66,7 @@ export function AttachmentPreview({ attachment, token }: AttachmentPreviewProps)
         href={authUrl}
         target="_blank"
         rel="noopener noreferrer"
+        className="am-attachment-file"
         style={styles.fileLink}
       >
         <span style={styles.fileIcon}>{getFileIcon(attachment.content_type)}</span>
