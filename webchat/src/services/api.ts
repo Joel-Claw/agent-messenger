@@ -207,6 +207,38 @@ export async function getPresence(token: string): Promise<AgentPresence[]> {
   return res.json();
 }
 
+// --- Notification Preferences ---
+
+export interface NotificationPref {
+  conversation_id: string;
+  muted: boolean;
+}
+
+export async function getNotificationPrefs(token: string): Promise<NotificationPref[]> {
+  const res = await fetch(`${API_BASE}/notification-prefs`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Failed to fetch notification preferences');
+  return res.json();
+}
+
+export async function setNotificationPref(token: string, conversationId: string, muted: boolean): Promise<NotificationPref> {
+  const res = await fetch(`${API_BASE}/notification-prefs/set`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      ...CSRF_HEADERS,
+    },
+    body: `conversation_id=${encodeURIComponent(conversationId)}&muted=${muted}`,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Set notification pref failed' }));
+    throw new Error(err.error || 'Set notification pref failed');
+  }
+  return res.json();
+}
+
 export function isImageContentType(ct: string): boolean {
   return ct.startsWith('image/');
 }

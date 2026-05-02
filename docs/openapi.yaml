@@ -1331,3 +1331,87 @@ components:
         created_at:
           type: string
           format: date-time
+  /notification-prefs:
+    get:
+      summary: Get notification preferences
+      description: Returns all notification preferences for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of notification preferences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationPref'
+        '401':
+          description: Unauthorized
+
+  /notification-prefs/set:
+    post:
+      summary: Set notification preference
+      description: Set mute status for a specific conversation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - conversation_id
+                - muted
+              properties:
+                conversation_id:
+                  type: string
+                muted:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated preference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPref'
+        '400':
+          description: Missing conversation_id
+        '403':
+          description: Not your conversation
+        '404':
+          description: Conversation not found
+
+  /notification-prefs/delete:
+    post:
+      summary: Delete notification preference
+      description: Remove notification preference for a conversation (reverts to default: not muted)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - conversation_id
+              properties:
+                conversation_id:
+                  type: string
+      responses:
+        '200':
+          description: Preference deleted
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPref'
+    NotificationPref:
+      type: object
+      properties:
+        conversation_id:
+          type: string
+        muted:
+          type: boolean

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { AttachmentUpload } from './AttachmentUpload';
 import { AttachmentPreview } from './AttachmentPreview';
-import { toggleReaction, editMessage, deleteMessage, markConversationRead } from '../services/api';
+import { toggleReaction, editMessage, deleteMessage, markConversationRead, getNotificationPrefs, setNotificationPref } from '../services/api';
 import type { Message, UploadResult } from '../types';
 import { isE2EInitialized } from '../services/e2e';
 
@@ -44,9 +44,27 @@ export function ChatView({
   const [editContent, setEditContent] = useState('');
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [emojiPickerMsgId, setEmojiPickerMsgId] = useState<string | null>(null);
+  const [muted, setMuted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Load mute status for current conversation
+  useEffect(() => {
+    if (!token || !conversationId) { setMuted(false); return; }
+    getNotificationPrefs(token).then(prefs => {
+      const pref = prefs.find(p => p.conversation_id === conversationId);
+      setMuted(pref ? pref.muted : false);
+    }).catch(() => {});
+  }, [token, conversationId]);
+
+  const handleToggleMute = useCallback(async () => {
+    if (!token || !conversationId) return;
+    try {
+      await setNotificationPref(token, conversationId, !muted);
+      setMuted(!muted);
+    } catch {}
+  }, [token, conversationId, muted]);
 
   // Track whether user is near bottom of the chat
   const handleScroll = useCallback(() => {
@@ -298,6 +316,21 @@ export function ChatView({
           <span style={styles.headerName}>{agentName}</span>
         </div>
         <div style={styles.headerRight}>
+          {conversationId && (
+            <button
+              type="button"
+              onClick={handleToggleMute}
+              style={{
+                ...styles.e2eToggle,
+                backgroundColor: muted ? 'rgba(248, 81, 73, 0.2)' : 'transparent',
+                borderColor: muted ? '#f85149' : '#30363d',
+                color: muted ? '#f85149' : '#8b949e',
+              }}
+              title={muted ? 'Notifications muted (click to unmute)' : 'Notifications on (click to mute)'}
+            >
+              {muted ? '🔕' : '🔔'}
+            </button>
+          )}
           {isE2EInitialized() && (
             <button
               type="button"

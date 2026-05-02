@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -81,6 +82,13 @@ func writeJSONError(w http.ResponseWriter, code int, message string) {
 		"error":  message,
 		"status": http.StatusText(code),
 	})
+}
+
+// writeJSON writes a JSON success response.
+func writeJSON(w http.ResponseWriter, code int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(data)
 }
 
 // isUniqueViolation checks if the error is a SQLite UNIQUE constraint violation
@@ -384,6 +392,37 @@ func adminAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 		next(w, r)
 	}
+}
+
+// contextKeyUserID is the context key for the authenticated user ID
+var contextKeyUserID = &struct{}{}
+
+// authMiddleware validates JWT and sets user ID in request context.
+func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("Authorization")
+		if len(token) > 7 && token[:7] == "Bearer " {
+			token = token[7:]
+		}
+		claims, err := ValidateJWT(token)
+		if err != nil {
+			writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		ctx := r.Context()
+		// Store both user_id and agent flag
+		ctx = context.WithValue(ctx, contextKeyUserID, claims.UserID)
+		next(w, r.WithContext(ctx))
+	}
+}
+
+// getUserID extracts the authenticated user ID from request context.
+func getUserID(r *http.Request) (string, error) {
+	userID, ok := r.Context().Value(contextKeyUserID).(string)
+	if !ok || userID == "" {
+		return "", fmt.Errorf("unauthorized")
+	}
+	return userID, nil
 }
 
 // extractIP returns the client IP from the request, considering X-Forwarded-For

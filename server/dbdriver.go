@@ -160,6 +160,16 @@ CREATE TABLE IF NOT EXISTS encrypted_messages (
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (conversation_id) REFERENCES conversations(id)
 );
+
+CREATE TABLE IF NOT EXISTS notification_preferences (
+	user_id TEXT NOT NULL,
+	conversation_id TEXT NOT NULL,
+	muted INTEGER NOT NULL DEFAULT 0,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (user_id, conversation_id),
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+);
 `
 
 // PostgreSQL schema (compatible version)
@@ -251,6 +261,16 @@ CREATE TABLE IF NOT EXISTS encrypted_messages (
 	algorithm TEXT NOT NULL,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+);
+
+CREATE TABLE IF NOT EXISTS notification_preferences (
+	user_id TEXT NOT NULL,
+	conversation_id TEXT NOT NULL,
+	muted BOOLEAN DEFAULT FALSE,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (user_id, conversation_id),
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS schema_migrations (

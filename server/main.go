@@ -260,6 +260,9 @@ func main() {
 	http.HandleFunc("/push/vapid-key", accessLogMiddleware(requestIDMiddleware(corsMiddleware(handleGetVAPIDKey))))
 	http.HandleFunc("/push/web-subscribe", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(handleWebPushSubscribe)))))
 	http.HandleFunc("/push/web-unsubscribe", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(handleWebPushUnsubscribe)))))
+	http.HandleFunc("/notification-prefs", accessLogMiddleware(requestIDMiddleware(authMiddleware(handleGetNotificationPrefs))))
+	http.HandleFunc("/notification-prefs/set", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(authMiddleware(handleSetNotificationPrefs))))))
+	http.HandleFunc("/notification-prefs/delete", accessLogMiddleware(requestIDMiddleware(csrfMiddleware(corsMiddleware(authMiddleware(handleDeleteNotificationPrefs))))))
 
 	// Admin rate limit tier endpoints — require admin auth
 	http.HandleFunc("/admin/rate-limit/tier", accessLogMiddleware(requestIDMiddleware(adminAuthMiddleware(corsMiddleware(handleAdminRateLimitTier)))))
@@ -453,6 +456,21 @@ func initSchema(db *sql.DB) error {
 			tier_name TEXT NOT NULL DEFAULT 'free',
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		);
+	`); err != nil {
+		return err
+	}
+
+	// Create notification_preferences table for per-conversation mute settings
+	if _, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS notification_preferences (
+			user_id TEXT NOT NULL,
+			conversation_id TEXT NOT NULL,
+			muted BOOLEAN NOT NULL DEFAULT 0,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (user_id, conversation_id),
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+			FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
 		);
 	`); err != nil {
 		return err

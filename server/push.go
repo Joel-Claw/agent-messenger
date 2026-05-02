@@ -344,6 +344,11 @@ func notifyUser(userID, title, body, conversationID string) {
 		return
 	}
 
+	// Check if user has muted this conversation
+	if conversationID != "" && isConversationMuted(userID, conversationID) {
+		return
+	}
+
 	tokens, err := getDeviceTokensForUser(userID)
 	if err != nil || len(tokens) == 0 {
 		return
