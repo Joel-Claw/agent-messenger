@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -19,12 +21,23 @@ const (
 	// pingPeriod is how often to send pings to the peer. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
 
-	// maxMessageSize is the maximum size of a single WebSocket message.
-	maxMessageSize = 65536 // 64KB
+	// defaultMaxMessageSize is the default maximum size of a single WebSocket message.
+	defaultMaxMessageSize = 65536 // 64KB
 
 	// writeWait is the time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
 )
+
+// maxMessageSize is the maximum size of a single WebSocket message.
+// Configurable via MAX_WS_MESSAGE_SIZE env var (in bytes).
+var maxMessageSize = func() int64 {
+	if v := os.Getenv("MAX_WS_MESSAGE_SIZE"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil && n > 0 {
+			return n
+		}
+	}
+	return defaultMaxMessageSize
+}()
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
