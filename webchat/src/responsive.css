@@ -138,9 +138,11 @@ html {
     padding: 0.5rem !important;
   }
 
-  .am-input-bar input[type="text"] {
+  .am-input-bar textarea,
+  .am-message-input {
     min-width: 0;
     flex: 1 1 0;
+    font-size: 16px !important; /* Prevent iOS zoom on focus */
   }
 
   .am-send-btn {

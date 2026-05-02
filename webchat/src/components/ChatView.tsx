@@ -46,6 +46,7 @@ export function ChatView({
   const [emojiPickerMsgId, setEmojiPickerMsgId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Track whether user is near bottom of the chat
   const handleScroll = useCallback(() => {
@@ -70,6 +71,15 @@ export function ChatView({
       }
     }
   }, [hasOlderMessages, loadingOlder, loadOlderMessages]);
+
+  // Auto-grow textarea to fit content
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 96) + 'px';
+    }
+  }, [input]);
+
   const dropAreaRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -94,6 +104,22 @@ export function ChatView({
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  // Escape key to close context menu, emoji picker
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setContextMenu(null);
+        setEmojiPickerMsgId(null);
+        if (editingMessageId) {
+          setEditingMessageId(null);
+          setEditContent('');
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [editingMessageId]);
 
   useEffect(() => {
     // Only auto-scroll if user is near the bottom
@@ -504,13 +530,21 @@ export function ChatView({
           droppedFiles={droppedFiles}
           onDropsConsumed={handleDropsConsumed}
         />
-        <input
-          type="text"
+        <textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={connected ? 'Type a message...' : 'Connecting...'}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+              e.preventDefault();
+              handleSubmit(e as unknown as React.FormEvent);
+            }
+          }}
+          placeholder={connected ? 'Type a message... (Shift+Enter for newline)' : 'Connecting...'}
           disabled={!connected}
+          className="am-message-input"
           style={styles.input}
+          rows={1}
         />
         <button
           type="submit"
@@ -938,6 +972,12 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#0d1117',
     color: '#e6edf3',
     fontSize: '0.875rem',
+    resize: 'none' as const,
+    overflow: 'hidden' as const,
+    lineHeight: '1.4',
+    minHeight: '2.5rem',
+    maxHeight: '6rem',
+    fontFamily: 'inherit',
   },
   sendButton: {
     padding: '0.75rem 1.5rem',

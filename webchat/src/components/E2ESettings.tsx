@@ -26,6 +26,17 @@ export function E2ESettings({ token, onClose }: E2ESettingsProps) {
     }
   }, [initialized]);
 
+  // Escape key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const handleInitialize = async () => {
     setLoading(true);
     setError(null);
@@ -62,8 +73,8 @@ export function E2ESettings({ token, onClose }: E2ESettingsProps) {
   };
 
   return (
-    <div style={styles.overlay}>
-      <div className="am-e2e-panel" style={styles.panel}>
+    <div style={styles.overlay} onClick={onClose}>
+      <div className="am-e2e-panel" style={styles.panel} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
           <span style={styles.title}>🔒 End-to-End Encryption</span>
           <button onClick={onClose} style={styles.closeButton}>×</button>
