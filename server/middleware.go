@@ -222,11 +222,20 @@ func requestIDMiddleware(next http.HandlerFunc) http.HandlerFunc {
 }
 
 // accessLogMiddleware logs each HTTP request using the structured logger.
-// Logs method, path, status code, duration, and request ID.
+// Logs method, path, status code, duration, request ID, and user ID (when available).
 func accessLogMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		requestID := r.Header.Get("X-Request-ID")
+
+		// Extract user ID from Authorization header (without blocking on auth failure)
+		userID := ""
+		authHeader := r.Header.Get("Authorization")
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			if claims, err := ValidateJWT(strings.TrimPrefix(authHeader, "Bearer ")); err == nil {
+				userID = claims.UserID
+			}
+		}
 
 		// Wrap ResponseWriter to capture status code
 		wrapped := &responseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
@@ -234,15 +243,19 @@ func accessLogMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		next(wrapped, r)
 
 		duration := time.Since(start)
-		DefaultLogger.Info("http_request", map[string]interface{}{
+		fields := map[string]interface{}{
 			"method":      r.Method,
 			"path":        r.URL.Path,
 			"status":      wrapped.statusCode,
-			"duration_ms":  duration.Milliseconds(),
+			"duration_ms": duration.Milliseconds(),
 			"request_id":  requestID,
 			"remote_addr": r.RemoteAddr,
 			"user_agent":  r.UserAgent(),
-		})
+		}
+		if userID != "" {
+			fields["user_id"] = userID
+		}
+		DefaultLogger.Info("http_request", fields)
 	}
 }
 
