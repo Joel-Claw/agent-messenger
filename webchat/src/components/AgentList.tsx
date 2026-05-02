@@ -69,7 +69,7 @@ export function AgentList({ token, selectedAgent, onSelectAgent, onAgentsLoaded 
   if (error) return <div style={styles.error}>{error}</div>;
 
   return (
-    <div className="am-agent-list" style={styles.container}>
+    <div className="am-agent-list" style={styles.container} role="listbox" aria-label="Available agents">
       <h3 style={styles.heading}>Agents</h3>
       {agents.length === 0 && (
         <div style={styles.empty}>No agents online</div>
@@ -82,6 +82,9 @@ export function AgentList({ token, selectedAgent, onSelectAgent, onAgentsLoaded 
             key={agent.id}
             onClick={() => onSelectAgent(agent.id)}
             className="am-agent-card"
+            role="option"
+            aria-selected={selectedAgent === agent.id}
+            aria-label={`${agent.name || agent.id}, ${statusLabel}`}
             style={{
               ...styles.agentCard,
               ...(selectedAgent === agent.id ? styles.agentSelected : {}),

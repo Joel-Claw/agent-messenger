@@ -73,7 +73,7 @@ export function E2ESettings({ token, onClose }: E2ESettingsProps) {
   };
 
   return (
-    <div style={styles.overlay} onClick={onClose}>
+    <div style={styles.overlay} onClick={onClose} role="dialog" aria-modal="true" aria-label="End-to-End Encryption Settings">
       <div className="am-e2e-panel" style={styles.panel} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
           <span style={styles.title}>🔒 End-to-End Encryption</span>

@@ -143,17 +143,17 @@ export function PushSubscription({ token }: PushSubscriptionProps) {
 
   if (!supported) {
     return (
-      <div style={styles.container}>
+      <div style={styles.container} role="status">
         <div style={styles.unsupported}>Push notifications not supported in this browser</div>
       </div>
     );
   }
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} role="region" aria-label="Push notifications">
       <div style={styles.row}>
         <div style={styles.info}>
-          <span style={styles.icon}>{subscribed ? '🔔' : '🔕'}</span>
+          <span style={styles.icon} aria-hidden="true">{subscribed ? '🔔' : '🔕'}</span>
           <span style={styles.label}>
             {subscribed ? 'Push notifications enabled' : 'Push notifications'}
           </span>
@@ -162,6 +162,7 @@ export function PushSubscription({ token }: PushSubscriptionProps) {
           <button
             onClick={subscribe}
             disabled={loading || permission === 'denied'}
+            aria-label="Enable push notifications"
             style={{
               ...styles.button,
               ...styles.enableButton,

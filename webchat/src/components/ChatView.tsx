@@ -284,7 +284,7 @@ export function ChatView({
   };
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} role="main" aria-label={`Chat with ${agentName}`}>
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           <button
@@ -328,6 +328,9 @@ export function ChatView({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onScroll={handleScroll}
+        role="log"
+        aria-label="Message history"
+        aria-live="polite"
         style={{
           ...styles.messages,
           ...(dragOver ? styles.dragOver : {}),
@@ -380,6 +383,7 @@ export function ChatView({
                   ...styles.messageRow,
                   justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
                 }}
+                role="listitem"
               >
               <div
                 style={{
@@ -486,7 +490,7 @@ export function ChatView({
           );
         })}
         {isTyping && (
-          <div style={{ ...styles.messageRow, justifyContent: 'flex-start' }}>
+          <div style={{ ...styles.messageRow, justifyContent: 'flex-start' }} aria-label="Agent is typing" role="status">
             <div style={{ ...styles.messageBubble, ...styles.agentBubble }}>
               <div style={styles.typingIndicator}>
                 <span style={styles.typingDot}>●</span>
@@ -502,7 +506,7 @@ export function ChatView({
       {pendingAttachments.length > 0 && (
         <div className="am-pending-bar" style={styles.pendingBar}>
           {pendingAttachments.map(att => (
-            <div key={att.id} style={styles.pendingChip}>
+            <div key={att.id} style={styles.pendingChip} role="status" aria-label={`Pending attachment: ${att.filename}`}>
               <span style={styles.pendingChipIcon}>
                 {att.content_type.startsWith('image/') ? '🖼' : '📎'}
               </span>
@@ -543,12 +547,14 @@ export function ChatView({
           placeholder={connected ? 'Type a message... (Shift+Enter for newline)' : 'Connecting...'}
           disabled={!connected}
           className="am-message-input"
+          aria-label="Message input"
           style={styles.input}
           rows={1}
         />
         <button
           type="submit"
           className="am-send-btn"
+          aria-label="Send message"
           disabled={!connected || (!input.trim() && pendingAttachments.length === 0)}
           style={{
             ...styles.sendButton,

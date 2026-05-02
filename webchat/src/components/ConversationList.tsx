@@ -71,7 +71,7 @@ export function ConversationList({
   }
 
   return (
-    <div className="am-conv-list" style={styles.container}>
+    <div className="am-conv-list" style={styles.container} role="listbox" aria-label="Conversations">
       <div style={styles.heading}>Chats</div>
       {conversations.length > 3 && (
         <input
@@ -79,6 +79,7 @@ export function ConversationList({
           placeholder="Search conversations..."
           value={searchFilter}
           onChange={e => setSearchFilter(e.target.value)}
+          aria-label="Search conversations"
           style={styles.searchInput}
         />
       )}
@@ -90,6 +91,9 @@ export function ConversationList({
           key={conv.id}
           onClick={() => onSelectConversation(conv.id, conv.agent_id)}
           className="am-conv-card"
+          role="option"
+          aria-selected={selectedConversationId === conv.id}
+          aria-label={`${getAgentName(conv.agent_id)}, ${conv.last_message ? conv.last_message.content?.slice(0, 50) : 'No messages'}${conv.unread_count ? `, ${conv.unread_count} unread` : ''}`}
           style={{
             ...styles.convCard,
             ...(selectedConversationId === conv.id ? styles.convSelected : {}),

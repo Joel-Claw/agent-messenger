@@ -336,6 +336,8 @@ function App() {
       <div
         className={`am-sidebar${sidebarOpen ? ' am-sidebar-open' : ''}`}
         style={styles.sidebar}
+        role="navigation"
+        aria-label="Sidebar navigation"
       >
         <div className="am-sidebar-desktop-header" style={styles.sidebarHeader}>
           <span style={styles.logo}>Agent Messenger</span>

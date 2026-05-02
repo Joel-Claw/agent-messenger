@@ -34,32 +34,40 @@ export function Login({ onLogin }: LoginProps) {
   };
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} role="main">
       <div style={styles.card}>
         <h1 style={styles.title}>Agent Messenger</h1>
         <h2 style={styles.subtitle}>
           {mode === 'login' ? 'Sign In' : 'Create Account'}
         </h2>
 
-        {error && <div style={styles.error}>{error}</div>}
+        {error && <div role="alert" style={styles.error}>{error}</div>}
 
-        <form onSubmit={handleSubmit} style={styles.form}>
+        <form onSubmit={handleSubmit} style={styles.form} aria-label={mode === 'login' ? 'Sign in form' : 'Registration form'}>
+          <label htmlFor="username" style={styles.srOnly}>Username</label>
           <input
+            id="username"
             type="text"
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={styles.input}
             required
+            aria-required="true"
+            autoComplete="username"
           />
 
+          <label htmlFor="password" style={styles.srOnly}>Password</label>
           <input
+            id="password"
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={styles.input}
             required
+            aria-required="true"
+            autoComplete="current-password"
           />
 
           <button type="submit" style={styles.button} disabled={loading}>
@@ -156,5 +164,16 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     fontSize: '0.875rem',
     padding: 0,
+  },
+  srOnly: {
+    position: 'absolute' as const,
+    width: '1px',
+    height: '1px',
+    padding: 0,
+    margin: '-1px',
+    overflow: 'hidden' as const,
+    clip: 'rect(0, 0, 0, 0)',
+    whiteSpace: 'nowrap' as const,
+    borderWidth: 0,
   },
 };
