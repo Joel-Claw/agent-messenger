@@ -135,6 +135,9 @@ func replayOfflineMessages(conn *Connection) {
 		return
 	}
 
+	// Remove persisted messages since they've been drained
+	deleteQueueMessages(db, conn.id)
+
 	log.Printf("Replaying %d offline messages to %s %s", len(messages), conn.connType, conn.id)
 
 	for _, data := range messages {

@@ -147,11 +147,13 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 			if delivered == 0 {
 				// All buffers full, queue for later
 				offlineQueue.Enqueue(recipientID, outgoing)
+				persistQueue(db, recipientID, outgoing)
 				go notifyUser(recipientID, "New Message", truncate(msg.Content, 100), msg.ConversationID)
 			}
 		} else {
 			// Client is offline on all devices, queue message for later delivery
 			offlineQueue.Enqueue(recipientID, outgoing)
+			persistQueue(db, recipientID, outgoing)
 			// Also send push notification for immediate awareness
 			go notifyUser(recipientID, "New Message", truncate(msg.Content, 100), msg.ConversationID)
 		}
@@ -166,6 +168,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 		} else {
 			// Agent is offline, queue message for later delivery
 			offlineQueue.Enqueue(recipientID, outgoing)
+			persistQueue(db, recipientID, outgoing)
 		}
 	}
 

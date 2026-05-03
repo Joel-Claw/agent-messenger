@@ -72,7 +72,7 @@ class RestClient:
 
     def login(self, req: LoginRequest) -> LoginResponse:
         """Authenticate and get a JWT token."""
-        data = self._post("/auth/login", {"username": req.username, "password": req.password})
+        data = self._post("/auth/login", {"username": req.username, "password": req.password}, auth=False)
         resp = LoginResponse(
             token=data["token"],
             user_id=data["user_id"],
@@ -83,7 +83,7 @@ class RestClient:
 
     def register_user(self, req: RegisterUserRequest) -> RegisterUserResponse:
         """Register a new user account."""
-        data = self._post("/auth/user", {"username": req.username, "password": req.password})
+        data = self._post("/auth/user", {"username": req.username, "password": req.password}, auth=False)
         return RegisterUserResponse(
             user_id=data["user_id"],
             username=data["username"],
@@ -92,7 +92,7 @@ class RestClient:
         )
 
     def register_agent(self, req: RegisterAgentRequest) -> RegisterAgentResponse:
-        """Register a new AI agent (admin)."""
+        """Register a new AI agent."""
         data = self._post("/auth/agent", {
             "agent_id": req.agent_id,
             "agent_secret": req.agent_secret,
@@ -100,17 +100,17 @@ class RestClient:
             "model": req.model,
             "personality": req.personality,
             "specialty": req.specialty,
-        }, admin=True)
+        }, auth=False)
         return RegisterAgentResponse(
             agent_id=data["agent_id"],
-            name=data["name"],
-            api_key=data["api_key"],
+            name=data.get("name", data.get("agent_id", "")),
+            api_key=data.get("api_key", ""),
         )
 
     def change_password(self, req: ChangePasswordRequest) -> Dict[str, Any]:
         """Change the current user's password."""
         return self._post("/auth/change-password", {
-            "current_password": req.current_password,
+            "old_password": req.current_password,
             "new_password": req.new_password,
         })
 
@@ -120,9 +120,9 @@ class RestClient:
         """List all available agents."""
         data = self._get("/agents")
         return [Agent(
-            agent_id=a["agent_id"],
-            name=a["name"],
-            model=a["model"],
+            agent_id=a.get("agent_id", a.get("id", "")),
+            name=a.get("name", ""),
+            model=a.get("model", ""),
             personality=a.get("personality", ""),
             specialty=a.get("specialty", ""),
             status=a.get("status", "offline"),
@@ -242,7 +242,7 @@ class RestClient:
         """Get presence status for all agents."""
         data = self._get("/presence")
         return [PresenceEntry(
-            agent_id=p["agent_id"],
+            agent_id=p.get("agent_id", p.get("id", "")),
             status=p.get("status", "offline"),
             last_seen=p.get("last_seen", ""),
         ) for p in data]
@@ -437,7 +437,7 @@ class RestClient:
         admin: bool = False,
     ) -> Any:
         url = self.base_url + path
-        headers: Dict[str, str] = {}
+        headers: Dict[str, str] = {"X-Requested-With": "XMLHttpRequest"}
         if auth and self.token:
             headers["Authorization"] = f"Bearer {self.token}"
         if content_type:

@@ -161,6 +161,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Initialize offline queue persistence
+	initQueueDB(db)
+
 	// Configure max upload size from environment
 	if v := os.Getenv("MAX_UPLOAD_SIZE"); v != "" {
 		size, err := parseSize(v)
@@ -199,6 +202,10 @@ func main() {
 
 	// Initialize hub
 	hub = newHub()
+
+	// Load persisted offline messages from DB into in-memory queue
+	loadQueueFromDB(db, offlineQueue)
+
 	go hub.run()
 
 	// Initialize metrics

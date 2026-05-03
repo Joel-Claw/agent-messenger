@@ -170,6 +170,15 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
 	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 	FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS offline_queue (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	recipient TEXT NOT NULL,
+	data BLOB NOT NULL,
+	queued_at DATETIME NOT NULL,
+	sent_count INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_queue_recipient ON offline_queue(recipient);
 `
 
 // PostgreSQL schema (compatible version)
@@ -272,6 +281,15 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
 	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 	FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS offline_queue (
+	id SERIAL PRIMARY KEY,
+	recipient TEXT NOT NULL,
+	data BYTEA NOT NULL,
+	queued_at TIMESTAMP NOT NULL,
+	sent_count INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_queue_recipient ON offline_queue(recipient);
 
 CREATE TABLE IF NOT EXISTS schema_migrations (
 	version INTEGER NOT NULL,
