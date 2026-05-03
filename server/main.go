@@ -321,6 +321,14 @@ func main() {
 		}
 	}()
 
+	// Start stale offline queue cleanup goroutine (every hour)
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		for range ticker.C {
+			cleanStaleQueueMessages(db, 7*24*time.Hour) // Remove messages older than 7 days
+		}
+	}()
+
 	// Wait for interrupt signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
