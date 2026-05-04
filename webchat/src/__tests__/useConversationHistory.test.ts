@@ -34,13 +34,13 @@ describe('useConversationHistory', () => {
     const conversations = [
       { id: 'conv-1', user_id: 'u1', agent_id: 'agent-1', created_at: '', updated_at: '' },
     ];
-    const rawMessages = [
-      { id: 'm1', conversation_id: 'conv-1', sender_type: 'agent', content: 'Hello', created_at: '2026-05-03T10:00:00Z' },
-      { id: 'm2', conversation_id: 'conv-1', sender_type: 'client', content: 'Hi', created_at: '2026-05-03T10:01:00Z' },
+    const mockMessages = [
+      { id: 'm1', conversation_id: 'conv-1', sender: 'agent' as const, content: 'Hello', timestamp: '2026-05-03T10:00:00Z', type: 'text' as const },
+      { id: 'm2', conversation_id: 'conv-1', sender: 'user' as const, content: 'Hi', timestamp: '2026-05-03T10:01:00Z', type: 'text' as const },
     ];
 
     mockGetConversations.mockResolvedValueOnce(conversations);
-    mockGetMessages.mockResolvedValueOnce(rawMessages);
+    mockGetMessages.mockResolvedValueOnce(mockMessages);
 
     const { result } = renderHook(() => useConversationHistory({
       token: 'test-token',
@@ -62,13 +62,13 @@ describe('useConversationHistory', () => {
     const conversations = [
       { id: 'conv-1', user_id: 'u1', agent_id: 'agent-1', created_at: '', updated_at: '' },
     ];
-    const rawMessages = [
-      { id: 'm1', conversation_id: 'conv-1', sender_type: 'client', content: 'User msg', created_at: '2026-05-03T10:00:00Z' },
-      { id: 'm2', conversation_id: 'conv-1', sender_type: 'agent', content: 'Agent msg', created_at: '2026-05-03T10:01:00Z' },
+    const mockMessages = [
+      { id: 'm1', conversation_id: 'conv-1', sender: 'user' as const, content: 'User msg', timestamp: '2026-05-03T10:00:00Z', type: 'text' as const },
+      { id: 'm2', conversation_id: 'conv-1', sender: 'agent' as const, content: 'Agent msg', timestamp: '2026-05-03T10:01:00Z', type: 'text' as const },
     ];
 
     mockGetConversations.mockResolvedValueOnce(conversations);
-    mockGetMessages.mockResolvedValueOnce(rawMessages);
+    mockGetMessages.mockResolvedValueOnce(mockMessages);
 
     const { result } = renderHook(() => useConversationHistory({
       token: 'test-token',
@@ -129,11 +129,11 @@ describe('useConversationHistory', () => {
       { id: 'conv-1', user_id: 'u1', agent_id: 'agent-1', created_at: '', updated_at: '' },
     ];
     const recentMessages = [
-      { id: 'm3', conversation_id: 'conv-1', sender_type: 'agent', content: 'Recent', created_at: '2026-05-03T10:02:00Z' },
+      { id: 'm3', conversation_id: 'conv-1', sender: 'agent' as const, content: 'Recent', timestamp: '2026-05-03T10:02:00Z', type: 'text' as const },
     ];
     const olderMessages = [
-      { id: 'm1', conversation_id: 'conv-1', sender_type: 'agent', content: 'Old', created_at: '2026-05-03T10:00:00Z' },
-      { id: 'm2', conversation_id: 'conv-1', sender_type: 'client', content: 'Older', created_at: '2026-05-03T10:01:00Z' },
+      { id: 'm1', conversation_id: 'conv-1', sender: 'agent' as const, content: 'Old', timestamp: '2026-05-03T10:00:00Z', type: 'text' as const },
+      { id: 'm2', conversation_id: 'conv-1', sender: 'user' as const, content: 'Older', timestamp: '2026-05-03T10:01:00Z', type: 'text' as const },
     ];
 
     mockGetConversations.mockResolvedValueOnce(conversations);
@@ -188,7 +188,7 @@ describe('useConversationHistory', () => {
       { id: 'conv-2', user_id: 'u1', agent_id: 'agent-2', created_at: '', updated_at: '' },
     ]);
     mockGetMessages.mockResolvedValueOnce([
-      { id: 'm1', conversation_id: 'conv-2', sender_type: 'agent', content: 'Hello from 2', created_at: '2026-05-03T10:00:00Z' },
+      { id: 'm1', conversation_id: 'conv-2', sender: 'agent' as const, content: 'Hello from 2', timestamp: '2026-05-03T10:00:00Z', type: 'text' as const },
     ]);
 
     const { result, rerender } = renderHook(

@@ -339,7 +339,18 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 // 300 requests per minute per IP by default, configurable via IP_RATE_LIMIT env.
 var ipRateLimiter = NewRateLimiter(300, time.Minute)
 
-// authIPLimiter applies a stricter rate limit (30/min) to auth endpoints.
+// authIPLimiter applies a stricter rate limit to auth endpoints.
+// Configurable via AUTH_RATE_LIMIT env var (default: 30/min).
+func initAuthRateLimit() {
+	n := 30
+	if v := os.Getenv("AUTH_RATE_LIMIT"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 {
+			n = parsed
+		}
+	}
+	authIPLimiter = NewRateLimiter(n, time.Minute)
+}
+
 var authIPLimiter = NewRateLimiter(30, time.Minute)
 
 // ipRateLimitMiddleware limits requests per IP address for HTTP API endpoints.
