@@ -156,6 +156,9 @@ func main() {
 		log.Println("⚠️  WARNING: ADMIN_SECRET not set or using dev default. Set ADMIN_SECRET in production!")
 	}
 
+	// Initialize auth rate limit from env (AUTH_RATE_LIMIT)
+	initAuthRateLimit()
+
 	// Create tables
 	if err := initSchema(db); err != nil {
 		log.Fatal(err)
