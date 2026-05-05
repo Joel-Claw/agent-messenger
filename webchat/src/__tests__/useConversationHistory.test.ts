@@ -65,7 +65,7 @@ describe('useConversationHistory', () => {
     const mockMessages = [
       { id: 'm1', conversation_id: 'conv-1', sender_type: 'client', content: 'User msg', created_at: '2026-05-03T10:00:00Z', type: 'text' as const },
       { id: 'm2', conversation_id: 'conv-1', sender_type: 'agent', content: 'Agent msg', created_at: '2026-05-03T10:01:00Z', type: 'text' as const },
-    ];
+    ] as any[];
 
     mockGetConversations.mockResolvedValueOnce(conversations);
     mockGetMessages.mockResolvedValueOnce(mockMessages);
