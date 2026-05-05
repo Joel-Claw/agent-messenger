@@ -41,13 +41,16 @@ Object.defineProperty(Element.prototype, 'clientHeight', { configurable: true, v
 // Mock clipboard API
 Object.assign(navigator, { clipboard: { writeText: jest.fn().mockResolvedValue(undefined) } });
 
+const today = new Date();
+const todayISO = today.toISOString().split('T')[0];
+
 const mockMessages: Message[] = [
   {
     id: 'msg-1',
     conversation_id: 'conv-1',
     sender: 'agent',
     content: 'Hello from agent',
-    timestamp: '2026-05-03T10:00:00Z',
+    timestamp: `${todayISO}T10:00:00Z`,
     type: 'text',
   },
   {
@@ -55,7 +58,7 @@ const mockMessages: Message[] = [
     conversation_id: 'conv-1',
     sender: 'user',
     content: 'Hello from user',
-    timestamp: '2026-05-03T10:01:00Z',
+    timestamp: `${todayISO}T10:01:00Z`,
     type: 'text',
   },
   {
@@ -63,7 +66,7 @@ const mockMessages: Message[] = [
     conversation_id: 'conv-1',
     sender: 'agent',
     content: 'How can I help?',
-    timestamp: '2026-05-03T10:02:00Z',
+    timestamp: `${todayISO}T10:02:00Z`,
     type: 'text',
   },
 ];
