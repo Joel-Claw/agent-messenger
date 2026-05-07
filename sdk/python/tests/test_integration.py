@@ -63,6 +63,8 @@ def server():
         "ADMIN_SECRET": "int-test-admin-secret",
         "DATABASE_PATH": db_path,
         "PORT": str(port),
+        "AUTH_RATE_LIMIT": "200",
+        "IP_RATE_LIMIT": "1000",
     }
     proc = subprocess.Popen(
         [SERVER_BIN, "-port", str(port)],
@@ -167,7 +169,7 @@ class TestRestIntegration:
             current_password="testpass123",
             new_password="newpass456",
         ))
-        assert result.get("status") in ("ok", "changed")
+        assert result.get("status") in ("ok", "changed", "password_changed")
 
     def test_list_agents(self, server):
         client, _, _ = make_user(server, "agents")

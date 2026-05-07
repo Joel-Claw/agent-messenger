@@ -262,6 +262,18 @@ func routeStatusUpdate(sender *Connection, data json.RawMessage) {
 	// Update agent status in hub if this is an agent
 	if sender.connType == "agent" && payload.Status != "" {
 		hub.SetAgentStatus(sender.id, payload.Status)
+
+		// Broadcast status change to all connected clients
+		outgoing := OutgoingMessage{
+			Type: MsgTypeStatus,
+			Data: map[string]string{
+				"sender_type": sender.connType,
+				"sender_id":   sender.id,
+				"status":      payload.Status,
+			},
+		}
+		outData, _ := json.Marshal(outgoing)
+		hub.BroadcastToAllClients(outData)
 	}
 
 	if payload.ConversationID == "" {

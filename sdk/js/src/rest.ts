@@ -115,7 +115,17 @@ export class RestClient {
   /** Create a new conversation with an agent */
   async createConversation(req: CreateConversationRequest): Promise<Conversation> {
     const res = await this.request('POST', '/conversations/create', formEncode({ ...req }));
-    return res.json();
+    const data = await res.json();
+    return {
+      conversation_id: data.conversation_id ?? data.id,
+      user_id: data.user_id ?? '',
+      agent_id: data.agent_id ?? '',
+      title: data.title ?? null,
+      created_at: data.created_at ?? '',
+      last_message: data.last_message ?? null,
+      unread_count: data.unread_count ?? 0,
+      tags: data.tags ?? [],
+    };
   }
 
   /** List conversations for the authenticated user */
@@ -126,7 +136,17 @@ export class RestClient {
     if (tag) params.set('tag', tag);
     const qs = params.toString() ? `?${params.toString()}` : '';
     const res = await this.request('GET', `/conversations/list${qs}`);
-    return res.json();
+    const data = await res.json();
+    return data.map((c: Record<string, unknown>) => ({
+      conversation_id: (c.conversation_id ?? c.id) as string,
+      user_id: c.user_id ?? '',
+      agent_id: c.agent_id ?? '',
+      title: c.title ?? null,
+      created_at: c.created_at ?? '',
+      last_message: c.last_message ?? null,
+      unread_count: c.unread_count ?? 0,
+      tags: c.tags ?? [],
+    }));
   }
 
   /** Get messages for a conversation */
@@ -361,6 +381,7 @@ export class RestClient {
     extraHeaders?: Record<string, string>,
   ): Promise<Response> {
     const headers: Record<string, string> = {
+      'X-Requested-With': 'XMLHttpRequest',
       ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
       ...extraHeaders,
     };

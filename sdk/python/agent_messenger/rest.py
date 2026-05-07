@@ -462,7 +462,7 @@ class RestClient:
     def _parse_conversation(d: Dict[str, Any]) -> Conversation:
         last_msg = d.get("last_message")
         return Conversation(
-            conversation_id=d["conversation_id"],
+            conversation_id=d.get("conversation_id", d.get("id", "")),
             user_id=d.get("user_id", ""),
             agent_id=d.get("agent_id", ""),
             created_at=d.get("created_at", ""),

@@ -194,39 +194,44 @@ class ClientWS(BaseWS):
 
     def connect(self) -> WSConnectedData:
         """Connect to the server synchronously (blocking)."""
-        result: Optional[WSConnectedData] = None
-        error: Optional[Exception] = None
-
-        def run():
-            nonlocal result, error
-            try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                self._loop = loop
-                result = loop.run_until_complete(self._connect_async())
-            except Exception as e:
-                error = e
-
-        # Start background listener
         self._stop_event.clear()
+
+        # Track connection result and errors from the listener thread
+        connected_event = threading.Event()
+        conn_result: list = []
+        conn_error: list = []
+
+        def on_connected(data):
+            conn_result.append(data)
+            connected_event.set()
+
+        def on_error(data):
+            conn_error.append(data)
+            connected_event.set()
+
+        self.on("connected", on_connected)
+        self.on("error", on_error)
+
+        # Start background listener (runs _connect_async + listen loop)
         self._thread = threading.Thread(target=self._run_listener, daemon=True)
         self._thread.start()
 
         # Wait for connected or error
-        import time
-        timeout = 10
-        start = time.time()
-        while time.time() - start < timeout:
-            if self._connected:
-                break
-            if error:
-                raise error
-            time.sleep(0.05)
-
-        if not self._connected and not error:
+        if not connected_event.wait(timeout=15):
+            self.off("connected", on_connected)
+            self.off("error", on_error)
             raise WebSocketError("Connection timeout")
 
-        return result or WSConnectedData(id="", status="connected")
+        self.off("connected", on_connected)
+        self.off("error", on_error)
+
+        if conn_error:
+            err_data = conn_error[0]
+            raise WebSocketError(err_data.error if hasattr(err_data, 'error') else str(err_data))
+
+        if conn_result:
+            return conn_result[0]
+        return WSConnectedData(id="", status="connected")
 
     async def _connect_async(self) -> WSConnectedData:
         """Connect asynchronously."""
@@ -356,28 +361,42 @@ class AgentWS(BaseWS):
 
     def connect(self) -> WSConnectedData:
         """Connect to the server synchronously (blocking)."""
-        import time
-
-        result: Optional[WSConnectedData] = None
-        error: Optional[Exception] = None
-
         self._stop_event.clear()
+
+        # Track connection result and errors from the listener thread
+        connected_event = threading.Event()
+        conn_result: list = []
+        conn_error: list = []
+
+        def on_connected(data):
+            conn_result.append(data)
+            connected_event.set()
+
+        def on_error(data):
+            conn_error.append(data)
+            connected_event.set()
+
+        self.on("connected", on_connected)
+        self.on("error", on_error)
+
         self._thread = threading.Thread(target=self._run_listener, daemon=True)
         self._thread.start()
 
-        timeout = 10
-        start = time.time()
-        while time.time() - start < timeout:
-            if self._connected:
-                break
-            if error:
-                raise error
-            time.sleep(0.05)
-
-        if not self._connected and not error:
+        if not connected_event.wait(timeout=15):
+            self.off("connected", on_connected)
+            self.off("error", on_error)
             raise WebSocketError("Connection timeout")
 
-        return result or WSConnectedData(id="", status="connected")
+        self.off("connected", on_connected)
+        self.off("error", on_error)
+
+        if conn_error:
+            err_data = conn_error[0]
+            raise WebSocketError(err_data.error if hasattr(err_data, 'error') else str(err_data))
+
+        if conn_result:
+            return conn_result[0]
+        return WSConnectedData(id="", status="connected")
 
     async def _connect_async(self) -> WSConnectedData:
         """Connect asynchronously."""

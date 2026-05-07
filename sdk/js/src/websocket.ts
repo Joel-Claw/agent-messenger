@@ -142,11 +142,10 @@ export class ClientWS {
   }
 
   /** Send a status update */
-  sendStatus(conversationId: string, status: string): void {
-    this.send({
-      type: 'status',
-      data: { conversation_id: conversationId, status },
-    });
+  sendStatus(status: string, conversationId?: string): void {
+    const data: Record<string, string> = { status };
+    if (conversationId) data.conversation_id = conversationId;
+    this.send({ type: 'status', data });
   }
 
   /** Register an event handler */

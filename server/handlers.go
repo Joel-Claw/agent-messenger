@@ -62,10 +62,13 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 
 	// Negotiate sub-protocol version
 	protocolVersion := negotiateProtocol(r)
-	upgradeWithProtocol(w, r, protocolVersion)
+	responseHeader := http.Header{}
+	if protocolVersion != "" && isSupportedVersion(protocolVersion) {
+		responseHeader.Set("Sec-WebSocket-Protocol", protocolVersion)
+	}
 
 	// Upgrade to WebSocket
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := upgrader.Upgrade(w, r, responseHeader)
 	if err != nil {
 		log.Printf("WebSocket upgrade failed for agent %s: %v", agentID, err)
 		return
@@ -96,13 +99,6 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleClientConnect(w http.ResponseWriter, r *http.Request) {
-	// Extract user_id from query params
-	userID := r.URL.Query().Get("user_id")
-	if userID == "" {
-		writeJSONError(w, http.StatusBadRequest, "missing user_id parameter")
-		return
-	}
-
 	token := r.URL.Query().Get("token")
 	if token == "" {
 		writeJSONError(w, http.StatusUnauthorized, "missing token parameter")
@@ -118,14 +114,17 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use the user ID from the JWT claims (don't trust query param)
-	userID = claims.UserID
+	userID := claims.UserID
 
 	// Negotiate sub-protocol version
 	protocolVersion := negotiateProtocol(r)
-	upgradeWithProtocol(w, r, protocolVersion)
+	responseHeader := http.Header{}
+	if protocolVersion != "" && isSupportedVersion(protocolVersion) {
+		responseHeader.Set("Sec-WebSocket-Protocol", protocolVersion)
+	}
 
 	// Upgrade to WebSocket
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := upgrader.Upgrade(w, r, responseHeader)
 	if err != nil {
 		log.Printf("WebSocket upgrade failed for client %s: %v", userID, err)
 		return

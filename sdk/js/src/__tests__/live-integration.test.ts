@@ -99,6 +99,8 @@ async function startServer(): Promise<void> {
       JWT_SECRET,
       DATABASE_PATH: dbPath,
       PORT: String(serverPort),
+      AUTH_RATE_LIMIT: '200',
+      IP_RATE_LIMIT: '1000',
     },
     stdio: ['pipe', 'pipe', 'pipe'],
   });
@@ -141,7 +143,10 @@ async function makeUser(prefix = 'u'): Promise<{ client: AgentMessengerClient; t
     baseUrl: serverBaseUrl,
   });
   const reg = await sdkClient.register({ username, password: 'testpass123' });
-  return { client: sdkClient, token: reg.token, userId: reg.user_id };
+  // Register doesn't return a token; need to login
+  await new Promise(r => setTimeout(r, 300));
+  const login = await sdkClient.login({ username, password: 'testpass123' });
+  return { client: sdkClient, token: login.token, userId: reg.user_id };
 }
 
 async function makeAgent(prefix = 'a'): Promise<string> {
@@ -295,7 +300,7 @@ describe.skipIf(!shouldRun)('JS SDK Live Integration Tests', () => {
         current_password: 'testpass123',
         new_password: 'newpass456',
       });
-      expect(result.status).toMatch(/ok|changed/);
+      expect(result.status).toMatch(/ok|changed|password_changed/);
     });
   });
 

@@ -330,6 +330,21 @@ func (h *Hub) ClientCount() int {
 	return len(h.clientConns)
 }
 
+// BroadcastToAllClients sends a message to all connected client connections.
+// Thread-safe: acquires h.mu for reading.
+func (h *Hub) BroadcastToAllClients(data []byte) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for _, conns := range h.clientConns {
+		for _, client := range conns {
+			select {
+			case client.send <- data:
+			default:
+			}
+		}
+	}
+}
+
 // broadcastPresence sends a presence_update event to all connected clients
 // broadcastPresence sends a presence_update event to all connected clients.
 // MUST be called with h.mu held (called from run() under Lock).
