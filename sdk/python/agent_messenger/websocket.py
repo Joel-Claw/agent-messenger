@@ -244,6 +244,7 @@ class ClientWS(BaseWS):
 
         ws = await websockets.connect(
             ws_url,
+            subprotocols=["v1"],
             additional_headers={"Authorization": f"Bearer {self.config.token}"},
         )
         self._ws = ws
@@ -417,7 +418,7 @@ class AgentWS(BaseWS):
         ws_url = self.base_url.replace("http", "ws").replace("https", "wss")
         ws_url += f"/agent/connect?{urlencode(params)}"
 
-        ws = await websockets.connect(ws_url)
+        ws = await websockets.connect(ws_url, subprotocols=["v1"])
         self._ws = ws
 
         raw = await asyncio.wait_for(ws.recv(), timeout=10)

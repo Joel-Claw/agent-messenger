@@ -297,7 +297,7 @@ describe.skipIf(!shouldRun)('JS SDK Live Integration Tests', () => {
       const { client } = await makeUser('pw');
       await delay(500);
       const result = await client.rest.changePassword({
-        current_password: 'testpass123',
+        old_password: 'testpass123',
         new_password: 'newpass456',
       });
       expect(result.status).toMatch(/ok|changed|password_changed/);

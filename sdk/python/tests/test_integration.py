@@ -485,3 +485,128 @@ class TestClientIntegration:
         # Health check via REST
         health = client.rest.health()
         assert health.status == "ok"
+
+    def test_multi_device(self, server):
+        """Test that messages are delivered to multiple devices for the same user."""
+        time.sleep(0.5)
+        client, token, _ = make_user(server, "ws_multi")
+        time.sleep(0.3)
+        agent_id = make_agent(server, "ws_multi")
+        conv = client.create_conversation(CreateConversationRequest(agent_id=agent_id))
+
+        # Connect as agent
+        agent_ws = AgentWS(AgentConfig(
+            base_url=server["ws_url"],
+            agent_id=agent_id,
+            agent_secret=server["agent_secret"],
+            auto_reconnect=False,
+        ))
+        agent_ws.connect()
+        time.sleep(0.5)
+
+        try:
+            # Connect two client devices
+            device1 = ClientWS(ClientConfig(
+                base_url=server["ws_url"],
+                token=token,
+                device_id="device-1",
+                auto_reconnect=False,
+            ))
+            device1.connect()
+
+            device2 = ClientWS(ClientConfig(
+                base_url=server["ws_url"],
+                token=token,
+                device_id="device-2",
+                auto_reconnect=False,
+            ))
+            device2.connect()
+
+            try:
+                # Both devices should receive agent message
+                received1 = []
+                received2 = []
+                device1.on("message", lambda data: received1.append(data))
+                device2.on("message", lambda data: received2.append(data))
+
+                agent_ws.send_message(conv.conversation_id, "Multi-device message!")
+
+                for _ in range(50):
+                    if received1 and received2:
+                        break
+                    time.sleep(0.1)
+
+                assert len(received1) >= 1
+                assert len(received2) >= 1
+
+            finally:
+                device1.disconnect()
+                device2.disconnect()
+        finally:
+            agent_ws.disconnect()
+
+    def test_e2e_message_flow(self, server):
+        """Test full end-to-end message flow: client sends, agent receives, agent replies."""
+        time.sleep(0.5)
+        client, token, _ = make_user(server, "e2e")
+        time.sleep(0.3)
+        agent_id = make_agent(server, "e2e")
+        conv = client.create_conversation(CreateConversationRequest(agent_id=agent_id))
+
+        # Connect as agent
+        agent_ws = AgentWS(AgentConfig(
+            base_url=server["ws_url"],
+            agent_id=agent_id,
+            agent_secret=server["agent_secret"],
+            auto_reconnect=False,
+        ))
+        agent_ws.connect()
+        time.sleep(0.5)
+
+        try:
+            # Connect as client
+            client_ws = ClientWS(ClientConfig(
+                base_url=server["ws_url"],
+                token=token,
+                auto_reconnect=False,
+            ))
+            client_ws.connect()
+
+            try:
+                # Client sends message to agent
+                agent_received = []
+                agent_ws.on("message", lambda data: agent_received.append(data))
+
+                client_ws.send_message(conv.conversation_id, "Hello agent!")
+
+                for _ in range(50):
+                    if agent_received:
+                        break
+                    time.sleep(0.1)
+
+                assert len(agent_received) >= 1
+                assert agent_received[0].content == "Hello agent!"
+
+                # Agent replies
+                client_received = []
+                client_ws.on("message", lambda data: client_received.append(data))
+
+                agent_ws.send_message(conv.conversation_id, "Hello user!")
+
+                for _ in range(50):
+                    if client_received:
+                        break
+                    time.sleep(0.1)
+
+                assert len(client_received) >= 1
+                assert client_received[0].content == "Hello user!"
+
+                # Verify messages are persisted
+                time.sleep(0.2)
+                messages = client.get_messages(conv.conversation_id)
+                assert len(messages) >= 2
+
+            finally:
+                client_ws.disconnect()
+        finally:
+            agent_ws.disconnect()

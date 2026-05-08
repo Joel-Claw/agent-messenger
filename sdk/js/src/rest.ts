@@ -160,7 +160,7 @@ export class RestClient {
 
   /** Delete a conversation (must be owner) */
   async deleteConversation(conversationId: string): Promise<{ status: string; conversation_id: string }> {
-    const res = await this.request('DELETE', '/conversations/delete', formEncode({ conversation_id: conversationId }));
+    const res = await this.request('DELETE', `/conversations/delete?conversation_id=${encodeURIComponent(conversationId)}`);
     return res.json();
   }
 
