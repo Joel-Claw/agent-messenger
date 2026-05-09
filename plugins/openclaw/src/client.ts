@@ -81,7 +81,7 @@ export class AgentMessengerClient {
       if (this.config.agentSpecialty) params.set('specialty', this.config.agentSpecialty);
       const url = `${this.config.serverUrl}/agent/connect?${params.toString()}`;
 
-      this.ws = new WebSocket(url);
+      this.ws = new WebSocket(url, 'v1');
 
       const connectTimeout = setTimeout(() => {
         if (this.ws) {
