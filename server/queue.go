@@ -125,6 +125,27 @@ func (q *OfflineQueue) TotalDepth() int {
 
 // replayOfflineMessages sends all queued messages to a newly connected
 // client or agent. Called after a successful WebSocket connection.
+// safeSendToConn sends data to a connection's send channel, recovering from
+// send-on-closed-channel panics. This is necessary because the hub's unregister
+// handler may close conn.send between the IsClosed() check and the channel send
+// in background goroutines like replayOfflineMessages.
+func safeSendToConn(conn *Connection, data []byte) (sent bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			sent = false
+		}
+	}()
+	if conn.IsClosed() {
+		return false
+	}
+	select {
+	case conn.send <- data:
+		return true
+	default:
+		return false
+	}
+}
+
 func replayOfflineMessages(conn *Connection) {
 	if offlineQueue == nil {
 		return
@@ -140,18 +161,23 @@ func replayOfflineMessages(conn *Connection) {
 
 	log.Printf("Replaying %d offline messages to %s %s", len(messages), conn.connType, conn.id)
 
+	replayed := 0
 	for _, data := range messages {
 		// Parse to check if it's a chat message (skip typing/status)
 		var outMsg OutgoingMessage
 		if err := json.Unmarshal(data, &outMsg); err == nil {
 			// Only replay actual messages, not transient events
 			if outMsg.Type == MsgTypeMessage || outMsg.Type == "read_receipt" {
-				select {
-				case conn.send <- data:
-				default:
-					log.Printf("Send buffer full while replaying offline messages to %s %s, stopping replay", conn.connType, conn.id)
+				if !safeSendToConn(conn, data) {
+					if conn.IsClosed() {
+						log.Printf("Connection closed during offline replay to %s %s, %d/%d messages delivered",
+							conn.connType, conn.id, replayed, len(messages))
+					} else {
+						log.Printf("Send buffer full while replaying offline messages to %s %s, stopping replay", conn.connType, conn.id)
+					}
 					return
 				}
+				replayed++
 			}
 		}
 	}

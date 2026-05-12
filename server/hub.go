@@ -79,6 +79,11 @@ type Connection struct {
 	// status is the agent's current availability ("online", "busy", "idle")
 	// Only meaningful for agent connections
 	status string
+	// closed is set to true when the hub unregisters this connection.
+	// It prevents send-on-closed-channel panics in replay and other
+	// background goroutines that may still hold a reference.
+	closed  bool
+	closeMu sync.RWMutex
 }
 
 // Hub manages all active connections
@@ -143,6 +148,7 @@ func (h *Hub) run() {
 				if old, ok := h.agents[conn.id]; ok {
 					log.Printf("Agent %s reconnecting, closing old connection", conn.id)
 				DefaultLogger.Info("agent_reconnect", map[string]interface{}{"agent_id": conn.id})
+					old.MarkClosed()
 					close(old.send)
 				}
 				h.agents[conn.id] = conn
@@ -159,6 +165,7 @@ func (h *Hub) run() {
 					if existing.deviceID == conn.deviceID && conn.deviceID != "" {
 						log.Printf("Client %s device %s reconnecting, closing old connection", conn.id, conn.deviceID)
 					DefaultLogger.Info("client_device_reconnect", map[string]interface{}{"user_id": conn.id, "device_id": conn.deviceID})
+						existing.MarkClosed()
 						close(existing.send)
 						h.clientConns[conn.id][i] = conn
 						didReplace = true
@@ -179,7 +186,12 @@ func (h *Hub) run() {
 			if conn.connType == "agent" {
 				if existing, ok := h.agents[conn.id]; ok && existing == conn {
 					delete(h.agents, conn.id)
-					close(conn.send)
+					// Only close the send channel if not already closed
+					// (may have been closed by a reconnect-replace earlier)
+					if !conn.IsClosed() {
+						conn.MarkClosed()
+						close(conn.send)
+					}
 					log.Printf("Agent disconnected: %s", conn.id)
 				DefaultLogger.Info("agent_disconnected", map[string]interface{}{"agent_id": conn.id})
 					// Broadcast presence: agent offline
@@ -188,20 +200,29 @@ func (h *Hub) run() {
 			} else {
 				// Remove only this specific connection from the user's device list
 				conns := h.clientConns[conn.id]
+				found := false
 				for i, existing := range conns {
 					if existing == conn {
 						// Remove without preserving order
 						conns[i] = conns[len(conns)-1]
 						conns = conns[:len(conns)-1]
+						found = true
 						break
 					}
 				}
-				if len(conns) == 0 {
-					delete(h.clientConns, conn.id)
-				} else {
-					h.clientConns[conn.id] = conns
+				if found {
+					if len(conns) == 0 {
+						delete(h.clientConns, conn.id)
+					} else {
+						h.clientConns[conn.id] = conns
+					}
 				}
-				close(conn.send)
+				// Only close the send channel if not already closed
+				// (may have been closed by a reconnect-replace earlier)
+				if !conn.IsClosed() {
+					conn.MarkClosed()
+					close(conn.send)
+				}
 				log.Printf("Client disconnected: %s (device: %s, remaining devices: %d)", conn.id, conn.deviceID, len(conns))
 				DefaultLogger.Info("client_disconnected", map[string]interface{}{"user_id": conn.id, "device_id": conn.deviceID, "remaining_devices": len(conns)})
 			}
@@ -414,6 +435,21 @@ type AgentInfo struct {
 	Specialty   string `json:"specialty"`
 	Status      string `json:"status"`
 	ConnectedAt string `json:"connected_at,omitempty"`
+}
+
+// IsClosed returns whether this connection has been unregistered from the hub.
+func (c *Connection) IsClosed() bool {
+	c.closeMu.RLock()
+	defer c.closeMu.RUnlock()
+	return c.closed
+}
+
+// MarkClosed marks this connection as unregistered. Must be called by the hub
+// before closing the send channel.
+func (c *Connection) MarkClosed() {
+	c.closeMu.Lock()
+	defer c.closeMu.Unlock()
+	c.closed = true
 }
 
 // readPump reads messages from the WebSocket connection.
