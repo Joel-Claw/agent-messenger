@@ -103,6 +103,9 @@ func TestMetricsEndpoint(t *testing.T) {
 		"agent_messenger_uptime_seconds",
 		"agent_messenger_goroutines",
 		"agent_messenger_memory_alloc_bytes",
+		"agent_messenger_offline_queue_depth",
+		"agent_messenger_stale_agents",
+		"agent_messenger_agent_heartbeat_enabled",
 	}
 
 	for _, metric := range expectedMetrics {

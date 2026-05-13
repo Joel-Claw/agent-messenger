@@ -19,6 +19,7 @@ type Metrics struct {
 	AgentsConnected  func() int
 	ClientsConnected func() int // unique client users
 	ClientConnsTotal func() int // total client connections (multi-device)
+	StaleAgentCount func() int64 // agents that missed heartbeat timeout
 
 	// Server metadata
 	StartTime time.Time
@@ -36,6 +37,7 @@ func NewMetrics(h *Hub) *Metrics {
 		AgentsConnected:  h.AgentCount,
 		ClientsConnected: h.ClientCount,
 		ClientConnsTotal: h.ClientConnCount,
+		StaleAgentCount:  h.StaleAgentCount,
 	}
 }
 
@@ -74,7 +76,7 @@ func (m *Metrics) Snapshot() map[string]interface{} {
 			"enabled":     agentPresenceEnabled,
 			"interval_s":  int(agentPresenceInterval.Seconds()),
 			"timeout_s":   int(agentPresenceTimeout.Seconds()),
-			"stale_agents": hub.StaleAgentCount(),
+			"stale_agents": m.StaleAgentCount(),
 		},
 	}
 }

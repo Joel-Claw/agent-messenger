@@ -40,6 +40,27 @@ func handleMetrics(w http.ResponseWriter, r *http.Request) {
 	writeMetric("memory_sys_bytes", "gauge", "System memory in bytes",
 		fmt.Sprintf("%.0f", snapshot["memory_sys_mb"].(float64)*1024*1024))
 
+	// Offline queue depth
+	if depth, ok := snapshot["offline_queue_depth"]; ok {
+		writeMetric("offline_queue_depth", "gauge", "Messages queued for offline recipients", depth)
+	}
+
+	// Agent heartbeat / stale agents
+	if hb, ok := snapshot["agent_heartbeat"]; ok {
+		if hbMap, ok := hb.(map[string]interface{}); ok {
+			writeMetric("agent_heartbeat_enabled", "gauge", "Whether agent heartbeat monitoring is enabled (1=on, 0=off)", boolToInt(hbMap["enabled"]))
+			writeMetric("stale_agents", "gauge", "Number of agents that missed heartbeat timeout", hbMap["stale_agents"])
+		}
+	}
+
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 	w.Write([]byte(sb.String()))
+}
+
+// boolToInt converts a bool to 1 or 0 for Prometheus gauge metrics.
+func boolToInt(v interface{}) int {
+	if b, ok := v.(bool); ok && b {
+		return 1
+	}
+	return 0
 }

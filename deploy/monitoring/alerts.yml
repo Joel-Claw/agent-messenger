@@ -1,0 +1,179 @@
+# Agent Messenger - Prometheus Alert Rules
+#
+# Usage: Add to Prometheus config:
+#   rule_files:
+#     - "agent_messenger_alerts.yml"
+#
+# Or via docker-compose volume mount / Kubernetes ConfigMap.
+#
+# All metrics are prefixed with agent_messenger_ (from /metrics endpoint).
+
+groups:
+  # === Error Rate Alerts ===
+  - name: agent_messenger_errors
+    rules:
+      - alert: HighErrorRate
+        expr: rate(agent_messenger_errors_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          component: agent-messenger
+        annotations:
+          summary: "High error rate on Agent Messenger"
+          description: "Error rate is {{ $value | printf \"%.1f\" }} errors/sec over the last 5 minutes (threshold: 10/sec)"
+
+      - alert: CriticalErrorRate
+        expr: rate(agent_messenger_errors_total[5m]) > 50
+        for: 1m
+        labels:
+          severity: critical
+          component: agent-messenger
+        annotations:
+          summary: "Critical error rate on Agent Messenger"
+          description: "Error rate is {{ $value | printf \"%.1f\" }} errors/sec over the last 5 minutes (threshold: 50/sec)"
+
+      - alert: ErrorSpike
+        expr: increase(agent_messenger_errors_total[1m]) > 100
+        for: 0m
+        labels:
+          severity: warning
+          component: agent-messenger
+        annotations:
+          summary: "Sudden error spike on Agent Messenger"
+          description: "{{ $value }} errors in the last minute"
+
+  # === Rate Limiting Alerts ===
+  - name: agent_messenger_rate_limiting
+    rules:
+      - alert: HighRateLimiting
+        expr: rate(agent_messenger_rate_limited_total[5m]) > 30
+        for: 5m
+        labels:
+          severity: warning
+          component: agent-messenger
+        annotations:
+          summary: "High rate of rate-limited requests"
+          description: "{{ $value | printf \"%.1f\" }} requests/sec are being rate-limited. Possible abuse or misconfigured clients."
+
+  # === Stale Agent Alerts ===
+  - name: agent_messenger_agents
+    rules:
+      - alert: StaleAgents
+        expr: agent_messenger_stale_agents > 0
+        for: 2m
+        labels:
+          severity: warning
+          component: agent-messenger
+        annotations:
+          summary: "Agents missing heartbeat"
+          description: "{{ $value }} agent(s) have missed heartbeat timeout and may be disconnected"
+
+      - alert: NoAgentsConnected
+        expr: agent_messenger_agents_connected < 1
+        for: 5m
+        labels:
+          severity: critical
+          component: agent-messenger
+        annotations:
+          summary: "No agents connected"
+          description: "No AI agents are currently connected. Users cannot receive responses."
+
+      - alert: AgentHeartbeatMonitoringDisabled
+        expr: agent_messenger_agent_heartbeat_enabled < 1
+        for: 10m
+        labels:
+          severity: info
+          component: agent-messenger
+        annotations:
+          summary: "Agent heartbeat monitoring is disabled"
+          description: "AGENT_HEARTBEAT_ENABLED is not set. Stale agent detection is not active."
+
+  # === Queue Depth Alerts ===
+  - name: agent_messenger_queues
+    rules:
+      - alert: OfflineQueueGrowing
+        expr: increase(agent_messenger_offline_queue_depth[5m]) > 50
+        for: 3m
+        labels:
+          severity: warning
+          component: agent-messenger
+        annotations:
+          summary: "Offline message queue is growing"
+          description: "Offline queue grew by {{ $value }} messages in 5 minutes. Recipients may not be receiving messages."
+
+      - alert: OfflineQueueBacklog
+        expr: agent_messenger_offline_queue_depth > 500
+        for: 5m
+        labels:
+          severity: warning
+          component: agent-messenger
+        annotations:
+          summary: "Large offline message backlog"
+          description: "{{ $value }} messages are queued for offline recipients. Agents may need attention."
+
+      - alert: OfflineQueueCritical
+        expr: agent_messenger_offline_queue_depth > 2000
+        for: 5m
+        labels:
+          severity: critical
+          component: agent-messenger
+        annotations:
+          summary: "Critical offline message backlog"
+          description: "{{ $value }} messages are queued for offline recipients. Message delivery may be severely delayed."
+
+  # === Connection Alerts ===
+  - name: agent_messenger_connections
+    rules:
+      - alert: HighConnectionRate
+        expr: rate(agent_messenger_connections_total[5m]) > 50
+        for: 5m
+        labels:
+          severity: warning
+          component: agent-messenger
+        annotations:
+          summary: "High connection rate"
+          description: "{{ $value | printf \"%.1f\" }} new connections/sec over 5 minutes. Possible connection churn."
+
+      - alert: MessageThroughputDrop
+        expr: rate(agent_messenger_messages_in_total[5m]) < 1 AND agent_messenger_agents_connected > 0 AND agent_messenger_clients_connected > 0
+        for: 10m
+        labels:
+          severity: warning
+          component: agent-messenger
+        annotations:
+          summary: "Message throughput dropped"
+          description: "Less than 1 message/sec while agents and clients are connected. Possible routing issue."
+
+  # === Resource Alerts ===
+  - name: agent_messenger_resources
+    rules:
+      - alert: HighGoroutineCount
+        expr: agent_messenger_goroutines > 1000
+        for: 5m
+        labels:
+          severity: warning
+          component: agent-messenger
+        annotations:
+          summary: "High goroutine count"
+          description: "{{ $value }} goroutines running. Possible goroutine leak."
+
+      - alert: HighMemoryUsage
+        expr: agent_messenger_memory_alloc_bytes > 536870912
+        for: 5m
+        labels:
+          severity: warning
+          component: agent-messenger
+        annotations:
+          summary: "High memory usage"
+          description: "Agent Messenger is using {{ $value | printf \"%.0f\" }} bytes ({{ $value | printf \"%.1f\" }} MB) of allocated memory (threshold: 512MB)"
+          runbook_url: "https://github.com/Joel-Claw/agent-messenger/blob/main/docs/DEPLOYMENT.md#memory"
+
+      - alert: ServerRestart
+        expr: agent_messenger_uptime_seconds < 300
+        for: 0m
+        labels:
+          severity: info
+          component: agent-messenger
+        annotations:
+          summary: "Agent Messenger recently restarted"
+          description: "Server uptime is {{ $value }} seconds. May indicate an unexpected restart."
