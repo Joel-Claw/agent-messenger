@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"time"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Message types
@@ -31,8 +35,16 @@ type RoutedMessage struct {
 
 // routeMessage handles incoming messages and routes them to the correct recipient
 func routeMessage(sender *Connection, raw []byte) {
+	// Start top-level routing span
+	span := TraceRouteMessage(sender.connType, sender.id)
+	defer span.End()
+
 	// Rate limit check
 	if !checkRateLimit(sender) {
+		span.AddEvent("rate_limited", trace.WithAttributes(
+			attribute.String(attrConnType, sender.connType),
+			attribute.String(attrConnID, sender.id),
+		))
 		return
 	}
 
@@ -40,9 +52,12 @@ func routeMessage(sender *Connection, raw []byte) {
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		log.Printf("Invalid message from %s %s: %v", sender.connType, sender.id, err)
 		DefaultLogger.Warn("invalid_message", map[string]interface{}{"conn_type": sender.connType, "id": sender.id, "error": err.Error()})
+		SpanError(span, err)
 		sendError(sender, "invalid message format")
 		return
 	}
+
+	span.SetAttributes(attribute.String(attrMessageType, msg.Type))
 
 	switch msg.Type {
 	case MsgTypeMessage:
@@ -62,12 +77,22 @@ func routeMessage(sender *Connection, raw []byte) {
 
 // routeChatMessage handles a chat message: validate, persist, and deliver
 func routeChatMessage(sender *Connection, data json.RawMessage) {
+	_, span := TraceChatMessage(context.Background(), sender.connType, sender.id, "", "")
+	defer span.End()
+
 	var msg RoutedMessage
 	if err := json.Unmarshal(data, &msg); err != nil {
 		log.Printf("Invalid chat message from %s %s: %v", sender.connType, sender.id, err)
+		SpanError(span, err)
 		sendError(sender, "invalid message data")
 		return
 	}
+
+	span.SetAttributes(
+		attribute.String(attrConversationID, msg.ConversationID),
+		attribute.String(attrSenderType, sender.connType),
+		attribute.String(attrSenderID, sender.id),
+	)
 
 	if msg.Content == "" {
 		sendError(sender, "content is required")
@@ -87,6 +112,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 	conv, err := getConversation(msg.ConversationID)
 	if err != nil {
 		log.Printf("Error fetching conversation %s: %v", msg.ConversationID, err)
+		SpanError(span, err)
 		sendError(sender, "conversation not found")
 		return
 	}
@@ -115,13 +141,20 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 		recipientID = conv.AgentID
 	}
 
-	// Persist message
+	span.SetAttributes(attribute.String(attrRecipientID, recipientID))
+
+	// Persist message (child span)
+	_, storeSpan := TraceStoreMessage(context.Background(), msg.ConversationID, sender.id)
 	if err := storeMessage(msg); err != nil {
 		log.Printf("Error storing message: %v", err)
 		DefaultLogger.Error("message_store_error", map[string]interface{}{"error": err.Error()})
+		SpanError(storeSpan, err)
+		storeSpan.End()
 		sendError(sender, "failed to store message")
 		return
 	}
+	SpanOK(storeSpan)
+	storeSpan.End()
 
 	// Deliver to recipient if online
 	outgoing, err := json.Marshal(OutgoingMessage{Type: MsgTypeMessage, Data: msg})
@@ -133,6 +166,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 	if sender.connType == "agent" {
 		// Deliver to ALL of the user's connected devices (multi-device sync)
 		conns := hub.GetClientConns(recipientID)
+		_, deliverSpan := TraceDeliverMessage(context.Background(), recipientID, "client", len(conns) > 0)
 		if len(conns) > 0 {
 			delivered := 0
 			for _, client := range conns {
@@ -144,31 +178,67 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 					DefaultLogger.Warn("client_buffer_full", map[string]interface{}{"user_id": recipientID, "device_id": client.deviceID})
 				}
 			}
+			deliverSpan.SetAttributes(
+				attribute.Int("messenger.devices_delivered", delivered),
+				attribute.Int("messenger.devices_total", len(conns)),
+			)
 			if delivered == 0 {
 				// All buffers full, queue for later
+				offlineSpan := TraceOfflineEnqueue(recipientID)
 				offlineQueue.Enqueue(recipientID, outgoing)
 				persistQueue(db, recipientID, outgoing)
+				offlineSpan.SetAttributes(attribute.Bool(attrBuffered, true))
+				SpanOK(offlineSpan)
+				offlineSpan.End()
 				go notifyUser(recipientID, "New Message", truncate(msg.Content, 100), msg.ConversationID)
 			}
 		} else {
 			// Client is offline on all devices, queue message for later delivery
+			offlineSpan := TraceOfflineEnqueue(recipientID)
 			offlineQueue.Enqueue(recipientID, outgoing)
 			persistQueue(db, recipientID, outgoing)
+			offlineSpan.SetAttributes(attribute.Bool(attrOffline, true))
+			SpanOK(offlineSpan)
+			offlineSpan.End()
 			// Also send push notification for immediate awareness
+			pushSpan := TracePushNotify(recipientID, msg.ConversationID, true)
 			go notifyUser(recipientID, "New Message", truncate(msg.Content, 100), msg.ConversationID)
+			pushSpan.SetAttributes(attribute.Bool(attrPushSent, true))
+			pushSpan.End()
 		}
+		SpanOK(deliverSpan)
+		deliverSpan.End()
 	} else {
 		if agent := hub.GetAgent(recipientID); agent != nil {
+			_, deliverSpan := TraceDeliverMessage(context.Background(), recipientID, "agent", true)
 			select {
 			case agent.send <- outgoing:
+				deliverSpan.SetAttributes(attribute.Bool(attrDelivered, true))
 			default:
 				log.Printf("Agent %s send buffer full, dropping message", recipientID)
 				DefaultLogger.Warn("agent_buffer_full", map[string]interface{}{"agent_id": recipientID})
+				deliverSpan.SetAttributes(attribute.Bool(attrDelivered, false))
+				offlineSpan := TraceOfflineEnqueue(recipientID)
+				offlineQueue.Enqueue(recipientID, outgoing)
+				persistQueue(db, recipientID, outgoing)
+				offlineSpan.SetAttributes(attribute.Bool(attrOffline, true))
+				SpanOK(offlineSpan)
+				offlineSpan.End()
 			}
+			SpanOK(deliverSpan)
+			deliverSpan.End()
 		} else {
+			_, deliverSpan := TraceDeliverMessage(context.Background(), recipientID, "agent", false)
+			deliverSpan.SetAttributes(attribute.Bool(attrDelivered, false))
+			deliverSpan.End()
+
 			// Agent is offline, queue message for later delivery
+			offlineSpan := TraceOfflineEnqueue(recipientID)
 			offlineQueue.Enqueue(recipientID, outgoing)
 			persistQueue(db, recipientID, outgoing)
+			offlineSpan.SetAttributes(attribute.Bool(attrOffline, true))
+			SpanOK(offlineSpan)
+			offlineSpan.End()
 		}
 	}
 

@@ -11,6 +11,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // RateLimiter tracks message counts per connection ID
@@ -233,10 +235,18 @@ func requestIDMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 // accessLogMiddleware logs each HTTP request using the structured logger.
 // Logs method, path, status code, duration, request ID, and user ID (when available).
+// Also creates an OpenTelemetry span for the request when tracing is enabled.
 func accessLogMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		requestID := r.Header.Get("X-Request-ID")
+
+		// Start an OTel span for this HTTP request (if tracing is enabled)
+		_, httpSpan := StartSpanFromRequest(r, spanHTTPRequest,
+			attribute.String("http.method", r.Method),
+			attribute.String("http.url", r.URL.Path),
+			attribute.String("http.user_agent", r.UserAgent()),
+		)
 
 		// Extract user ID from Authorization header (without blocking on auth failure)
 		userID := ""
@@ -244,6 +254,7 @@ func accessLogMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		if strings.HasPrefix(authHeader, "Bearer ") {
 			if claims, err := ValidateJWT(strings.TrimPrefix(authHeader, "Bearer ")); err == nil {
 				userID = claims.UserID
+				httpSpan.SetAttributes(attribute.String(attrConnID, userID))
 			}
 		}
 
@@ -253,6 +264,12 @@ func accessLogMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		next(wrapped, r)
 
 		duration := time.Since(start)
+		httpSpan.SetAttributes(
+			attribute.Int("http.status_code", wrapped.statusCode),
+			attribute.Int64("http.duration_ms", duration.Milliseconds()),
+		)
+		httpSpan.End()
+
 		fields := map[string]interface{}{
 			"method":      r.Method,
 			"path":        r.URL.Path,

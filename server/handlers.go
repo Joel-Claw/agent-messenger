@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,9 +27,18 @@ type OutgoingMessage struct {
 }
 
 func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
+	// Start tracing span for agent WebSocket connection
+	_, agentSpan := StartSpanFromRequest(r, spanAgentConnect,
+		attribute.String(attrConnType, "agent"),
+	)
+	defer agentSpan.End()
+
 	// Extract agent_id from query params
 	agentID := r.URL.Query().Get("agent_id")
+	agentSpan.SetAttributes(attribute.String(attrConnID, agentID))
+
 	if agentID == "" {
+		agentSpan.SetAttributes(attribute.Bool("messenger.auth_success", false))
 		writeJSONError(w, http.StatusBadRequest, "missing agent_id parameter")
 		return
 	}
@@ -40,6 +51,7 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 
 	// Validate against shared AGENT_SECRET
 	if err := ValidateAgentSecret(agentID, secret); err != nil {
+		agentSpan.SetAttributes(attribute.Bool("messenger.auth_success", false))
 		if ServerMetrics != nil { ServerMetrics.ErrorsTotal.Add(1) }
 		status := http.StatusUnauthorized
 		if err.Error() == "rate limited: too many connection attempts" {
@@ -99,8 +111,15 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleClientConnect(w http.ResponseWriter, r *http.Request) {
+	// Start tracing span for client WebSocket connection
+	_, clientSpan := StartSpanFromRequest(r, spanClientConnect,
+		attribute.String(attrConnType, "client"),
+	)
+	defer clientSpan.End()
+
 	token := r.URL.Query().Get("token")
 	if token == "" {
+		clientSpan.SetAttributes(attribute.Bool("messenger.auth_success", false))
 		writeJSONError(w, http.StatusUnauthorized, "missing token parameter")
 		return
 	}
@@ -108,6 +127,7 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	// Validate JWT token
 	claims, err := ValidateJWT(token)
 	if err != nil {
+		clientSpan.SetAttributes(attribute.Bool("messenger.auth_success", false))
 		if ServerMetrics != nil { ServerMetrics.ErrorsTotal.Add(1) }
 		writeJSONError(w, http.StatusUnauthorized, "authentication failed: "+err.Error())
 		return
@@ -115,6 +135,7 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 
 	// Use the user ID from the JWT claims (don't trust query param)
 	userID := claims.UserID
+	clientSpan.SetAttributes(attribute.String(attrConnID, userID))
 
 	// Negotiate sub-protocol version
 	protocolVersion := negotiateProtocol(r)
@@ -181,6 +202,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	snapshot["status"] = "ok"
 	snapshot["version"] = ServerVersion
 	snapshot["db"] = dbStatus
+	snapshot["tracing_enabled"] = IsTracingEnabled()
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(snapshot)

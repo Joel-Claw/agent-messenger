@@ -305,6 +305,12 @@ func main() {
 		}
 	}
 
+	// Initialize OpenTelemetry tracing (if configured)
+	if err := InitTracing(); err != nil {
+		log.Printf("Warning: tracing initialization failed: %v", err)
+	}
+	defer ShutdownTracing()
+
 	// Start server with graceful shutdown
 	addr := ":" + *port
 	srv := &http.Server{Addr: addr}
