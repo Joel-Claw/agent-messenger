@@ -4,7 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // Supported database drivers
@@ -45,21 +48,59 @@ func openDatabase(driver, dsn string) (*sql.DB, error) {
 
 	// Configure connection pool based on driver
 	if driver == DriverPostgreSQL {
-		db.SetMaxOpenConns(25)
-		db.SetMaxIdleConns(5)
+		maxOpen := envIntOrDefault("DB_MAX_OPEN_CONNS", 25)
+		maxIdle := envIntOrDefault("DB_MAX_IDLE_CONNS", 5)
+		maxLifetime := envDurationOrDefault("DB_CONN_MAX_LIFETIME", 30*time.Minute)
+		maxIdleTime := envDurationOrDefault("DB_CONN_MAX_IDLE_TIME", 5*time.Minute)
+
+		db.SetMaxOpenConns(maxOpen)
+		db.SetMaxIdleConns(maxIdle)
+		db.SetConnMaxLifetime(maxLifetime)
+		db.SetConnMaxIdleTime(maxIdleTime)
+
+		log.Printf("Connected to PostgreSQL database (pool: maxOpen=%d, maxIdle=%d, maxLifetime=%s, maxIdleTime=%s)",
+			maxOpen, maxIdle, maxLifetime, maxIdleTime)
+
 		// Verify connection
 		if err := db.Ping(); err != nil {
 			return nil, fmt.Errorf("failed to connect to PostgreSQL: %w", err)
 		}
-		log.Printf("Connected to PostgreSQL database")
 	} else {
-		// SQLite: enable WAL mode for better concurrent performance
+		// SQLite: single connection for write safety, enable WAL mode
+		db.SetMaxOpenConns(1)
+		db.SetMaxIdleConns(1)
 		db.Exec("PRAGMA journal_mode=WAL")
 		db.Exec("PRAGMA foreign_keys=ON")
-		log.Printf("Connected to SQLite database")
+		db.Exec("PRAGMA busy_timeout=5000")
+		log.Printf("Connected to SQLite database (WAL mode, busy_timeout=5s)")
 	}
 
 	return db, nil
+}
+
+// envIntOrDefault returns the integer value of the environment variable,
+// or the default value if not set or invalid.
+func envIntOrDefault(key string, defaultVal int) int {
+	if v := os.Getenv(key); v != "" {
+		if i, err := strconv.Atoi(v); err == nil {
+			return i
+		}
+		log.Printf("Warning: invalid %s value %q, using default %d", key, v, defaultVal)
+	}
+	return defaultVal
+}
+
+// envDurationOrDefault returns the duration value of the environment variable
+// (supports Go duration strings like "30m", "5s", "1h30m"), or the default value
+// if not set or invalid.
+func envDurationOrDefault(key string, defaultVal time.Duration) time.Duration {
+	if v := os.Getenv(key); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			return d
+		}
+		log.Printf("Warning: invalid %s value %q, using default %s", key, v, defaultVal)
+	}
+	return defaultVal
 }
 
 // initSchemaForDriver returns the appropriate schema SQL for the current driver

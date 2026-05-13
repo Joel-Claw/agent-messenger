@@ -66,7 +66,7 @@ func storeMessage(msg RoutedMessage) error {
 	}
 	metadataJSON, _ := json.Marshal(metadataMap)
 	_, err := db.Exec(
-		"INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, metadata, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, metadata, created_at) VALUES ("+Placeholder(1)+", "+Placeholder(2)+", "+Placeholder(3)+", "+Placeholder(4)+", "+Placeholder(5)+", "+Placeholder(6)+", "+Placeholder(7)+")",
 		id, msg.ConversationID, msg.SenderType, msg.SenderID, msg.Content, string(metadataJSON), time.Now().UTC(),
 	)
 	if err != nil {
@@ -75,10 +75,67 @@ func storeMessage(msg RoutedMessage) error {
 
 	// Link attachments to this message
 	for _, attachID := range msg.AttachmentIDs {
-		db.Exec("UPDATE attachments SET message_id = ? WHERE id = ? AND message_id IS NULL", id, attachID)
+		db.Exec("UPDATE attachments SET message_id = "+Placeholder(1)+" WHERE id = "+Placeholder(2)+" AND message_id IS NULL", id, attachID)
 	}
 
 	return nil
+}
+
+// storeMessagesBatch inserts multiple messages in a single transaction.
+// This is significantly faster than individual inserts for high-throughput
+// conversations (e.g., bulk message replay, history import).
+// Returns the IDs of the inserted messages in order, or an error if any insert fails.
+func storeMessagesBatch(msgs []RoutedMessage) ([]string, error) {
+	if len(msgs) == 0 {
+		return nil, nil
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(
+		"INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, metadata, created_at) VALUES (" +
+			Placeholder(1) + ", " + Placeholder(2) + ", " + Placeholder(3) + ", " + Placeholder(4) + ", " + Placeholder(5) + ", " + Placeholder(6) + ", " + Placeholder(7) + ")")
+	if err != nil {
+		return nil, fmt.Errorf("prepare insert: %w", err)
+	}
+	defer stmt.Close()
+
+	ids := make([]string, len(msgs))
+	now := time.Now().UTC()
+
+	for i, msg := range msgs {
+		id := generateID("msg")
+		ids[i] = id
+
+		metadataMap := map[string]interface{}{
+			"sender_type": msg.SenderType,
+			"sender_id":   msg.SenderID,
+		}
+		if len(msg.AttachmentIDs) > 0 {
+			metadataMap["attachment_ids"] = msg.AttachmentIDs
+		}
+		metadataJSON, _ := json.Marshal(metadataMap)
+
+		_, err = stmt.Exec(id, msg.ConversationID, msg.SenderType, msg.SenderID, msg.Content, string(metadataJSON), now)
+		if err != nil {
+			return nil, fmt.Errorf("insert message %d: %w", i, err)
+		}
+
+		// Link attachments
+		for _, attachID := range msg.AttachmentIDs {
+			tx.Exec("UPDATE attachments SET message_id = "+Placeholder(1)+" WHERE id = "+Placeholder(2)+" AND message_id IS NULL", id, attachID)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return ids, nil
 }
 
 // getConversationMessages retrieves messages for a conversation, ordered by time.
@@ -247,7 +304,7 @@ func markMessagesRead(convID, userID string) (int64, error) {
 func CreateConversation(userID, agentID string) (*Conversation, error) {
 	id := fmt.Sprintf("conv_%d", time.Now().UnixNano())
 	_, err := db.Exec(
-		"INSERT INTO conversations (id, user_id, agent_id) VALUES (?, ?, ?)",
+		"INSERT INTO conversations (id, user_id, agent_id) VALUES ("+Placeholder(1)+", "+Placeholder(2)+", "+Placeholder(3)+")",
 		id, userID, agentID,
 	)
 	if err != nil {
