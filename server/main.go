@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -276,6 +277,12 @@ func main() {
 
 	// Admin rate limit tier endpoints — require admin auth
 	http.HandleFunc("/admin/rate-limit/tier", accessLogMiddleware(requestIDMiddleware(adminAuthMiddleware(corsMiddleware(handleAdminRateLimitTier)))))
+
+	// Admin profiling endpoint — require admin auth
+	http.HandleFunc("/admin/profile", accessLogMiddleware(requestIDMiddleware(adminAuthMiddleware(corsMiddleware(handleAdminProfile)))))
+
+	// pprof endpoints (available at /debug/pprof/ when server is running)
+	// Imported via _ "net/http/pprof" — automatically registered on DefaultServeMux
 
 	// Initialize push notifications
 	initPushNotifications()
