@@ -200,16 +200,10 @@ func TestMemoryProfile_ConnectionChurn(t *testing.T) {
 	initialAlloc := initialStats["alloc_bytes"].(uint64)
 	t.Logf("Initial alloc: %d bytes (%.1f KB)", initialAlloc, float64(initialAlloc)/1024)
 
-	// Pre-register all users sequentially to avoid rate limits
+	// Connect and disconnect WebSocket clients rapidly
 	const numRounds = 5
 	const numClientsPerRound = 20
-	const totalClients = numRounds * numClientsPerRound
-	tokens := make([]string, totalClients)
-	for i := 0; i < totalClients; i++ {
-		tokens[i] = profileLoadRegisterUser(t, server, fmt.Sprintf("churnuser%d", i))
-	}
 
-	// Connect and disconnect WebSocket clients rapidly
 	for round := 0; round < numRounds; round++ {
 		var wg sync.WaitGroup
 		for i := 0; i < numClientsPerRound; i++ {
