@@ -332,6 +332,43 @@ CREATE TABLE IF NOT EXISTS offline_queue (
 );
 CREATE INDEX IF NOT EXISTS idx_queue_recipient ON offline_queue(recipient);
 
+CREATE TABLE IF NOT EXISTS reactions (
+	id TEXT PRIMARY KEY,
+	message_id TEXT NOT NULL,
+	user_id TEXT NOT NULL,
+	emoji TEXT NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	UNIQUE(message_id, user_id, emoji),
+	FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS conversation_tags (
+	id TEXT PRIMARY KEY,
+	conversation_id TEXT NOT NULL,
+	tag TEXT NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	UNIQUE(conversation_id, tag),
+	FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_rate_limit_tiers (
+	user_id TEXT NOT NULL PRIMARY KEY,
+	tier_name TEXT NOT NULL DEFAULT 'free',
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS notification_preferences (
+	user_id TEXT NOT NULL,
+	conversation_id TEXT NOT NULL,
+	muted BOOLEAN DEFAULT FALSE,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (user_id, conversation_id),
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
 	version INTEGER NOT NULL,
 	name TEXT NOT NULL,
