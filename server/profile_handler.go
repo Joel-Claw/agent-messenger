@@ -104,11 +104,11 @@ func handleGoroutineProfile(w http.ResponseWriter, r *http.Request) {
 
 	stats := MemoryStats()
 	writeProfileJSON(w, map[string]interface{}{
-		"status":    "ok",
-		"action":    "goroutine",
-		"file":      path,
+		"status":     "ok",
+		"action":     "goroutine",
+		"file":       path,
 		"goroutines": stats["goroutines"],
-		"timestamp": time.Now().UTC().Format(time.RFC3339),
+		"timestamp":  time.Now().UTC().Format(time.RFC3339),
 	})
 }
 
@@ -187,13 +187,13 @@ func handleForceGC(w http.ResponseWriter, r *http.Request) {
 	after := MemoryStats()
 
 	writeProfileJSON(w, map[string]interface{}{
-		"status":    "ok",
-		"action":    "gc",
-		"gc_cycles":  numGC,
-		"before":     before,
-		"after":      after,
+		"status":      "ok",
+		"action":      "gc",
+		"gc_cycles":   numGC,
+		"before":      before,
+		"after":       after,
 		"freed_bytes": before["alloc_bytes"].(uint64) - after["alloc_bytes"].(uint64),
-		"timestamp":  time.Now().UTC().Format(time.RFC3339),
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
 	})
 }
 
@@ -203,7 +203,7 @@ func handleMemoryStats(w http.ResponseWriter, r *http.Request) {
 		"status":    "ok",
 		"action":    "stats",
 		"memory":    stats,
-		"timestamp":  time.Now().UTC().Format(time.RFC3339),
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
 	})
 }
 

@@ -106,9 +106,9 @@ func TestMemoryProfile_UnderLoad(t *testing.T) {
 
 	// Register agent first
 	agentForm := url.Values{
-		"agent_id":      {"loadagent1"},
-		"name":          {"LoadAgent"},
-		"agent_secret":  {agentSecret},
+		"agent_id":     {"loadagent1"},
+		"name":         {"LoadAgent"},
+		"agent_secret": {agentSecret},
 	}
 	resp, err := http.PostForm(server.URL+"/auth/agent", agentForm)
 	if err != nil {
@@ -185,9 +185,9 @@ func TestMemoryProfile_ConnectionChurn(t *testing.T) {
 
 	// Register a base agent
 	agentForm := url.Values{
-		"agent_id":      {"churnagent"},
-		"name":          {"ChurnAgent"},
-		"agent_secret":  {agentSecret},
+		"agent_id":     {"churnagent"},
+		"name":         {"ChurnAgent"},
+		"agent_secret": {agentSecret},
 	}
 	resp, err := http.PostForm(server.URL+"/auth/agent", agentForm)
 	if err != nil {
@@ -495,9 +495,9 @@ func TestMemoryProfile_ConcurrentMessageRouting(t *testing.T) {
 
 	// Register agent
 	agentForm := url.Values{
-		"agent_id":      {"memagent"},
-		"name":          {"MemAgent"},
-		"agent_secret":  {agentSecret},
+		"agent_id":     {"memagent"},
+		"name":         {"MemAgent"},
+		"agent_secret": {agentSecret},
 	}
 	resp, err := http.PostForm(server.URL+"/auth/agent", agentForm)
 	if err != nil {
@@ -805,9 +805,9 @@ func TestMemoryProfile_SteadyStateGrowth(t *testing.T) {
 
 	// Register an agent
 	agentForm := url.Values{
-		"agent_id":      {"steadyagent"},
-		"name":          {"SteadyAgent"},
-		"agent_secret":  {agentSecret},
+		"agent_id":     {"steadyagent"},
+		"name":         {"SteadyAgent"},
+		"agent_secret": {agentSecret},
 	}
 	resp, _ := http.PostForm(server.URL+"/auth/agent", agentForm)
 	resp.Body.Close()

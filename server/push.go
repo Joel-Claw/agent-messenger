@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -21,13 +20,13 @@ import (
 
 // PushNotificationConfig holds push notification configuration
 type PushNotificationConfig struct {
-	APNSEnabled  bool
-	CertPath     string // Path to .p8 or .p12 certificate
-	Password     string // Password for .p12 (empty for .p8)
-	KeyID        string // Key ID for .p8 token
-	TeamID       string // Team ID for .p8 token
-	BundleID     string // App bundle ID (e.g., com.agentmessenger.ios)
-	Environment  string // "production" or "development"
+	APNSEnabled bool
+	CertPath    string // Path to .p8 or .p12 certificate
+	Password    string // Password for .p12 (empty for .p8)
+	KeyID       string // Key ID for .p8 token
+	TeamID      string // Team ID for .p8 token
+	BundleID    string // App bundle ID (e.g., com.agentmessenger.ios)
+	Environment string // "production" or "development"
 
 	FCMEnabled     bool
 	FCMCredentials string // Path to Firebase service account JSON
@@ -41,14 +40,14 @@ var pushConfig *PushNotificationConfig
 // initPushNotifications initializes push notification clients (APNs + FCM)
 func initPushNotifications() {
 	pushConfig = &PushNotificationConfig{
-		APNSEnabled:  os.Getenv("APNS_ENABLED") == "true",
-		CertPath:     os.Getenv("APNS_CERT_PATH"),
-		Password:     os.Getenv("APNS_CERT_PASSWORD"),
-		KeyID:        os.Getenv("APNS_KEY_ID"),
-		TeamID:       os.Getenv("APNS_TEAM_ID"),
-		BundleID:     getEnvOrDefault("APNS_BUNDLE_ID", "com.agentmessenger.ios"),
-		Environment:  getEnvOrDefault("APNS_ENVIRONMENT", "development"),
-		FCMEnabled:   os.Getenv("FCM_ENABLED") == "true",
+		APNSEnabled:    os.Getenv("APNS_ENABLED") == "true",
+		CertPath:       os.Getenv("APNS_CERT_PATH"),
+		Password:       os.Getenv("APNS_CERT_PASSWORD"),
+		KeyID:          os.Getenv("APNS_KEY_ID"),
+		TeamID:         os.Getenv("APNS_TEAM_ID"),
+		BundleID:       getEnvOrDefault("APNS_BUNDLE_ID", "com.agentmessenger.ios"),
+		Environment:    getEnvOrDefault("APNS_ENVIRONMENT", "development"),
+		FCMEnabled:     os.Getenv("FCM_ENABLED") == "true",
 		FCMCredentials: os.Getenv("FCM_CREDENTIALS_PATH"),
 	}
 
@@ -61,12 +60,12 @@ func initPushNotifications() {
 
 func initAPNs() {
 	if !pushConfig.APNSEnabled {
-		log.Println("APNs push notifications disabled (APNS_ENABLED not set)")
+		DefaultLogger.Info("apns_disabled", nil)
 		return
 	}
 
 	if pushConfig.CertPath == "" {
-		log.Println("WARNING: APNS_ENABLED but no APNS_CERT_PATH set, APNs will fail")
+		DefaultLogger.Warn("apns_no_cert_path", nil)
 		return
 	}
 
@@ -75,15 +74,15 @@ func initAPNs() {
 	}
 
 	if _, err := os.Stat(pushConfig.CertPath); err != nil {
-		log.Printf("WARNING: APNs certificate not found at %s: %v", pushConfig.CertPath, err)
-		log.Println("APNs will be unavailable until certificate is installed")
+		DefaultLogger.Warn("apns_cert_not_found", map[string]interface{}{"cert_path": pushConfig.CertPath, "error": err.Error()})
+		DefaultLogger.Warn("apns_unavailable_no_cert", nil)
 		pushConfig.APNSEnabled = false
 		return
 	}
 
 	cert, err := certificate.FromP12File(pushConfig.CertPath, pushConfig.Password)
 	if err != nil {
-		log.Printf("WARNING: Failed to load APNs certificate: %v", err)
+		DefaultLogger.Warn("apns_cert_load_failed", map[string]interface{}{"error": err.Error()})
 		pushConfig.APNSEnabled = false
 		return
 	}
@@ -94,23 +93,23 @@ func initAPNs() {
 		pushConfig.apnsClient = apns2.NewClient(cert).Development()
 	}
 
-	log.Printf("APNs push notifications enabled (%s)", pushConfig.Environment)
+	DefaultLogger.Info("apns_enabled", map[string]interface{}{"environment": pushConfig.Environment})
 }
 
 func initFCM() {
 	if !pushConfig.FCMEnabled {
-		log.Println("FCM push notifications disabled (FCM_ENABLED not set)")
+		DefaultLogger.Info("fcm_disabled", nil)
 		return
 	}
 
 	if pushConfig.FCMCredentials == "" {
-		log.Println("WARNING: FCM_ENABLED but no FCM_CREDENTIALS_PATH set, FCM will fail")
+		DefaultLogger.Warn("fcm_no_creds_path", nil)
 		return
 	}
 
 	if _, err := os.Stat(pushConfig.FCMCredentials); err != nil {
-		log.Printf("WARNING: FCM credentials not found at %s: %v", pushConfig.FCMCredentials, err)
-		log.Println("FCM will be unavailable until credentials are installed")
+		DefaultLogger.Warn("fcm_creds_not_found", map[string]interface{}{"creds_path": pushConfig.FCMCredentials, "error": err.Error()})
+		DefaultLogger.Warn("fcm_unavailable_no_creds", nil)
 		pushConfig.FCMEnabled = false
 		return
 	}
@@ -118,20 +117,20 @@ func initFCM() {
 	ctx := context.Background()
 	app, err := firebase.NewApp(ctx, nil, option.WithCredentialsFile(pushConfig.FCMCredentials))
 	if err != nil {
-		log.Printf("WARNING: Failed to initialize Firebase app: %v", err)
+		DefaultLogger.Warn("fcm_init_failed", map[string]interface{}{"error": err.Error()})
 		pushConfig.FCMEnabled = false
 		return
 	}
 
 	client, err := app.Messaging(ctx)
 	if err != nil {
-		log.Printf("WARNING: Failed to create FCM client: %v", err)
+		DefaultLogger.Warn("fcm_client_failed", map[string]interface{}{"error": err.Error()})
 		pushConfig.FCMEnabled = false
 		return
 	}
 
 	pushConfig.fcmClient = client
-	log.Println("FCM push notifications enabled")
+	DefaultLogger.Info("fcm_enabled", nil)
 }
 
 // sendAPNSNotification sends a push notification via APNs (iOS)
@@ -162,11 +161,11 @@ func sendAPNSNotification(deviceToken, title, body, conversationID string) error
 	}
 
 	if response.StatusCode != http.StatusOK {
-		log.Printf("APNs push rejected for %s...%s: %s", deviceToken[:8], deviceToken[len(deviceToken)-8:], response.Reason)
+		DefaultLogger.Warn("apns_push_rejected", map[string]interface{}{"token_prefix": deviceToken[:8], "reason": response.Reason})
 		return nil
 	}
 
-	log.Printf("APNs notification sent to %s...%s", deviceToken[:8], deviceToken[len(deviceToken)-8:])
+	DefaultLogger.Info("apns_push_sent", map[string]interface{}{"token_prefix": deviceToken[:8]})
 	return nil
 }
 
@@ -202,7 +201,7 @@ func sendFCMNotification(deviceToken, title, body, conversationID string) error 
 		return fmt.Errorf("FCM send failed: %w", err)
 	}
 
-	log.Printf("FCM notification sent to %s...%s", deviceToken[:8], deviceToken[len(deviceToken)-8:])
+	DefaultLogger.Info("fcm_push_sent", map[string]interface{}{"token_prefix": deviceToken[:8]})
 	return nil
 }
 
@@ -262,12 +261,12 @@ func handleRegisterDeviceToken(w http.ResponseWriter, r *http.Request) {
 	`, claims.UserID, req.DeviceToken, req.Platform, req.Platform)
 
 	if err != nil {
-		log.Printf("Error storing device token: %v", err)
+		DefaultLogger.Error("device_token_store_error", map[string]interface{}{"error": err.Error()})
 		writeJSONError(w, http.StatusInternalServerError, "failed to store device token")
 		return
 	}
 
-	log.Printf("Device token registered for user %s (%s)", claims.UserID[:8], req.Platform)
+	DefaultLogger.Info("device_token_registered", map[string]interface{}{"user_id": claims.UserID[:8], "platform": req.Platform})
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
@@ -356,7 +355,7 @@ func notifyUser(userID, title, body, conversationID string) {
 
 	for _, t := range tokens {
 		if err := sendPushNotification(t.Token, title, body, conversationID, t.Platform); err != nil {
-			log.Printf("Failed to send push to %s (%s): %v", t.Token[:8], t.Platform, err)
+			DefaultLogger.Warn("push_send_failed", map[string]interface{}{"token_prefix": t.Token[:8], "platform": t.Platform, "error": err.Error()})
 		}
 	}
 }
@@ -460,7 +459,7 @@ func handleWebPushSubscribe(w http.ResponseWriter, r *http.Request) {
 		VALUES (?, ?, ?, ?, ?)
 	`, claims.UserID, req.Endpoint, req.Keys.P256DH, req.Keys.Auth, time.Now().UTC())
 	if err != nil {
-		log.Printf("Warning: failed to store web push keys: %v", err)
+		DefaultLogger.Warn("web_push_keys_store_error", map[string]interface{}{"error": err.Error()})
 		// Non-fatal — the device token is already registered
 	}
 

@@ -85,8 +85,8 @@ func chaosRegisterUser(t *testing.T, server *httptest.Server, username string) s
 func chaosRegisterAgent(t *testing.T, server *httptest.Server, agentID, name string) {
 	t.Helper()
 	form := url.Values{
-		"agent_id":    {agentID},
-		"name":        {name},
+		"agent_id":     {agentID},
+		"name":         {name},
 		"agent_secret": {agentSecret},
 	}
 	resp, err := http.PostForm(server.URL+"/auth/agent", form)
@@ -564,11 +564,11 @@ func TestChaos_SustainedRandomOps(t *testing.T) {
 	convID := chaosCreateConversation(t, server, agentID, token)
 
 	var (
-		wg          sync.WaitGroup
-		stop        = make(chan struct{})
-		opsDone     atomic.Int64
-		connErrors  atomic.Int64
-		msgErrors   atomic.Int64
+		wg         sync.WaitGroup
+		stop       = make(chan struct{})
+		opsDone    atomic.Int64
+		connErrors atomic.Int64
+		msgErrors  atomic.Int64
 	)
 
 	// Start agent connection maintainer

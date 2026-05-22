@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // setupTestDB initializes an in-memory DB for unit tests that need DB access
@@ -125,7 +125,7 @@ func TestValidateJWT_InvalidToken(t *testing.T) {
 
 func TestValidateJWT_WrongSecret(t *testing.T) {
 	claims := &Claims{
-		UserID: "user-456",
+		UserID:   "user-456",
 		Username: "evil_user",
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),

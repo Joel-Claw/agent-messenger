@@ -18,9 +18,9 @@ func TestGetMessagesHandlerPagination(t *testing.T) {
 
 	// Register agent
 	agentForm := url.Values{
-		"agent_id":      {"pag_agent"},
-		"name":          {"Page Agent"},
-		"agent_secret":  {getAgentSecret()},
+		"agent_id":     {"pag_agent"},
+		"name":         {"Page Agent"},
+		"agent_secret": {getAgentSecret()},
 	}
 	req := httptest.NewRequest("POST", "/auth/agent", strings.NewReader(agentForm.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -105,9 +105,9 @@ func TestGetMessagesHandlerCursorPagination(t *testing.T) {
 
 	// Register agent
 	agentForm := url.Values{
-		"agent_id":      {"cursor_agent"},
-		"name":          {"Cursor Agent"},
-		"agent_secret":  {getAgentSecret()},
+		"agent_id":     {"cursor_agent"},
+		"name":         {"Cursor Agent"},
+		"agent_secret": {getAgentSecret()},
 	}
 	req := httptest.NewRequest("POST", "/auth/agent", strings.NewReader(agentForm.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

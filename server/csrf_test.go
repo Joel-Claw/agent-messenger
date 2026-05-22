@@ -157,10 +157,10 @@ func TestIsOriginAllowed(t *testing.T) {
 	defer func() { corsAllowedOrigins = originalOrigins }()
 
 	tests := []struct {
-		name        string
-		origins     string
-		origin      string
-		expected    bool
+		name     string
+		origins  string
+		origin   string
+		expected bool
 	}{
 		{"wildcard allows all", "*", "https://anything.com", true},
 		{"exact match", "https://chat.example.com", "https://chat.example.com", true},

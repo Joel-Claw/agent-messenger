@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
 	"time"
 )
 
@@ -22,7 +21,7 @@ func persistQueue(db *sql.DB, recipient string, data []byte) {
 		recipient, data, time.Now().UTC().Format(time.RFC3339),
 	)
 	if err != nil {
-		log.Printf("Failed to persist offline message for %s: %v", recipient, err)
+		DefaultLogger.Error("offline_persist_error", map[string]interface{}{"recipient": recipient, "error": err.Error()})
 	}
 }
 
@@ -33,7 +32,7 @@ func deleteQueueMessages(db *sql.DB, recipient string) {
 	}
 	_, err := db.Exec("DELETE FROM offline_queue WHERE recipient = ?", recipient)
 	if err != nil {
-		log.Printf("Failed to delete persisted queue for %s: %v", recipient, err)
+		DefaultLogger.Error("offline_persist_delete_error", map[string]interface{}{"recipient": recipient, "error": err.Error()})
 	}
 }
 
@@ -45,7 +44,7 @@ func loadQueueFromDB(db *sql.DB, q *OfflineQueue) {
 	}
 	rows, err := db.Query("SELECT recipient, data, queued_at FROM offline_queue ORDER BY id ASC")
 	if err != nil {
-		log.Printf("Failed to load offline queue from DB: %v", err)
+		DefaultLogger.Error("offline_db_load_error", map[string]interface{}{"error": err.Error()})
 		return
 	}
 	defer rows.Close()
@@ -56,14 +55,14 @@ func loadQueueFromDB(db *sql.DB, q *OfflineQueue) {
 		var data []byte
 		var queuedAtStr string
 		if err := rows.Scan(&recipient, &data, &queuedAtStr); err != nil {
-			log.Printf("Failed to scan offline queue row: %v", err)
+			DefaultLogger.Warn("offline_db_scan_error", map[string]interface{}{"error": err.Error()})
 			continue
 		}
 		q.Enqueue(recipient, data)
 		loaded++
 	}
 	if loaded > 0 {
-		log.Printf("Loaded %d offline messages from SQLite into memory", loaded)
+		DefaultLogger.Info("offline_db_loaded", map[string]interface{}{"count": loaded})
 	}
 }
 
@@ -83,7 +82,7 @@ CREATE TABLE IF NOT EXISTS offline_queue (
 );
 CREATE INDEX IF NOT EXISTS idx_queue_recipient ON offline_queue(recipient)`) //nolint:execinquery
 	if err != nil {
-		log.Printf("Failed to create offline_queue table: %v", err)
+		DefaultLogger.Error("offline_table_create_error", map[string]interface{}{"error": err.Error()})
 	}
 }
 
@@ -96,12 +95,12 @@ func cleanStaleQueueMessages(db *sql.DB, maxAge time.Duration) {
 	cutoff := time.Now().UTC().Add(-maxAge).Format(time.RFC3339)
 	result, err := db.Exec("DELETE FROM offline_queue WHERE queued_at < ?", cutoff)
 	if err != nil {
-		log.Printf("Failed to clean stale queue messages: %v", err)
+		DefaultLogger.Warn("offline_cleanup_error", map[string]interface{}{"error": err.Error()})
 		return
 	}
 	deleted, _ := result.RowsAffected()
 	if deleted > 0 {
-		log.Printf("Cleaned %d stale offline queue messages (older than %s)", deleted, maxAge)
+		DefaultLogger.Info("offline_cleanup_done", map[string]interface{}{"deleted": deleted, "max_age": maxAge.String()})
 	}
 }
 
@@ -109,7 +108,7 @@ func cleanStaleQueueMessages(db *sql.DB, maxAge time.Duration) {
 func marshalOutgoingMessage(msg OutgoingMessage) []byte {
 	data, err := json.Marshal(msg)
 	if err != nil {
-		log.Printf("Failed to marshal outgoing message for queue: %v", err)
+		DefaultLogger.Error("offline_marshal_error", map[string]interface{}{"error": err.Error()})
 		return nil
 	}
 	return data

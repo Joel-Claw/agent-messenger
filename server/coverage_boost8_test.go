@@ -289,9 +289,9 @@ func TestCb8SearchMessages_EmptyQueryReturnsAll(t *testing.T) {
 	// Store a message
 	err := storeMessage(RoutedMessage{
 		ConversationID: convID,
-		SenderID:      "search8user1",
-		SenderType:    "client",
-		Content:       "hello world",
+		SenderID:       "search8user1",
+		SenderType:     "client",
+		Content:        "hello world",
 	})
 	if err != nil {
 		t.Fatalf("storeMessage failed: %v", err)

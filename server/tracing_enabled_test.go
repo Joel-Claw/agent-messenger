@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"

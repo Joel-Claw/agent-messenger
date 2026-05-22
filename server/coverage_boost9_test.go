@@ -406,7 +406,7 @@ func TestCb9SetGCPercent(t *testing.T) {
 
 func TestCb9SetMemoryLimit(t *testing.T) {
 	oldLimit := SetMemoryLimit(1 << 30) // 1GB
-	SetMemoryLimit(oldLimit)              // restore
+	SetMemoryLimit(oldLimit)            // restore
 }
 
 func TestCb9CaptureProfile_NoDir(t *testing.T) {
@@ -1733,9 +1733,9 @@ func TestCb9SearchMessages_Handler(t *testing.T) {
 
 	storeMessage(RoutedMessage{
 		ConversationID: convID,
-		SenderID:      "search9handler",
-		SenderType:    "client",
-		Content:       "searchable content here",
+		SenderID:       "search9handler",
+		SenderType:     "client",
+		Content:        "searchable content here",
 	})
 
 	req := httptest.NewRequest("GET", "/messages/search?q=searchable&conversation_id="+convID, nil)

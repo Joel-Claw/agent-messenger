@@ -165,8 +165,8 @@ func TestLoggerTimestamp(t *testing.T) {
 func TestRateLimiterCleanupExpired(t *testing.T) {
 	rl := &RateLimiter{
 		counters: make(map[string]*rateCounter),
-		limit:   10,
-		window:  100 * time.Millisecond,
+		limit:    10,
+		window:   100 * time.Millisecond,
 	}
 
 	rl.counters["user1"] = &rateCounter{count: 1, expires: time.Now().Add(-1 * time.Second)}
@@ -193,8 +193,8 @@ func TestRateLimiterCleanupExpired(t *testing.T) {
 func TestRateLimiterCleanupNoneExpired(t *testing.T) {
 	rl := &RateLimiter{
 		counters: make(map[string]*rateCounter),
-		limit:   10,
-		window:  500 * time.Millisecond,
+		limit:    10,
+		window:   500 * time.Millisecond,
 	}
 
 	rl.counters["user1"] = &rateCounter{count: 1, expires: time.Now().Add(1 * time.Second)}
@@ -1130,10 +1130,10 @@ func TestE2EHandlersNoAuth(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
+		name    string
 		handler func(http.ResponseWriter, *http.Request)
-		method string
-		body   string
+		method  string
+		body    string
 	}{
 		{"uploadPublicKey", handleUploadPublicKey, "POST", `{"public_key":"test-key"}`},
 		{"getKeyBundle", handleGetKeyBundle, "GET", ""},
@@ -1181,7 +1181,7 @@ func TestReactionAndTagAuthRequired(t *testing.T) {
 		method  string
 		body    string
 	}{
-			{"react", handleReact, "POST", "message_id=msg-1&emoji=like&action=add"},
+		{"react", handleReact, "POST", "message_id=msg-1&emoji=like&action=add"},
 		{"addTag", handleAddTag, "POST", `{"conversation_id":"conv-1","tag":"important"}`},
 		{"removeTag", handleRemoveTag, "POST", `{"conversation_id":"conv-1","tag":"important"}`},
 	}
@@ -1401,6 +1401,7 @@ func TestAuthRateLimiterClean(t *testing.T) {
 		t.Error("fresh-agent should still be in attempts")
 	}
 }
+
 // ==================== Additional Coverage: marshalOutgoingMessage with error ====================
 
 func TestMarshalOutgoingMessageWithUnserializableData(t *testing.T) {

@@ -161,10 +161,10 @@ func handleReact(w http.ResponseWriter, r *http.Request) {
 	wsMsg := OutgoingMessage{
 		Type: eventType,
 		Data: map[string]interface{}{
-			"message_id":     messageID,
+			"message_id":      messageID,
 			"conversation_id": convID,
-			"user_id":        claims.UserID,
-			"emoji":          emoji,
+			"user_id":         claims.UserID,
+			"emoji":           emoji,
 		},
 	}
 	wsData, _ := json.Marshal(wsMsg)
@@ -190,14 +190,14 @@ func handleReact(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if added {
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":    "reaction_added",
-			"reaction":  reaction,
+			"status":   "reaction_added",
+			"reaction": reaction,
 		})
 	} else {
 		json.NewEncoder(w).Encode(map[string]string{
-			"status":    "reaction_removed",
+			"status":     "reaction_removed",
 			"message_id": messageID,
-			"emoji":     emoji,
+			"emoji":      emoji,
 		})
 	}
 }

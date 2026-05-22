@@ -60,12 +60,12 @@ func TestRegisterAgentWithMetadata(t *testing.T) {
 	server := setupTestServerForMultiAgent(t)
 
 	resp, err := http.PostForm(server.URL+"/auth/agent", url.Values{
-		"agent_id":    {"gpt-agent"},
-		"name":        {"GPT Assistant"},
-		"agent_secret":     {agentSecret},
-		"model":       {"gpt-4"},
-		"personality": {"helpful"},
-		"specialty":   {"general"},
+		"agent_id":     {"gpt-agent"},
+		"name":         {"GPT Assistant"},
+		"agent_secret": {agentSecret},
+		"model":        {"gpt-4"},
+		"personality":  {"helpful"},
+		"specialty":    {"general"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -98,9 +98,9 @@ func TestRegisterAgentWithoutMetadata(t *testing.T) {
 	server := setupTestServerForMultiAgent(t)
 
 	resp, err := http.PostForm(server.URL+"/auth/agent", url.Values{
-		"agent_id": {"basic-agent"},
-		"name":     {"Basic Agent"},
-		"agent_secret":  {agentSecret},
+		"agent_id":     {"basic-agent"},
+		"name":         {"Basic Agent"},
+		"agent_secret": {agentSecret},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -154,12 +154,12 @@ func TestListAgentsWithMultiple(t *testing.T) {
 
 	for _, a := range agents {
 		http.PostForm(server.URL+"/auth/agent", url.Values{
-			"agent_id":    {a.id},
-			"name":        {a.name},
+			"agent_id":     {a.id},
+			"name":         {a.name},
 			"agent_secret": {agentSecret},
-			"model":       {a.model},
-			"personality": {a.personality},
-			"specialty":   {a.specialty},
+			"model":        {a.model},
+			"personality":  {a.personality},
+			"specialty":    {a.specialty},
 		})
 	}
 
@@ -211,14 +211,14 @@ func TestListAgentsOnlineStatus(t *testing.T) {
 
 	// Register two agents
 	http.PostForm(server.URL+"/auth/agent", url.Values{
-		"agent_id": {"online-agent"},
-		"name":     {"Online Agent"},
-		"agent_secret":  {agentSecret},
+		"agent_id":     {"online-agent"},
+		"name":         {"Online Agent"},
+		"agent_secret": {agentSecret},
 	})
 	http.PostForm(server.URL+"/auth/agent", url.Values{
-		"agent_id": {"offline-agent"},
-		"name":     {"Offline Agent"},
-		"agent_secret":  {agentSecret},
+		"agent_id":     {"offline-agent"},
+		"name":         {"Offline Agent"},
+		"agent_secret": {agentSecret},
 	})
 
 	// Connect only the first agent via WebSocket
@@ -379,17 +379,17 @@ func TestAdminAgentsEndpoint(t *testing.T) {
 
 	// Register agents
 	http.PostForm(server.URL+"/auth/agent", url.Values{
-		"agent_id":    {"admin-agent"},
-		"name":        {"Admin Agent"},
-		"agent_secret":     {agentSecret},
-		"model":       {"gpt-4"},
-		"personality": {"professional"},
-		"specialty":   {"admin"},
+		"agent_id":     {"admin-agent"},
+		"name":         {"Admin Agent"},
+		"agent_secret": {agentSecret},
+		"model":        {"gpt-4"},
+		"personality":  {"professional"},
+		"specialty":    {"admin"},
 	})
 	http.PostForm(server.URL+"/auth/agent", url.Values{
-		"agent_id": {"admin-offline"},
-		"name":     {"Admin Offline"},
-		"agent_secret":  {agentSecret},
+		"agent_id":     {"admin-offline"},
+		"name":         {"Admin Offline"},
+		"agent_secret": {agentSecret},
 	})
 
 	// Connect one agent

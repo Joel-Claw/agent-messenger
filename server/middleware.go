@@ -148,6 +148,7 @@ func checkRateLimit(conn *Connection) bool {
 //   - Valid Origin header matching CORS_ALLOWED_ORIGINS
 //   - X-Requested-With: XMLHttpRequest header (common SPA pattern)
 //   - X-CSRF-Token header (custom token approach)
+//
 // GET, HEAD, OPTIONS requests are allowed through (they should be side-effect-free).
 func csrfMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

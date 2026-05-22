@@ -19,22 +19,22 @@ type Conversation struct {
 
 // MessageReadReceipt tracks which messages a user has read
 const (
-	ReadReceiptRead     = "read"
+	ReadReceiptRead      = "read"
 	ReadReceiptDelivered = "delivered"
 )
 
 // StoredMessage represents a persisted message
 type StoredMessage struct {
-	ID             string           `json:"id"`
-	ConversationID string           `json:"conversation_id"`
-	SenderType     string           `json:"sender_type"`
-	SenderID       string           `json:"sender_id"`
-	Content        string           `json:"content"`
-	Metadata       string           `json:"metadata,omitempty"`
-	CreatedAt      time.Time        `json:"created_at"`
-	ReadAt         *time.Time       `json:"read_at,omitempty"`
-	EditedAt       *time.Time       `json:"edited_at,omitempty"`
-	IsDeleted      bool             `json:"is_deleted"`
+	ID             string            `json:"id"`
+	ConversationID string            `json:"conversation_id"`
+	SenderType     string            `json:"sender_type"`
+	SenderID       string            `json:"sender_id"`
+	Content        string            `json:"content"`
+	Metadata       string            `json:"metadata,omitempty"`
+	CreatedAt      time.Time         `json:"created_at"`
+	ReadAt         *time.Time        `json:"read_at,omitempty"`
+	EditedAt       *time.Time        `json:"edited_at,omitempty"`
+	IsDeleted      bool              `json:"is_deleted"`
 	Reactions      []MessageReaction `json:"reactions,omitempty"`
 }
 
@@ -149,12 +149,12 @@ func getConversationMessages(convID string, limit int, before string) ([]StoredM
 	var err error
 	if before != "" {
 		rows, err = db.Query(
-				"SELECT id, conversation_id, sender_type, sender_id, content, COALESCE(metadata, ''), created_at, read_at, edited_at, COALESCE(is_deleted, 0) FROM messages WHERE conversation_id = ? AND created_at < ? ORDER BY created_at DESC LIMIT ?",
-				convID, before, limit)
+			"SELECT id, conversation_id, sender_type, sender_id, content, COALESCE(metadata, ''), created_at, read_at, edited_at, COALESCE(is_deleted, 0) FROM messages WHERE conversation_id = ? AND created_at < ? ORDER BY created_at DESC LIMIT ?",
+			convID, before, limit)
 	} else {
 		rows, err = db.Query(
-				"SELECT id, conversation_id, sender_type, sender_id, content, COALESCE(metadata, ''), created_at, read_at, edited_at, COALESCE(is_deleted, 0) FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?",
-				convID, limit)
+			"SELECT id, conversation_id, sender_type, sender_id, content, COALESCE(metadata, ''), created_at, read_at, edited_at, COALESCE(is_deleted, 0) FROM messages WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?",
+			convID, limit)
 	}
 	if err != nil {
 		return nil, err

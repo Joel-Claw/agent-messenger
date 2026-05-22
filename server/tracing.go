@@ -41,18 +41,18 @@ const (
 	tracerName = "github.com/Joel-Claw/agent-messenger"
 
 	// Span names for message routing
-	spanRouteMessage      = "route_message"
-	spanRouteChatMessage  = "route_chat_message"
-	spanRouteTyping       = "route_typing"
-	spanRouteStatus       = "route_status"
-	spanRouteHeartbeat    = "route_heartbeat"
-	spanStoreMessage      = "store_message"
-	spanDeliverMessage    = "deliver_message"
+	spanRouteMessage     = "route_message"
+	spanRouteChatMessage = "route_chat_message"
+	spanRouteTyping      = "route_typing"
+	spanRouteStatus      = "route_status"
+	spanRouteHeartbeat   = "route_heartbeat"
+	spanStoreMessage     = "store_message"
+	spanDeliverMessage   = "deliver_message"
 	spanOfflineEnqueue   = "offline_enqueue"
-	spanPushNotify        = "push_notify"
+	spanPushNotify       = "push_notify"
 	spanAgentConnect     = "ws.agent_connect"
 	spanClientConnect    = "ws.client_connect"
-	spanHTTPRequest       = "http_request"
+	spanHTTPRequest      = "http_request"
 
 	// Attribute keys
 	attrConnType       = "messenger.conn_type"

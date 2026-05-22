@@ -9,17 +9,17 @@ import (
 // Metrics tracks server-level statistics
 type Metrics struct {
 	// Counters (atomic for thread-safe increments)
-	MessagesIn      atomic.Int64 // total messages received
-	MessagesOut     atomic.Int64 // total messages sent
+	MessagesIn       atomic.Int64 // total messages received
+	MessagesOut      atomic.Int64 // total messages sent
 	ConnectionsTotal atomic.Int64 // total connections ever made (agents + clients)
-	ErrorsTotal     atomic.Int64 // total errors (auth failures, rate limits, write errors)
-	RateLimited     atomic.Int64 // total rate-limited messages
+	ErrorsTotal      atomic.Int64 // total errors (auth failures, rate limits, write errors)
+	RateLimited      atomic.Int64 // total rate-limited messages
 
 	// Gauges (updated via hub)
 	AgentsConnected  func() int
-	ClientsConnected func() int // unique client users
-	ClientConnsTotal func() int // total client connections (multi-device)
-	StaleAgentCount func() int64 // agents that missed heartbeat timeout
+	ClientsConnected func() int   // unique client users
+	ClientConnsTotal func() int   // total client connections (multi-device)
+	StaleAgentCount  func() int64 // agents that missed heartbeat timeout
 
 	// Server metadata
 	StartTime time.Time
@@ -52,20 +52,20 @@ func (m *Metrics) Snapshot() map[string]interface{} {
 	runtime.ReadMemStats(&memStats)
 
 	return map[string]interface{}{
-		"version":           m.Version,
-		"uptime_seconds":    int(m.Uptime().Seconds()),
-		"start_time":        m.StartTime.Format(time.RFC3339),
-		"messages_in":       m.MessagesIn.Load(),
-		"messages_out":      m.MessagesOut.Load(),
-		"connections_total": m.ConnectionsTotal.Load(),
-		"agents_connected":  m.AgentsConnected(),
+		"version":            m.Version,
+		"uptime_seconds":     int(m.Uptime().Seconds()),
+		"start_time":         m.StartTime.Format(time.RFC3339),
+		"messages_in":        m.MessagesIn.Load(),
+		"messages_out":       m.MessagesOut.Load(),
+		"connections_total":  m.ConnectionsTotal.Load(),
+		"agents_connected":   m.AgentsConnected(),
 		"clients_connected":  m.ClientsConnected(),
 		"client_conns_total": m.ClientConnsTotal(),
-		"errors_total":      m.ErrorsTotal.Load(),
-		"rate_limited":      m.RateLimited.Load(),
-		"goroutines":        runtime.NumGoroutine(),
-		"memory_alloc_mb":   float64(memStats.Alloc) / 1024 / 1024,
-		"memory_sys_mb":     float64(memStats.Sys) / 1024 / 1024,
+		"errors_total":       m.ErrorsTotal.Load(),
+		"rate_limited":       m.RateLimited.Load(),
+		"goroutines":         runtime.NumGoroutine(),
+		"memory_alloc_mb":    float64(memStats.Alloc) / 1024 / 1024,
+		"memory_sys_mb":      float64(memStats.Sys) / 1024 / 1024,
 		"offline_queue_depth": func() int {
 			if offlineQueue != nil {
 				return offlineQueue.TotalDepth()
@@ -73,9 +73,9 @@ func (m *Metrics) Snapshot() map[string]interface{} {
 			return 0
 		}(),
 		"agent_heartbeat": map[string]interface{}{
-			"enabled":     agentPresenceEnabled,
-			"interval_s":  int(agentPresenceInterval.Seconds()),
-			"timeout_s":   int(agentPresenceTimeout.Seconds()),
+			"enabled":      agentPresenceEnabled,
+			"interval_s":   int(agentPresenceInterval.Seconds()),
+			"timeout_s":    int(agentPresenceTimeout.Seconds()),
 			"stale_agents": m.StaleAgentCount(),
 		},
 	}

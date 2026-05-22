@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -209,7 +208,7 @@ func tieredRateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			w.Header().Set("Retry-After", itoa(retryAfter))
 			w.Header().Set("X-RateLimit-Remaining", "0")
 			writeJSONError(w, http.StatusTooManyRequests, "rate limit exceeded")
-			log.Printf("Tiered rate limit: %s (tier: %s)", userID, tier.Name)
+			DefaultLogger.Info("tiered_rate_limit", map[string]interface{}{"user_id": userID, "tier": tier.Name})
 			return
 		}
 
@@ -240,7 +239,7 @@ func loadTiersFromDB(trl *TieredRateLimiter) error {
 			tier = TierPro
 		case "enterprise":
 			tier = TierEnterprise
-			default:
+		default:
 			tier = TierFree
 		}
 		if tier.Name != "free" {
@@ -311,10 +310,10 @@ func handleSetRateLimitTier(w http.ResponseWriter, r *http.Request) {
 
 	// Persist to DB for durability
 	if err := persistTierToDB(userID, tier); err != nil {
-		log.Printf("Warning: failed to persist rate limit tier for %s: %v", userID, err)
+		DefaultLogger.Warn("rate_limit_tier_persist_error", map[string]interface{}{"user_id": userID, "error": err.Error()})
 	}
 
-	log.Printf("Rate limit tier set: %s -> %s", userID, tierName)
+	DefaultLogger.Info("rate_limit_tier_set", map[string]interface{}{"user_id": userID, "tier": tierName})
 
 	writeJSONResponse(w, http.StatusOK, map[string]string{
 		"status":  "ok",
@@ -397,4 +396,3 @@ func handleAdminRateLimitTier(w http.ResponseWriter, r *http.Request) {
 		handleGetRateLimitTier(w, r)
 	}
 }
-

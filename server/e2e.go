@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -11,35 +10,35 @@ import (
 
 // E2E encryption key types
 const (
-	KeyTypeIdentity    = "identity"     // Long-term identity key pair (Ed25519/X25519)
-	KeyTypeSignedPreKey  = "signed_prekey" // Medium-term signed pre-key
+	KeyTypeIdentity      = "identity"        // Long-term identity key pair (Ed25519/X25519)
+	KeyTypeSignedPreKey  = "signed_prekey"   // Medium-term signed pre-key
 	KeyTypeOneTimePreKey = "one_time_prekey" // Single-use one-time pre-key
 )
 
 // KeyBundle represents a public key uploaded by a user or agent
 type KeyBundle struct {
-	ID         string `json:"id"`
-	OwnerID    string `json:"owner_id"`
-	OwnerType  string `json:"owner_type"` // "user" or "agent"
-	KeyType    string `json:"key_type"`
-	PublicKey  string `json:"public_key"`  // base64-encoded public key
-	Signature  string `json:"signature,omitempty"` // base64-encoded signature (for signed pre-keys)
-	KeyID      int    `json:"key_id,omitempty"` // one-time pre-key sequential ID
-	CreatedAt  string `json:"created_at"`
+	ID        string `json:"id"`
+	OwnerID   string `json:"owner_id"`
+	OwnerType string `json:"owner_type"` // "user" or "agent"
+	KeyType   string `json:"key_type"`
+	PublicKey string `json:"public_key"`          // base64-encoded public key
+	Signature string `json:"signature,omitempty"` // base64-encoded signature (for signed pre-keys)
+	KeyID     int    `json:"key_id,omitempty"`    // one-time pre-key sequential ID
+	CreatedAt string `json:"created_at"`
 }
 
 // EncryptedMessage represents an encrypted message envelope
 type EncryptedMessage struct {
-	ID              string `json:"id"`
-	ConversationID  string `json:"conversation_id"`
-	SenderID        string `json:"sender_id"`
-	SenderType      string `json:"sender_type"`
-	Ciphertext      string `json:"ciphertext"`       // base64-encoded encrypted content
-	Iv              string `json:"iv"`                // base64-encoded initialization vector
-	RecipientKeyID  string `json:"recipient_key_id"`  // which key was used to encrypt
-	SenderKeyID     string `json:"sender_key_id,omitempty"` // sender's key used for signing/DH
-	Algorithm       string `json:"algorithm"`         // e.g. "aes-256-gcm", "x25519-aes-256-gcm"
-	CreatedAt       string `json:"created_at"`
+	ID             string `json:"id"`
+	ConversationID string `json:"conversation_id"`
+	SenderID       string `json:"sender_id"`
+	SenderType     string `json:"sender_type"`
+	Ciphertext     string `json:"ciphertext"`              // base64-encoded encrypted content
+	Iv             string `json:"iv"`                      // base64-encoded initialization vector
+	RecipientKeyID string `json:"recipient_key_id"`        // which key was used to encrypt
+	SenderKeyID    string `json:"sender_key_id,omitempty"` // sender's key used for signing/DH
+	Algorithm      string `json:"algorithm"`               // e.g. "aes-256-gcm", "x25519-aes-256-gcm"
+	CreatedAt      string `json:"created_at"`
 }
 
 // handleUploadPublicKey handles POST /keys/upload
@@ -103,7 +102,7 @@ func handleUploadPublicKey(w http.ResponseWriter, r *http.Request) {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`, keyID, ownerID, ownerType, req.KeyType, req.PublicKey, req.Signature, req.KeyID, time.Now().UTC())
 	if err != nil {
-		log.Printf("Error storing key bundle: %v", err)
+		DefaultLogger.Error("key_bundle_store_error", map[string]interface{}{"error": err.Error()})
 		writeJSONError(w, http.StatusInternalServerError, "failed to store key")
 		return
 	}
@@ -247,8 +246,8 @@ func handleStoreEncryptedMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	validAlgorithms := map[string]bool{
-		"aes-256-gcm":          true,
-		"x25519-aes-256-gcm":   true,
+		"aes-256-gcm":              true,
+		"x25519-aes-256-gcm":       true,
 		"x25519-chacha20-poly1305": true,
 	}
 	if !validAlgorithms[req.Algorithm] {
@@ -279,7 +278,7 @@ func handleStoreEncryptedMessage(w http.ResponseWriter, r *http.Request) {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, msgID, req.ConversationID, senderID, senderType, req.Ciphertext, req.Iv, req.RecipientKeyID, req.SenderKeyID, req.Algorithm, time.Now().UTC())
 	if err != nil {
-		log.Printf("Error storing encrypted message: %v", err)
+		DefaultLogger.Error("encrypted_message_store_error", map[string]interface{}{"error": err.Error()})
 		writeJSONError(w, http.StatusInternalServerError, "failed to store encrypted message")
 		return
 	}
@@ -302,7 +301,7 @@ func handleStoreEncryptedMessage(w http.ResponseWriter, r *http.Request) {
 				select {
 				case agent.send <- outgoing:
 				default:
-					log.Printf("Agent %s send buffer full, dropping encrypted message", conv.AgentID)
+					DefaultLogger.Warn("agent_buffer_full_encrypted", map[string]interface{}{"agent_id": conv.AgentID})
 				}
 			}
 		} else {
@@ -315,7 +314,7 @@ func handleStoreEncryptedMessage(w http.ResponseWriter, r *http.Request) {
 					case client.send <- outgoing:
 						delivered++
 					default:
-						log.Printf("Client %s (device %s) send buffer full, dropping encrypted message", conv.UserID, client.deviceID)
+						DefaultLogger.Warn("client_buffer_full_encrypted", map[string]interface{}{"user_id": conv.UserID, "device_id": client.deviceID})
 					}
 				}
 				if delivered == 0 {

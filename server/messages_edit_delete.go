@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 )
@@ -82,7 +81,7 @@ func handleMessageEdit(w http.ResponseWriter, r *http.Request) {
 				"message_id":      messageID,
 				"conversation_id": msg.ConversationID,
 				"content":         content,
-				"edited_at":        now.Format(time.RFC3339),
+				"edited_at":       now.Format(time.RFC3339),
 				"edited_by":       claims.UserID,
 			},
 		}
@@ -107,10 +106,10 @@ func handleMessageEdit(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":          "edited",
-		"message_id":     messageID,
+		"message_id":      messageID,
 		"conversation_id": msg.ConversationID,
 		"content":         content,
-		"edited_at":        now.Format(time.RFC3339),
+		"edited_at":       now.Format(time.RFC3339),
 	})
 }
 
@@ -206,12 +205,12 @@ func handleMessageDelete(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	log.Printf("Message %s deleted by %s", messageID, claims.UserID)
+	DefaultLogger.Info("message_deleted", map[string]interface{}{"message_id": messageID, "user_id": claims.UserID})
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":          "deleted",
-		"message_id":     messageID,
+		"message_id":      messageID,
 		"conversation_id": msg.ConversationID,
 		"deleted_at":      now.Format(time.RFC3339),
 	})

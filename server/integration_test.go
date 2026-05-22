@@ -76,7 +76,7 @@ func intTestUser(t *testing.T, server *httptest.Server, username string) string 
 func intTestAgent(t *testing.T, server *httptest.Server, agentID, name string) string {
 	t.Helper()
 	form := url.Values{
-		"agent_id":    {agentID},
+		"agent_id":     {agentID},
 		"name":         {name},
 		"agent_secret": {agentSecret},
 	}

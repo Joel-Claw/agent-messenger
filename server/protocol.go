@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -61,9 +60,9 @@ func upgradeWithProtocol(w http.ResponseWriter, r *http.Request, negotiated stri
 // sendWelcomeMessage sends the initial welcome message with protocol version info
 func sendWelcomeMessage(connType, id, deviceID, protocolVersion string, send chan []byte) {
 	welcomeData := map[string]interface{}{
-		"id":               id,
-		"status":           "connected",
-		"protocol_version": protocolVersion,
+		"id":                 id,
+		"status":             "connected",
+		"protocol_version":   protocolVersion,
 		"supported_versions": strings.Split(SupportedVersions, ","),
 	}
 	if deviceID != "" {
@@ -76,12 +75,12 @@ func sendWelcomeMessage(connType, id, deviceID, protocolVersion string, send cha
 	}
 	data, err := json.Marshal(welcome)
 	if err != nil {
-		log.Printf("Failed to marshal welcome message: %v", err)
+		DefaultLogger.Error("welcome_marshal_error", map[string]interface{}{"error": err.Error()})
 		return
 	}
 	select {
 	case send <- data:
 	default:
-		log.Printf("Send buffer full, dropping welcome message for %s", id)
+		DefaultLogger.Warn("welcome_buffer_full", map[string]interface{}{"id": id})
 	}
 }

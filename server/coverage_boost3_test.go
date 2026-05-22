@@ -339,9 +339,9 @@ func TestHandleAdminRateLimitTierPost(t *testing.T) {
 	defer func() { adminSecret = origSecret }()
 
 	form := url.Values{
-		"user_id":       {"testuser1"},
-		"tier":          {"pro"},
-		"admin_secret":  {"admin-test-secret"},
+		"user_id":      {"testuser1"},
+		"tier":         {"pro"},
+		"admin_secret": {"admin-test-secret"},
 	}
 	req := httptest.NewRequest("POST", "/admin/rate-limit/tier", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

@@ -18,12 +18,12 @@ func TestParseSize(t *testing.T) {
 		{"1TB", 1 << 40, false},
 		{"1024B", 1024, false},
 		{"1024", 1024, false},
-		{"50mb", 50 << 20, false}, // case insensitive
+		{"50mb", 50 << 20, false},  // case insensitive
 		{"50 Mb", 50 << 20, false}, // space ok
 		{"0", 0, false},
-		{"", 0, true},           // empty
-		{"abc", 0, true},        // invalid
-		{"10XB", 0, true},       // unknown suffix
+		{"", 0, true},     // empty
+		{"abc", 0, true},  // invalid
+		{"10XB", 0, true}, // unknown suffix
 	}
 
 	for _, tt := range tests {

@@ -26,11 +26,11 @@ import (
 
 func TestCb10EnvIntOrDefault(t *testing.T) {
 	tests := []struct {
-		name      string
-		envVal    string
-		envKey    string
+		name       string
+		envVal     string
+		envKey     string
 		defaultVal int
-		want      int
+		want       int
 	}{
 		{"unset env returns default", "", "TEST_CB10_INT", 42, 42},
 		{"valid env returns parsed", "99", "TEST_CB10_INT", 42, 99},

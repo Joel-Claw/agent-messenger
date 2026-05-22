@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -26,7 +25,7 @@ func handleGetNotificationPrefs(w http.ResponseWriter, r *http.Request) {
 		FROM notification_preferences
 		WHERE user_id = ?`, userID)
 	if err != nil {
-		log.Printf("[notif-prefs] query error: %v", err)
+		DefaultLogger.Error("notif_prefs_query_error", map[string]interface{}{"error": err.Error()})
 		writeJSONError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -67,7 +66,7 @@ func handleSetNotificationPrefs(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, http.StatusNotFound, "conversation not found")
 		return
 	} else if err != nil {
-		log.Printf("[notif-prefs] conversation lookup error: %v", err)
+		DefaultLogger.Error("notif_prefs_conv_lookup_error", map[string]interface{}{"error": err.Error()})
 		writeJSONError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -83,14 +82,14 @@ func handleSetNotificationPrefs(w http.ResponseWriter, r *http.Request) {
 		Placeholder(1), Placeholder(2), Placeholder(3), Placeholder(4)),
 		userID, conversationID, muted, muted)
 	if err != nil {
-		log.Printf("[notif-prefs] upsert error: %v", err)
+		DefaultLogger.Error("notif_prefs_upsert_error", map[string]interface{}{"error": err.Error()})
 		writeJSONError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
 	writeJSON(w, http.StatusOK, NotificationPreferences{
 		ConversationID: conversationID,
-		Muted:           muted,
+		Muted:          muted,
 	})
 }
 

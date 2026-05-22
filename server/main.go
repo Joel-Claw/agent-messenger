@@ -415,8 +415,8 @@ func initSchema(db *sql.DB) error {
 			{4, "attachments_table"},
 			{5, "e2e_encryption_tables"},
 			{6, "reactions_and_tags_tables"},
-		{7, "message_edit_delete_columns"},
-		{8, "rate_limit_tiers_table"},
+			{7, "message_edit_delete_columns"},
+			{8, "rate_limit_tiers_table"},
 		}
 		for _, m := range inlineMigrations {
 			if currentDriver == DriverPostgreSQL {

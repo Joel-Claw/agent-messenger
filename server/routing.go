@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -14,10 +13,10 @@ import (
 const (
 	MsgTypeMessage   = "message"
 	MsgTypeTyping    = "typing"
-	MsgTypeStatus   = "status"
-	MsgTypeError    = "error"
-	MsgTypeHistReq  = "history_request"
-	MsgTypeHistResp = "history_response"
+	MsgTypeStatus    = "status"
+	MsgTypeError     = "error"
+	MsgTypeHistReq   = "history_request"
+	MsgTypeHistResp  = "history_response"
 	MsgTypeHeartbeat = "heartbeat"
 )
 
@@ -50,7 +49,7 @@ func routeMessage(sender *Connection, raw []byte) {
 
 	var msg IncomingMessage
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		log.Printf("Invalid message from %s %s: %v", sender.connType, sender.id, err)
+		DefaultLogger.Warn("invalid_message", map[string]interface{}{"conn_type": sender.connType, "id": sender.id, "error": err.Error()})
 		DefaultLogger.Warn("invalid_message", map[string]interface{}{"conn_type": sender.connType, "id": sender.id, "error": err.Error()})
 		SpanError(span, err)
 		sendError(sender, "invalid message format")
@@ -69,7 +68,7 @@ func routeMessage(sender *Connection, raw []byte) {
 	case MsgTypeHeartbeat:
 		routeHeartbeat(sender)
 	default:
-		log.Printf("Unknown message type %q from %s %s", msg.Type, sender.connType, sender.id)
+		DefaultLogger.Warn("unknown_message_type", map[string]interface{}{"type": msg.Type, "conn_type": sender.connType, "id": sender.id})
 		DefaultLogger.Warn("unknown_message_type", map[string]interface{}{"type": msg.Type, "conn_type": sender.connType, "id": sender.id})
 		sendError(sender, "unknown message type: "+msg.Type)
 	}
@@ -82,7 +81,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 
 	var msg RoutedMessage
 	if err := json.Unmarshal(data, &msg); err != nil {
-		log.Printf("Invalid chat message from %s %s: %v", sender.connType, sender.id, err)
+		DefaultLogger.Warn("invalid_chat_message", map[string]interface{}{"conn_type": sender.connType, "id": sender.id, "error": err.Error()})
 		SpanError(span, err)
 		sendError(sender, "invalid message data")
 		return
@@ -111,7 +110,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 	// Verify conversation exists and sender is a participant
 	conv, err := getConversation(msg.ConversationID)
 	if err != nil {
-		log.Printf("Error fetching conversation %s: %v", msg.ConversationID, err)
+		DefaultLogger.Error("conversation_fetch_error", map[string]interface{}{"conversation_id": msg.ConversationID, "error": err.Error()})
 		SpanError(span, err)
 		sendError(sender, "conversation not found")
 		return
@@ -146,7 +145,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 	// Persist message (child span)
 	_, storeSpan := TraceStoreMessage(context.Background(), msg.ConversationID, sender.id)
 	if err := storeMessage(msg); err != nil {
-		log.Printf("Error storing message: %v", err)
+		DefaultLogger.Error("message_store_error", map[string]interface{}{"error": err.Error()})
 		DefaultLogger.Error("message_store_error", map[string]interface{}{"error": err.Error()})
 		SpanError(storeSpan, err)
 		storeSpan.End()
@@ -159,7 +158,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 	// Deliver to recipient if online
 	outgoing, err := json.Marshal(OutgoingMessage{Type: MsgTypeMessage, Data: msg})
 	if err != nil {
-		log.Printf("Error marshaling outgoing message: %v", err)
+		DefaultLogger.Error("message_marshal_error", map[string]interface{}{"error": err.Error()})
 		return
 	}
 
@@ -174,7 +173,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 				case client.send <- outgoing:
 					delivered++
 				default:
-					log.Printf("Client %s (device %s) send buffer full, dropping message", recipientID, client.deviceID)
+					DefaultLogger.Warn("client_buffer_full", map[string]interface{}{"user_id": recipientID, "device_id": client.deviceID})
 					DefaultLogger.Warn("client_buffer_full", map[string]interface{}{"user_id": recipientID, "device_id": client.deviceID})
 				}
 			}
@@ -215,7 +214,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 			case agent.send <- outgoing:
 				deliverSpan.SetAttributes(attribute.Bool(attrDelivered, true))
 			default:
-				log.Printf("Agent %s send buffer full, dropping message", recipientID)
+				DefaultLogger.Warn("agent_buffer_full", map[string]interface{}{"agent_id": recipientID})
 				DefaultLogger.Warn("agent_buffer_full", map[string]interface{}{"agent_id": recipientID})
 				deliverSpan.SetAttributes(attribute.Bool(attrDelivered, false))
 				offlineSpan := TraceOfflineEnqueue(recipientID)
@@ -426,10 +425,10 @@ func routeHeartbeat(sender *Connection) {
 	ack := OutgoingMessage{
 		Type: "heartbeat_ack",
 		Data: map[string]interface{}{
-			"server_time":  time.Now().UTC().Format(time.RFC3339Nano),
-			"interval_s":   int(agentPresenceInterval.Seconds()),
-			"timeout_s":    int(agentPresenceTimeout.Seconds()),
-			"monitoring":   agentPresenceEnabled,
+			"server_time": time.Now().UTC().Format(time.RFC3339Nano),
+			"interval_s":  int(agentPresenceInterval.Seconds()),
+			"timeout_s":   int(agentPresenceTimeout.Seconds()),
+			"monitoring":  agentPresenceEnabled,
 		},
 	}
 	ackData, _ := json.Marshal(ack)

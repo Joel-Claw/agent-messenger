@@ -80,10 +80,10 @@ func ForceGC() uint32 {
 // ProfileSnapshot captures a point-in-time profile snapshot including
 // memory stats, goroutine count, and optionally writes heap/goroutine profiles.
 type ProfileSnapshot struct {
-	Timestamp   time.Time
-	Memory      map[string]interface{}
-	Goroutines  int
-	HeapFile    string // path to heap profile file (empty if not written)
+	Timestamp     time.Time
+	Memory        map[string]interface{}
+	Goroutines    int
+	HeapFile      string // path to heap profile file (empty if not written)
 	GoroutineFile string // path to goroutine profile file (empty if not written)
 }
 

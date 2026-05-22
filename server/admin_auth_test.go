@@ -21,7 +21,7 @@ func TestAdminAuthMiddleware(t *testing.T) {
 	tests := []struct {
 		name       string
 		secret     string
-		setOn     string // "header", "form", "query", or empty
+		setOn      string // "header", "form", "query", or empty
 		expectCode int
 	}{
 		{

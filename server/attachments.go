@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -32,15 +31,15 @@ func getMaxUploadSize() int64 {
 
 // Attachment represents a stored file attachment
 type Attachment struct {
-	ID           string `json:"id"`
-	MessageID    string `json:"message_id,omitempty"`
-	Filename     string `json:"filename"`
-	ContentType  string `json:"content_type"`
-	Size         int64  `json:"size"`
-	Sha256       string `json:"sha256"`
-	StoragePath  string `json:"-"` // not exposed in API
-	URL          string `json:"url"`
-	CreatedAt    string `json:"created_at"`
+	ID          string `json:"id"`
+	MessageID   string `json:"message_id,omitempty"`
+	Filename    string `json:"filename"`
+	ContentType string `json:"content_type"`
+	Size        int64  `json:"size"`
+	Sha256      string `json:"sha256"`
+	StoragePath string `json:"-"` // not exposed in API
+	URL         string `json:"url"`
+	CreatedAt   string `json:"created_at"`
 }
 
 // getUploadDir returns the directory for storing uploaded files
@@ -143,7 +142,7 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		fmt.Sprintf("%02d", now.Month()),
 	)
 	if err := os.MkdirAll(dateDir, 0755); err != nil {
-		log.Printf("Error creating upload directory: %v", err)
+		DefaultLogger.Error("upload_dir_create_error", map[string]interface{}{"error": err.Error()})
 		writeJSONError(w, http.StatusInternalServerError, "failed to store file")
 		return
 	}
@@ -154,7 +153,7 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	// Write file to disk
 	dst, err := os.Create(storagePath)
 	if err != nil {
-		log.Printf("Error creating file %s: %v", storagePath, err)
+		DefaultLogger.Error("upload_file_create_error", map[string]interface{}{"path": storagePath, "error": err.Error()})
 		writeJSONError(w, http.StatusInternalServerError, "failed to store file")
 		return
 	}
@@ -162,7 +161,7 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	size, err := io.Copy(dst, tee)
 	if err != nil {
-		log.Printf("Error writing file %s: %v", storagePath, err)
+		DefaultLogger.Error("upload_file_write_error", map[string]interface{}{"path": storagePath, "error": err.Error()})
 		os.Remove(storagePath)
 		writeJSONError(w, http.StatusInternalServerError, "failed to store file")
 		return
@@ -190,7 +189,7 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		attachID, messageID, claims.UserID, header.Filename, contentType, size, sha, relPath, now.UTC(),
 	)
 	if err != nil {
-		log.Printf("Error storing attachment metadata: %v", err)
+		DefaultLogger.Error("attachment_metadata_store_error", map[string]interface{}{"error": err.Error()})
 		os.Remove(storagePath)
 		writeJSONError(w, http.StatusInternalServerError, "failed to store attachment")
 		return
@@ -339,7 +338,7 @@ func isAllowedContentType(ct string) bool {
 		"image/webp": true, "image/svg+xml": true, "image/bmp": true,
 		// Documents
 		"application/pdf": true,
-		"text/plain": true, "text/csv": true, "text/markdown": true,
+		"text/plain":      true, "text/csv": true, "text/markdown": true,
 		"application/json": true,
 		// Audio
 		"audio/mpeg": true, "audio/ogg": true, "audio/wav": true,

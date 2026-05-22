@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -52,7 +51,9 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 	// Validate against shared AGENT_SECRET
 	if err := ValidateAgentSecret(agentID, secret); err != nil {
 		agentSpan.SetAttributes(attribute.Bool("messenger.auth_success", false))
-		if ServerMetrics != nil { ServerMetrics.ErrorsTotal.Add(1) }
+		if ServerMetrics != nil {
+			ServerMetrics.ErrorsTotal.Add(1)
+		}
 		status := http.StatusUnauthorized
 		if err.Error() == "rate limited: too many connection attempts" {
 			status = http.StatusTooManyRequests
@@ -67,7 +68,7 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 	personality := r.URL.Query().Get("personality")
 	specialty := r.URL.Query().Get("specialty")
 	if err := RegisterAgentOnConnect(agentID, name, model, personality, specialty); err != nil {
-		log.Printf("Failed to self-register agent %s: %v", agentID, err)
+		DefaultLogger.Error("agent_self_register_failed", map[string]interface{}{"agent_id": agentID, "error": err.Error()})
 		writeJSONError(w, http.StatusInternalServerError, "failed to register agent")
 		return
 	}
@@ -82,7 +83,7 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 	// Upgrade to WebSocket
 	conn, err := upgrader.Upgrade(w, r, responseHeader)
 	if err != nil {
-		log.Printf("WebSocket upgrade failed for agent %s: %v", agentID, err)
+		DefaultLogger.Error("ws_upgrade_failed_agent", map[string]interface{}{"agent_id": agentID, "error": err.Error()})
 		return
 	}
 
@@ -128,7 +129,9 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	claims, err := ValidateJWT(token)
 	if err != nil {
 		clientSpan.SetAttributes(attribute.Bool("messenger.auth_success", false))
-		if ServerMetrics != nil { ServerMetrics.ErrorsTotal.Add(1) }
+		if ServerMetrics != nil {
+			ServerMetrics.ErrorsTotal.Add(1)
+		}
 		writeJSONError(w, http.StatusUnauthorized, "authentication failed: "+err.Error())
 		return
 	}
@@ -147,7 +150,7 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	// Upgrade to WebSocket
 	conn, err := upgrader.Upgrade(w, r, responseHeader)
 	if err != nil {
-		log.Printf("WebSocket upgrade failed for client %s: %v", userID, err)
+		DefaultLogger.Error("ws_upgrade_failed_client", map[string]interface{}{"user_id": userID, "error": err.Error()})
 		return
 	}
 
@@ -749,18 +752,18 @@ func handleListConversations(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	type LastMessage struct {
-		Content   string `json:"content"`
+		Content    string `json:"content"`
 		SenderType string `json:"sender_type"`
-		CreatedAt string `json:"created_at"`
+		CreatedAt  string `json:"created_at"`
 	}
 
 	type ConvInfo struct {
-		ID          string      `json:"id"`
-		UserID      string      `json:"user_id"`
-		AgentID     string      `json:"agent_id"`
-		CreatedAt   string      `json:"created_at"`
+		ID          string       `json:"id"`
+		UserID      string       `json:"user_id"`
+		AgentID     string       `json:"agent_id"`
+		CreatedAt   string       `json:"created_at"`
 		LastMessage *LastMessage `json:"last_message"`
-		UnreadCount int         `json:"unread_count"`
+		UnreadCount int          `json:"unread_count"`
 	}
 
 	var conversations []ConvInfo

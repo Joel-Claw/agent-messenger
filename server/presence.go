@@ -32,11 +32,11 @@ func handleGetPresence(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	type AgentPresence struct {
-		ID        string `json:"id"`
-		Name      string `json:"name"`
-		Online    bool   `json:"online"`
-		Status    string `json:"status"`
-		LastSeen  string `json:"last_seen,omitempty"`
+		ID       string `json:"id"`
+		Name     string `json:"name"`
+		Online   bool   `json:"online"`
+		Status   string `json:"status"`
+		LastSeen string `json:"last_seen,omitempty"`
 	}
 
 	var agents []AgentPresence

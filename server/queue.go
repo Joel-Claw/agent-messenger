@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"sync"
 	"time"
 )
@@ -61,7 +60,7 @@ func (q *OfflineQueue) Enqueue(recipientID string, data []byte) {
 	}
 
 	q.buffers[recipientID] = buf
-	log.Printf("Queued offline message for %s (queue depth: %d)", recipientID, len(buf))
+	DefaultLogger.Info("offline_message_queued", map[string]interface{}{"recipient": recipientID, "queue_depth": len(buf)})
 }
 
 // Drain removes all queued messages for a recipient, returning them in order.
@@ -82,7 +81,7 @@ func (q *OfflineQueue) Drain(recipientID string) [][]byte {
 
 	for _, msg := range buf {
 		if now.Sub(msg.queuedAt) > q.ttl {
-			log.Printf("Discarding expired offline message for %s (aged %v)", recipientID, now.Sub(msg.queuedAt))
+			DefaultLogger.Warn("offline_message_expired", map[string]interface{}{"recipient": recipientID, "age": now.Sub(msg.queuedAt).String()})
 			continue
 		}
 		result = append(result, msg.data)
@@ -94,7 +93,7 @@ func (q *OfflineQueue) Drain(recipientID string) [][]byte {
 		q.buffers[recipientID] = remaining
 	}
 
-	log.Printf("Drained %d offline messages for %s", len(result), recipientID)
+	DefaultLogger.Info("offline_messages_drained", map[string]interface{}{"recipient": recipientID, "count": len(result)})
 	return result
 }
 
@@ -159,7 +158,7 @@ func replayOfflineMessages(conn *Connection) {
 	// Remove persisted messages since they've been drained
 	deleteQueueMessages(db, conn.id)
 
-	log.Printf("Replaying %d offline messages to %s %s", len(messages), conn.connType, conn.id)
+	DefaultLogger.Info("offline_messages_replaying", map[string]interface{}{"conn_type": conn.connType, "id": conn.id, "count": len(messages)})
 
 	replayed := 0
 	for _, data := range messages {
@@ -170,10 +169,9 @@ func replayOfflineMessages(conn *Connection) {
 			if outMsg.Type == MsgTypeMessage || outMsg.Type == "read_receipt" {
 				if !safeSendToConn(conn, data) {
 					if conn.IsClosed() {
-						log.Printf("Connection closed during offline replay to %s %s, %d/%d messages delivered",
-							conn.connType, conn.id, replayed, len(messages))
+						DefaultLogger.Warn("offline_replay_conn_closed", map[string]interface{}{"conn_type": conn.connType, "id": conn.id, "delivered": replayed, "total": len(messages)})
 					} else {
-						log.Printf("Send buffer full while replaying offline messages to %s %s, stopping replay", conn.connType, conn.id)
+						DefaultLogger.Warn("offline_replay_buffer_full", map[string]interface{}{"conn_type": conn.connType, "id": conn.id})
 					}
 					return
 				}

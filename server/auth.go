@@ -2,7 +2,7 @@ package main
 
 import (
 	"crypto/subtle"
-"database/sql"
+	"database/sql"
 	"errors"
 	"log"
 	"os"
@@ -121,11 +121,11 @@ func ValidateAgentSecret(agentID string, secret string) error {
 		return errors.New("missing agent secret")
 	}
 	if !agentRateLimiter.Allow(agentID) {
-		log.Printf("Rate limited: too many connection attempts from agent %s", agentID)
+		DefaultLogger.Warn("agent_rate_limited", map[string]interface{}{"agent_id": agentID})
 		return errors.New("rate limited: too many connection attempts")
 	}
 	if subtle.ConstantTimeCompare([]byte(secret), []byte(agentSecret)) != 1 {
-		log.Printf("Auth failed: invalid secret for agent %s", agentID)
+		DefaultLogger.Warn("agent_auth_failed", map[string]interface{}{"agent_id": agentID})
 		return errors.New("invalid agent secret")
 	}
 	return nil

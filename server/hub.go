@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -101,13 +100,13 @@ var agentPresenceEnabled = false
 
 // Hub manages all active connections
 type Hub struct {
-	mu              sync.RWMutex
-	agents          map[string]*Connection   // agent_id -> Connection (single agent session)
-	clientConns     map[string][]*Connection // user_id -> []*Connection (multi-device: one user, many devices)
-	register        chan *Connection
-	unregister      chan *Connection
-	broadcast       chan []byte
-	done            chan struct{}
+	mu          sync.RWMutex
+	agents      map[string]*Connection   // agent_id -> Connection (single agent session)
+	clientConns map[string][]*Connection // user_id -> []*Connection (multi-device: one user, many devices)
+	register    chan *Connection
+	unregister  chan *Connection
+	broadcast   chan []byte
+	done        chan struct{}
 
 	// counters for metrics
 	messagesRouted atomic.Int64
@@ -119,12 +118,12 @@ type Hub struct {
 func newHub() *Hub {
 	offlineQueue = newOfflineQueue(100, 7*24*time.Hour) // 100 msgs per user, 7 day TTL
 	h := &Hub{
-		agents:     make(map[string]*Connection),
+		agents:      make(map[string]*Connection),
 		clientConns: make(map[string][]*Connection),
-		register:   make(chan *Connection),
-		unregister: make(chan *Connection),
-		broadcast:  make(chan []byte),
-		done:       make(chan struct{}),
+		register:    make(chan *Connection),
+		unregister:  make(chan *Connection),
+		broadcast:   make(chan []byte),
+		done:        make(chan struct{}),
 	}
 	if agentPresenceEnabled {
 		go h.monitorAgentHeartbeats()
@@ -146,15 +145,15 @@ func (h *Hub) run() {
 
 				// Replace existing agent connection if any
 				if old, ok := h.agents[conn.id]; ok {
-					log.Printf("Agent %s reconnecting, closing old connection", conn.id)
-				DefaultLogger.Info("agent_reconnect", map[string]interface{}{"agent_id": conn.id})
+					DefaultLogger.Info("agent_reconnect", map[string]interface{}{"agent_id": conn.id})
 					old.MarkClosed()
 					close(old.send)
 				}
 				h.agents[conn.id] = conn
-				log.Printf("Agent connected: %s", conn.id)
 				DefaultLogger.Info("agent_connected", map[string]interface{}{"agent_id": conn.id})
-				if ServerMetrics != nil { ServerMetrics.ConnectionsTotal.Add(1) }
+				if ServerMetrics != nil {
+					ServerMetrics.ConnectionsTotal.Add(1)
+				}
 				// Broadcast presence: agent online
 				h.broadcastPresence(conn.id, "agent", true)
 			} else {
@@ -163,8 +162,7 @@ func (h *Hub) run() {
 				didReplace := false
 				for i, existing := range h.clientConns[conn.id] {
 					if existing.deviceID == conn.deviceID && conn.deviceID != "" {
-						log.Printf("Client %s device %s reconnecting, closing old connection", conn.id, conn.deviceID)
-					DefaultLogger.Info("client_device_reconnect", map[string]interface{}{"user_id": conn.id, "device_id": conn.deviceID})
+						DefaultLogger.Info("client_device_reconnect", map[string]interface{}{"user_id": conn.id, "device_id": conn.deviceID})
 						existing.MarkClosed()
 						close(existing.send)
 						h.clientConns[conn.id][i] = conn
@@ -175,9 +173,10 @@ func (h *Hub) run() {
 				if !didReplace {
 					h.clientConns[conn.id] = append(h.clientConns[conn.id], conn)
 				}
-				log.Printf("Client connected: %s (device: %s, total devices: %d)", conn.id, conn.deviceID, len(h.clientConns[conn.id]))
 				DefaultLogger.Info("client_connected", map[string]interface{}{"user_id": conn.id, "device_id": conn.deviceID, "total_devices": len(h.clientConns[conn.id])})
-				if ServerMetrics != nil { ServerMetrics.ConnectionsTotal.Add(1) }
+				if ServerMetrics != nil {
+					ServerMetrics.ConnectionsTotal.Add(1)
+				}
 			}
 			h.mu.Unlock()
 
@@ -192,8 +191,7 @@ func (h *Hub) run() {
 						conn.MarkClosed()
 						close(conn.send)
 					}
-					log.Printf("Agent disconnected: %s", conn.id)
-				DefaultLogger.Info("agent_disconnected", map[string]interface{}{"agent_id": conn.id})
+					DefaultLogger.Info("agent_disconnected", map[string]interface{}{"agent_id": conn.id})
 					// Broadcast presence: agent offline
 					h.broadcastPresence(conn.id, "agent", false)
 				}
@@ -223,7 +221,6 @@ func (h *Hub) run() {
 					conn.MarkClosed()
 					close(conn.send)
 				}
-				log.Printf("Client disconnected: %s (device: %s, remaining devices: %d)", conn.id, conn.deviceID, len(conns))
 				DefaultLogger.Info("client_disconnected", map[string]interface{}{"user_id": conn.id, "device_id": conn.deviceID, "remaining_devices": len(conns)})
 			}
 			h.mu.Unlock()
@@ -284,7 +281,7 @@ func (h *Hub) checkStaleAgents() {
 	h.mu.RLock()
 	for id, conn := range h.agents {
 		if now.Sub(conn.lastHeartbeat) > agentPresenceTimeout {
-			log.Printf("Agent %s heartbeat stale (last: %v, timeout: %v), disconnecting", id, conn.lastHeartbeat, agentPresenceTimeout)
+			DefaultLogger.Warn("agent_heartbeat_stale", map[string]interface{}{"agent_id": id, "last_heartbeat": conn.lastHeartbeat.Format(time.RFC3339), "timeout": agentPresenceTimeout.String()})
 			h.staleAgents.Add(1)
 			staleConns = append(staleConns, conn)
 		}
@@ -366,7 +363,6 @@ func (h *Hub) BroadcastToAllClients(data []byte) {
 	}
 }
 
-// broadcastPresence sends a presence_update event to all connected clients
 // broadcastPresence sends a presence_update event to all connected clients.
 // MUST be called with h.mu held (called from run() under Lock).
 func (h *Hub) broadcastPresence(id string, connType string, online bool) {
@@ -474,15 +470,17 @@ func (c *Connection) readPump() {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
-				log.Printf("Error reading from %s %s: %v", c.connType, c.id, err)
+				DefaultLogger.Error("ws_read_error", map[string]interface{}{"conn_type": c.connType, "id": c.id, "error": err.Error()})
 			}
 			break
 		}
 
 		c.hub.messagesRouted.Add(1)
-		if ServerMetrics != nil { ServerMetrics.MessagesIn.Add(1) }
+		if ServerMetrics != nil {
+			ServerMetrics.MessagesIn.Add(1)
+		}
 
-		log.Printf("Received from %s %s: %s", c.connType, c.id, string(message))
+		DefaultLogger.Debug("ws_message_received", map[string]interface{}{"conn_type": c.connType, "id": c.id})
 		routeMessage(c, message)
 	}
 }
@@ -513,10 +511,12 @@ func (c *Connection) writePump() {
 				return
 			}
 
-			if ServerMetrics != nil { ServerMetrics.MessagesOut.Add(1) }
+			if ServerMetrics != nil {
+				ServerMetrics.MessagesOut.Add(1)
+			}
 			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
 				c.writeMu.Unlock()
-				log.Printf("Error writing to %s %s: %v", c.connType, c.id, err)
+				DefaultLogger.Error("ws_write_error", map[string]interface{}{"conn_type": c.connType, "id": c.id, "error": err.Error()})
 				return
 			}
 			c.writeMu.Unlock()
@@ -527,7 +527,7 @@ func (c *Connection) writePump() {
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				c.writeMu.Unlock()
-				log.Printf("Error sending ping to %s %s: %v", c.connType, c.id, err)
+				DefaultLogger.Error("ws_ping_error", map[string]interface{}{"conn_type": c.connType, "id": c.id, "error": err.Error()})
 				return
 			}
 			c.writeMu.Unlock()
