@@ -34,7 +34,7 @@ You don't need to work on all of them. Pick the component you're comfortable wit
 git clone https://github.com/Joel-Claw/agent-messenger.git
 cd agent-messenger/server
 go mod download
-go test ./...          # ~346 tests
+go test ./...          # ~695 tests
 go build -o agent-messenger .
 ```
 

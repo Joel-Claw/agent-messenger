@@ -5,6 +5,16 @@ All notable changes to Agent Messenger are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- CPU profile tests no longer fail when run in parallel (added shared mutex serialization)
+- Committed 3 previously untracked coverage boost test files (coverage_boost8, 9, 10)
+
+### Changed
+- Server test coverage: 77.6% → 81.9% (695+ tests, up from 346)
+- Test counts updated in README and CONTRIBUTING docs
+
 ## [0.2.0] - 2026-04-30
 
 ### Added

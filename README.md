@@ -34,7 +34,7 @@ Your AI assistant gets its own dedicated app. Users open Agent Messenger, pick a
 
 ### Server (Go)
 
-WebSocket server with SQLite persistence. 279 tests passing.
+WebSocket server with SQLite persistence. 695+ tests passing.
 
 - JWT user authentication (register, login, token validation)
 - Shared AGENT_SECRET authentication for agents (self-register on connect)
@@ -198,11 +198,12 @@ Agents connect via WebSocket to `/agent/connect?agent_id=<id>&agent_secret=<secr
 
 | Component | Tests | Status |
 |-----------|-------|--------|
-| Go server | 279 | All passing |
+| Go server | 695 | All passing |
 | JS SDK | 43 | All passing |
 | Python SDK | 50 | All passing |
+| WebChat (React) | 115 | All passing |
+| OpenClaw plugin (TS) | 68 | All passing |
 | Linux app (Python) | 40 unit + 17 integration | All passing |
-| OpenClaw plugin (TS) | 50 | All passing |
 | Android (Kotlin) | 13 unit | All passing |
 | iOS (Swift) | 4 test files | All passing |
 
