@@ -226,11 +226,15 @@ func TestHandleCPUProfileStartAndStop(t *testing.T) {
 }
 
 func TestHandleCPUProfileStartAlreadyActive(t *testing.T) {
+	cpuProfileState.Lock()
 	cpuProfileState.active = true
 	cpuProfileState.stopFunc = func() {}
+	cpuProfileState.Unlock()
 	defer func() {
+		cpuProfileState.Lock()
 		cpuProfileState.active = false
 		cpuProfileState.stopFunc = nil
+		cpuProfileState.Unlock()
 	}()
 
 	w := httptest.NewRecorder()
@@ -243,8 +247,10 @@ func TestHandleCPUProfileStartAlreadyActive(t *testing.T) {
 }
 
 func TestHandleCPUProfileStopNotActive(t *testing.T) {
+	cpuProfileState.Lock()
 	cpuProfileState.active = false
 	cpuProfileState.stopFunc = nil
+	cpuProfileState.Unlock()
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("POST", "/admin/profile?action=cpu_stop", nil)

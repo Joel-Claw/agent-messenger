@@ -68,22 +68,28 @@ func TestCb8CPUProfileStart(t *testing.T) {
 		t.Errorf("Expected 200, got %d: %s", w.Code, w.Body.String())
 	}
 
-	// Clean up - stop profiling
+	// Clean up - stop profiling (safety net, also done by cpuProfileTestSetup cleanup)
+	cpuProfileState.Lock()
 	if cpuProfileState.stopFunc != nil {
 		cpuProfileState.stopFunc()
 		cpuProfileState.active = false
 	}
+	cpuProfileState.Unlock()
 }
 
 func TestCb8CPUProfileAlreadyActive(t *testing.T) {
 	setupTestDB(t)
 	defer db.Close()
 
+	cpuProfileState.Lock()
 	cpuProfileState.active = true
 	cpuProfileState.stopFunc = func() {}
+	cpuProfileState.Unlock()
 	defer func() {
+		cpuProfileState.Lock()
 		cpuProfileState.active = false
 		cpuProfileState.stopFunc = nil
+		cpuProfileState.Unlock()
 	}()
 
 	req := httptest.NewRequest("POST", "/admin/profile?action=cpu_start", nil)
@@ -99,8 +105,10 @@ func TestCb8CPUProfileStopNotActive(t *testing.T) {
 	setupTestDB(t)
 	defer db.Close()
 
+	cpuProfileState.Lock()
 	cpuProfileState.active = false
 	cpuProfileState.stopFunc = nil
+	cpuProfileState.Unlock()
 
 	req := httptest.NewRequest("POST", "/admin/profile?action=cpu_stop", nil)
 	w := httptest.NewRecorder()

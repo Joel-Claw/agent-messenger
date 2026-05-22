@@ -1251,8 +1251,10 @@ func TestProfileHandlerCPUAlreadyActive(t *testing.T) {
 }
 
 func TestProfileHandlerCPUStopNotActive(t *testing.T) {
+	cpuProfileState.Lock()
 	cpuProfileState.active = false
 	cpuProfileState.stopFunc = nil
+	cpuProfileState.Unlock()
 
 	req := httptest.NewRequest(http.MethodPost, "/admin/profile?action=cpu_stop", nil)
 	w := httptest.NewRecorder()

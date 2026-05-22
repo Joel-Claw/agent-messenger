@@ -13,24 +13,28 @@ var cpuProfileMu sync.Mutex
 
 // cpuProfileTestSetup acquires the CPU profile mutex and resets the cpuProfileState.
 // Returns a cleanup function that releases the mutex.
-// Usage: defer cpuProfileTestSetup(t)()
+// Usage: defer cpuProfileTestSetup()()
 func cpuProfileTestSetup() func() {
 	cpuProfileMu.Lock()
 	// Reset state in case a previous test left it dirty
+	cpuProfileState.Lock()
 	if cpuProfileState.active && cpuProfileState.stopFunc != nil {
 		cpuProfileState.stopFunc()
 	}
 	cpuProfileState.active = false
 	cpuProfileState.stopFunc = nil
+	cpuProfileState.Unlock()
 	// Clear PROFILING_DIR to avoid cross-test interference
 	os.Unsetenv("PROFILING_DIR")
 	return func() {
 		// Clean up any active profile before releasing the lock
+		cpuProfileState.Lock()
 		if cpuProfileState.active && cpuProfileState.stopFunc != nil {
 			cpuProfileState.stopFunc()
 		}
 		cpuProfileState.active = false
 		cpuProfileState.stopFunc = nil
+		cpuProfileState.Unlock()
 		cpuProfileMu.Unlock()
 	}
 }

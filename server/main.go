@@ -351,6 +351,16 @@ func main() {
 	sig := <-quit
 	log.Printf("Received %v, shutting down gracefully...", sig)
 
+	// Stop CPU profiling if active (flush profile data)
+	cpuProfileState.Lock()
+	if cpuProfileState.active && cpuProfileState.stopFunc != nil {
+		cpuProfileState.stopFunc()
+		cpuProfileState.active = false
+		cpuProfileState.stopFunc = nil
+		log.Printf("CPU profiling stopped on shutdown")
+	}
+	cpuProfileState.Unlock()
+
 	// Stop the hub (closes all WebSocket connections)
 	hub.Stop()
 

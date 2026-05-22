@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"sync"
 	"time"
 )
 
@@ -113,11 +114,15 @@ func handleGoroutineProfile(w http.ResponseWriter, r *http.Request) {
 
 // cpuProfileState tracks an in-progress CPU profile
 var cpuProfileState struct {
+	sync.Mutex
 	stopFunc func()
 	active   bool
 }
 
 func handleCPUProfileStart(w http.ResponseWriter, r *http.Request) {
+	cpuProfileState.Lock()
+	defer cpuProfileState.Unlock()
+
 	if cpuProfileState.active {
 		writeProfileError(w, "cpu profile already active", nil)
 		return
@@ -155,6 +160,9 @@ func handleCPUProfileStart(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleCPUProfileStop(w http.ResponseWriter, r *http.Request) {
+	cpuProfileState.Lock()
+	defer cpuProfileState.Unlock()
+
 	if !cpuProfileState.active {
 		writeProfileError(w, "no cpu profile active", nil)
 		return
