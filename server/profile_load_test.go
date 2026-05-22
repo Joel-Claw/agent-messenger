@@ -351,6 +351,8 @@ func TestMemoryProfile_HeapProfileUnderLoad(t *testing.T) {
 // TestMemoryProfile_CPUProfileUnderLoad verifies that CPU profiling
 // can be started and stopped while the server is under load.
 func TestMemoryProfile_CPUProfileUnderLoad(t *testing.T) {
+	defer cpuProfileTestSetup()()
+
 	server, cleanup := profileLoadSetupServer(t)
 	defer cleanup()
 
@@ -396,6 +398,8 @@ func TestMemoryProfile_CPUProfileUnderLoad(t *testing.T) {
 // TestMemoryProfile_AdminEndpointUnderLoad verifies that the admin
 // profile endpoint works correctly under load.
 func TestMemoryProfile_AdminEndpointUnderLoad(t *testing.T) {
+	defer cpuProfileTestSetup()()
+
 	server, cleanup := profileLoadSetupServer(t)
 	defer cleanup()
 

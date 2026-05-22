@@ -192,13 +192,11 @@ func TestHandleGoroutineProfileHandler(t *testing.T) {
 }
 
 func TestHandleCPUProfileStartAndStop(t *testing.T) {
+	defer cpuProfileTestSetup()()
+
 	dir := os.TempDir()
 	os.Setenv("PROFILING_DIR", dir)
 	defer os.Unsetenv("PROFILING_DIR")
-
-	// Reset CPU profile state
-	cpuProfileState.active = false
-	cpuProfileState.stopFunc = nil
 
 	// Start
 	w := httptest.NewRecorder()

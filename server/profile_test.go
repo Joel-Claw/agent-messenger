@@ -80,6 +80,8 @@ func TestWriteGoroutineProfile(t *testing.T) {
 }
 
 func TestStartCPUProfile(t *testing.T) {
+	defer cpuProfileTestSetup()()
+
 	dir := t.TempDir()
 	path := filepath.Join(dir, "cpu.prof")
 
@@ -250,6 +252,8 @@ func TestProfileGCEndpoint(t *testing.T) {
 }
 
 func TestProfileCPUEndpoints(t *testing.T) {
+	defer cpuProfileTestSetup()()
+
 	dir := t.TempDir()
 	t.Setenv("PROFILING_DIR", dir)
 

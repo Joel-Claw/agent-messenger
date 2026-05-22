@@ -1222,11 +1222,10 @@ func TestProfileHandlerGetStatsAction(t *testing.T) {
 }
 
 func TestProfileHandlerCPUAlreadyActive(t *testing.T) {
+	defer cpuProfileTestSetup()()
+
 	dir := t.TempDir()
 	t.Setenv("PROFILING_DIR", dir)
-
-	cpuProfileState.active = false
-	cpuProfileState.stopFunc = nil
 
 	req := httptest.NewRequest(http.MethodPost, "/admin/profile?action=cpu", nil)
 	w := httptest.NewRecorder()
