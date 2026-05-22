@@ -26,9 +26,14 @@ jobs:
       - name: Test
         run: go test -count=1 ./...
 
-      # TODO: fix remaining data races in hub.go and re-enable -race as blocking
-      # Races: concurrent map access in broadcastPresence (called inside run() lock),
-      # connection tracking edge cases, status updates without hub lock
+      - name: Coverage
+        run: go test -count=1 -cover ./...
+        continue-on-error: true
+
+      # Race detector: previously non-blocking due to hub.go data races.
+      # Fixed: broadcastPresence now documented must-hold-lock, messagesRouted/staleAgents
+      # converted to atomic, writeMu added to Connection, status under mutex.
+      # Keeping non-blocking as a safety net in case new races are introduced.
       - name: Race Check (non-blocking)
         run: go test -race -count=1 ./... 2>&1 || true
         continue-on-error: true
@@ -54,6 +59,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Test
+        run: CI=true npm test -- --watchAll=false
 
   sdk-js:
     name: JS SDK
