@@ -397,6 +397,10 @@ func TestAuthenticateRequest_InvalidJWT(t *testing.T) {
 }
 
 func TestAuthenticateRequest_AgentNoID(t *testing.T) {
+	origAgentSecret := agentSecret
+	origEnv := os.Getenv("AGENT_SECRET")
+	defer func() { agentSecret = origAgentSecret; os.Setenv("AGENT_SECRET", origEnv) }()
+	os.Setenv("AGENT_SECRET", "test-agent-secret")
 	agentSecret = "test-agent-secret"
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("X-Agent-Secret", "test-agent-secret")
@@ -411,9 +415,11 @@ func TestAuthenticateRequest_AgentNoID(t *testing.T) {
 }
 
 func TestAuthenticateRequest_ValidAgent(t *testing.T) {
-	origAgent := os.Getenv("AGENT_SECRET")
+	origAgentSecret := agentSecret
+	origEnv := os.Getenv("AGENT_SECRET")
+	defer func() { agentSecret = origAgentSecret; os.Setenv("AGENT_SECRET", origEnv) }()
 	os.Setenv("AGENT_SECRET", "test-agent-secret")
-	defer os.Setenv("AGENT_SECRET", origAgent)
+	agentSecret = "test-agent-secret"
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("X-Agent-Secret", "test-agent-secret")
 	req.Header.Set("X-Agent-ID", "test-agent-1")
@@ -430,9 +436,11 @@ func TestAuthenticateRequest_ValidAgent(t *testing.T) {
 }
 
 func TestAuthenticateRequest_WrongAgentSecret(t *testing.T) {
-	origAgent := os.Getenv("AGENT_SECRET")
+	origAgentSecret := agentSecret
+	origEnv := os.Getenv("AGENT_SECRET")
+	defer func() { agentSecret = origAgentSecret; os.Setenv("AGENT_SECRET", origEnv) }()
 	os.Setenv("AGENT_SECRET", "test-agent-secret")
-	defer os.Setenv("AGENT_SECRET", origAgent)
+	agentSecret = "test-agent-secret"
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("X-Agent-Secret", "wrong-secret")
 	req.Header.Set("X-Agent-ID", "test-agent-1")
@@ -1565,8 +1573,9 @@ func TestHandleSetRateLimitTier_NoAuth(t *testing.T) {
 
 func TestHandleSetRateLimitTier_UnknownTier(t *testing.T) {
 	setupTestDB(t)
+	origAdminSecret := adminSecret
+	defer func() { adminSecret = origAdminSecret }()
 	adminSecret = "test-admin-secret"
-	defer func() { adminSecret = "" }()
 
 	req := httptest.NewRequest(http.MethodPost, "/admin/rate-limit/tier", nil)
 	req.Header.Set("X-Admin-Secret", "test-admin-secret")
@@ -1583,12 +1592,12 @@ func TestHandleSetRateLimitTier_UnknownTier(t *testing.T) {
 }
 
 func TestHandleGetRateLimitTier_NoAuth(t *testing.T) {
-	origAdmin := os.Getenv("ADMIN_SECRET")
+	origAdminEnv := os.Getenv("ADMIN_SECRET")
 	os.Setenv("ADMIN_SECRET", "test-admin-secret-xyz")
-	defer os.Setenv("ADMIN_SECRET", origAdmin)
-	// Reset the global so getAdminSecret() picks up the env var
-	adminSecret = os.Getenv("ADMIN_SECRET")
-	defer func() { adminSecret = "" }()
+	defer os.Setenv("ADMIN_SECRET", origAdminEnv)
+	origAdminSecret := adminSecret
+	defer func() { adminSecret = origAdminSecret }()
+	adminSecret = getAdminSecret()
 
 	req := httptest.NewRequest(http.MethodGet, "/admin/rate-limit/tier?user_id=test", nil)
 	w := httptest.NewRecorder()
@@ -1600,8 +1609,9 @@ func TestHandleGetRateLimitTier_NoAuth(t *testing.T) {
 
 func TestHandleGetRateLimitTier_MissingUserID(t *testing.T) {
 	setupTestDB(t)
+	origAdminSecret := adminSecret
+	defer func() { adminSecret = origAdminSecret }()
 	adminSecret = "test-admin-secret2"
-	defer func() { adminSecret = "" }()
 
 	req := httptest.NewRequest(http.MethodGet, "/admin/rate-limit/tier", nil)
 	req.Header.Set("X-Admin-Secret", "test-admin-secret2")

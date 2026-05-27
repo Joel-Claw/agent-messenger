@@ -115,9 +115,12 @@ func TestOfflineQueueTotalDepth(t *testing.T) {
 
 func TestOfflineQueueReplayOnConnect(t *testing.T) {
 	// Set up test server
-	setupTestDB(t)
+	origAgentSecret := agentSecret
+	origJwtSecret := jwtSecret
 	agentSecret = "test-secret"
 	jwtSecret = []byte("test-jwt-secret-for-offline-queue")
+	defer func() { agentSecret = origAgentSecret; jwtSecret = origJwtSecret }()
+	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
 	defer hub.Stop()
@@ -187,9 +190,12 @@ func TestOfflineQueueReplayOnConnect(t *testing.T) {
 
 func TestOfflineQueueEnqueueOnOfflineRecipient(t *testing.T) {
 	// Set up test server with two agents
-	setupTestDB(t)
+	origAgentSecret := agentSecret
+	origJwtSecret := jwtSecret
 	agentSecret = "test-secret"
 	jwtSecret = []byte("test-jwt-secret-queue-routing")
+	defer func() { agentSecret = origAgentSecret; jwtSecret = origJwtSecret }()
+	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
 	defer hub.Stop()

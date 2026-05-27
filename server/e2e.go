@@ -298,9 +298,7 @@ func handleStoreEncryptedMessage(w http.ResponseWriter, r *http.Request) {
 		if senderType == "user" {
 			// Deliver to agent
 			if agent := hub.GetAgent(conv.AgentID); agent != nil {
-				select {
-				case agent.send <- outgoing:
-				default:
+				if !agent.SafeSend(outgoing) {
 					DefaultLogger.Warn("agent_buffer_full_encrypted", map[string]interface{}{"agent_id": conv.AgentID})
 				}
 			}
@@ -310,10 +308,9 @@ func handleStoreEncryptedMessage(w http.ResponseWriter, r *http.Request) {
 			if len(conns) > 0 {
 				delivered := 0
 				for _, client := range conns {
-					select {
-					case client.send <- outgoing:
+					if client.SafeSend(outgoing) {
 						delivered++
-					default:
+					} else {
 						DefaultLogger.Warn("client_buffer_full_encrypted", map[string]interface{}{"user_id": conv.UserID, "device_id": client.deviceID})
 					}
 				}

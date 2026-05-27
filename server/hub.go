@@ -228,18 +228,11 @@ func (h *Hub) run() {
 		case message := <-h.broadcast:
 			h.mu.RLock()
 			for _, conn := range h.agents {
-				select {
-				case conn.send <- message:
-				default:
-					// Buffer full, skip
-				}
+				conn.SafeSend(message)
 			}
 			for _, conns := range h.clientConns {
 				for _, conn := range conns {
-					select {
-					case conn.send <- message:
-					default:
-					}
+					conn.SafeSend(message)
 				}
 			}
 			h.mu.RUnlock()
@@ -247,9 +240,11 @@ func (h *Hub) run() {
 	}
 }
 
-// Stop signals the hub to stop running.
+// Stop signals the hub to stop running and waits for the run goroutine to exit.
 func (h *Hub) Stop() {
 	close(h.done)
+	// Give goroutines time to notice done channel and exit
+	time.Sleep(50 * time.Millisecond)
 }
 
 // monitorAgentHeartbeats periodically checks agent connections for stale heartbeats
@@ -355,10 +350,7 @@ func (h *Hub) BroadcastToAllClients(data []byte) {
 	defer h.mu.RUnlock()
 	for _, conns := range h.clientConns {
 		for _, client := range conns {
-			select {
-			case client.send <- data:
-			default:
-			}
+			client.SafeSend(data)
 		}
 	}
 }
@@ -380,10 +372,7 @@ func (h *Hub) broadcastPresence(id string, connType string, online bool) {
 	// No lock needed: caller (run()) holds h.mu.Lock()
 	for _, conns := range h.clientConns {
 		for _, client := range conns {
-			select {
-			case client.send <- data:
-			default:
-			}
+			client.SafeSend(data)
 		}
 	}
 }
@@ -446,6 +435,28 @@ func (c *Connection) MarkClosed() {
 	c.closeMu.Lock()
 	defer c.closeMu.Unlock()
 	c.closed = true
+}
+
+// SafeSend sends data to the connection's send channel, recovering from
+// send-on-closed-channel panics. This is necessary because the hub's
+// unregister handler may close conn.send between an IsClosed() check
+// and the channel send in any goroutine that references this connection.
+// Returns true if the message was sent, false if the channel was closed or full.
+func (c *Connection) SafeSend(data []byte) bool {
+	defer func() {
+		if r := recover(); r != nil {
+			// send on closed channel — connection was unregistered
+		}
+	}()
+	if c.IsClosed() {
+		return false
+	}
+	select {
+	case c.send <- data:
+		return true
+	default:
+		return false
+	}
 }
 
 // readPump reads messages from the WebSocket connection.

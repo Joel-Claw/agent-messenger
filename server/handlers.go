@@ -639,10 +639,7 @@ func handleMarkRead(w http.ResponseWriter, r *http.Request) {
 				},
 			}
 			data, _ := json.Marshal(readMsg)
-			select {
-			case agent.send <- data:
-			default:
-			}
+			agent.SafeSend(data)
 		}
 
 		// Also broadcast read_receipt to the user's other devices for cross-device read sync
@@ -656,10 +653,7 @@ func handleMarkRead(w http.ResponseWriter, r *http.Request) {
 				},
 			}
 			data, _ := json.Marshal(readMsg)
-			select {
-			case clientConn.send <- data:
-			default:
-			}
+			clientConn.SafeSend(data)
 		}
 	}
 

@@ -15,10 +15,10 @@ import (
 // setupHeartbeatTestServer creates a test server for heartbeat tests
 func setupHeartbeatTestServer(t *testing.T) (*httptest.Server, func()) {
 	t.Helper()
-	setupTestDB(t)
-
-	// Set a known agent secret for testing
+	origAgentSecret := agentSecret
 	agentSecret = "test-heartbeat-secret"
+	setupTestDB(t)
+	defer func() { agentSecret = origAgentSecret }()
 
 	hub = newHub()
 	go hub.run()
@@ -225,6 +225,8 @@ func TestStaleAgentDisconnected(t *testing.T) {
 	origInterval := agentPresenceInterval
 	origTimeout := agentPresenceTimeout
 
+	origAgentSecret := agentSecret
+
 	agentPresenceEnabled = true
 	agentPresenceInterval = 100 * time.Millisecond
 	agentPresenceTimeout = 300 * time.Millisecond
@@ -246,8 +248,7 @@ func TestStaleAgentDisconnected(t *testing.T) {
 		server.Close()
 	})
 
-	// Start the monitor goroutine
-	go hub.monitorAgentHeartbeats()
+	// Note: newHub() already starts monitorAgentHeartbeats when agentPresenceEnabled is true
 
 	ws := connectHeartbeatAgent(t, server, "stale-agent")
 	defer ws.Close()
@@ -282,6 +283,7 @@ func TestStaleAgentDisconnected(t *testing.T) {
 	agentPresenceEnabled = origEnabled
 	agentPresenceInterval = origInterval
 	agentPresenceTimeout = origTimeout
+	agentSecret = origAgentSecret
 }
 
 // TestAgentWithHeartbeatStaysConnected tests that an agent sending
@@ -290,6 +292,7 @@ func TestAgentWithHeartbeatStaysConnected(t *testing.T) {
 	origEnabled := agentPresenceEnabled
 	origInterval := agentPresenceInterval
 	origTimeout := agentPresenceTimeout
+	origAgentSecret := agentSecret
 
 	agentPresenceEnabled = true
 	agentPresenceInterval = 100 * time.Millisecond
@@ -311,7 +314,8 @@ func TestAgentWithHeartbeatStaysConnected(t *testing.T) {
 		server.Close()
 	})
 
-	go hub.monitorAgentHeartbeats()
+	// Note: newHub() already starts monitorAgentHeartbeats when agentPresenceEnabled is true
+	// No need to start it manually again
 
 	ws := connectHeartbeatAgent(t, server, "fresh-agent")
 	defer ws.Close()
@@ -335,6 +339,7 @@ func TestAgentWithHeartbeatStaysConnected(t *testing.T) {
 			agentPresenceEnabled = origEnabled
 			agentPresenceInterval = origInterval
 			agentPresenceTimeout = origTimeout
+			agentSecret = origAgentSecret
 			return
 		case <-ticker.C:
 			heartbeat := IncomingMessage{Type: "heartbeat", Data: json.RawMessage(`{}`)}
@@ -499,6 +504,7 @@ func TestStaleAgentCountIncrements(t *testing.T) {
 	origEnabled := agentPresenceEnabled
 	origInterval := agentPresenceInterval
 	origTimeout := agentPresenceTimeout
+	origAgentSecret := agentSecret
 
 	agentPresenceEnabled = true
 	agentPresenceInterval = 100 * time.Millisecond
@@ -549,6 +555,7 @@ func TestStaleAgentCountIncrements(t *testing.T) {
 	agentPresenceEnabled = origEnabled
 	agentPresenceInterval = origInterval
 	agentPresenceTimeout = origTimeout
+	agentSecret = origAgentSecret
 }
 
 // TestHeartbeatDisabledByDefault tests that heartbeat monitoring is disabled

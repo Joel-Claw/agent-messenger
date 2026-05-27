@@ -169,11 +169,9 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 		if len(conns) > 0 {
 			delivered := 0
 			for _, client := range conns {
-				select {
-				case client.send <- outgoing:
+				if client.SafeSend(outgoing) {
 					delivered++
-				default:
-					DefaultLogger.Warn("client_buffer_full", map[string]interface{}{"user_id": recipientID, "device_id": client.deviceID})
+				} else {
 					DefaultLogger.Warn("client_buffer_full", map[string]interface{}{"user_id": recipientID, "device_id": client.deviceID})
 				}
 			}
@@ -210,11 +208,9 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 	} else {
 		if agent := hub.GetAgent(recipientID); agent != nil {
 			_, deliverSpan := TraceDeliverMessage(context.Background(), recipientID, "agent", true)
-			select {
-			case agent.send <- outgoing:
+			if agent.SafeSend(outgoing) {
 				deliverSpan.SetAttributes(attribute.Bool(attrDelivered, true))
-			default:
-				DefaultLogger.Warn("agent_buffer_full", map[string]interface{}{"agent_id": recipientID})
+			} else {
 				DefaultLogger.Warn("agent_buffer_full", map[string]interface{}{"agent_id": recipientID})
 				deliverSpan.SetAttributes(attribute.Bool(attrDelivered, false))
 				offlineSpan := TraceOfflineEnqueue(recipientID)
@@ -250,10 +246,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 		},
 	}
 	ackData, _ := json.Marshal(ack)
-	select {
-	case sender.send <- ackData:
-	default:
-	}
+	sender.SafeSend(ackData)
 }
 
 // routeTypingIndicator forwards typing indicators to the other party
@@ -302,17 +295,11 @@ func routeTypingIndicator(sender *Connection, data json.RawMessage) {
 	if sender.connType == "agent" {
 		// Send typing indicator to ALL user's devices
 		for _, client := range hub.GetClientConns(recipientID) {
-			select {
-			case client.send <- outData:
-			default:
-			}
+			client.SafeSend(outData)
 		}
 	} else {
 		if agent := hub.GetAgent(recipientID); agent != nil {
-			select {
-			case agent.send <- outData:
-			default:
-			}
+			agent.SafeSend(outData)
 		}
 	}
 }
@@ -375,17 +362,11 @@ func routeStatusUpdate(sender *Connection, data json.RawMessage) {
 	if sender.connType == "agent" {
 		// Send status update to ALL user's devices
 		for _, client := range hub.GetClientConns(recipientID) {
-			select {
-			case client.send <- outData:
-			default:
-			}
+			client.SafeSend(outData)
 		}
 	} else {
 		if agent := hub.GetAgent(recipientID); agent != nil {
-			select {
-			case agent.send <- outData:
-			default:
-			}
+			agent.SafeSend(outData)
 		}
 	}
 }
@@ -397,10 +378,7 @@ func sendError(conn *Connection, message string) {
 		Data: map[string]string{"error": message},
 	}
 	data, _ := json.Marshal(errMsg)
-	select {
-	case conn.send <- data:
-	default:
-	}
+	safeSendToConn(conn, data)
 }
 
 // truncate shortens a string to maxLen characters
@@ -432,8 +410,5 @@ func routeHeartbeat(sender *Connection) {
 		},
 	}
 	ackData, _ := json.Marshal(ack)
-	select {
-	case sender.send <- ackData:
-	default:
-	}
+	sender.SafeSend(ackData)
 }

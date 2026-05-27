@@ -89,17 +89,11 @@ func handleMessageEdit(w http.ResponseWriter, r *http.Request) {
 
 		// Send to all user devices
 		for _, clientConn := range hub.GetClientConns(conv.UserID) {
-			select {
-			case clientConn.send <- editData:
-			default:
-			}
+			clientConn.SafeSend(editData)
 		}
 		// Send to agent
 		if agent := hub.GetAgent(conv.AgentID); agent != nil {
-			select {
-			case agent.send <- editData:
-			default:
-			}
+			agent.SafeSend(editData)
 		}
 	}
 
@@ -192,17 +186,11 @@ func handleMessageDelete(w http.ResponseWriter, r *http.Request) {
 
 	// Send to all user devices
 	for _, clientConn := range hub.GetClientConns(conv.UserID) {
-		select {
-		case clientConn.send <- deleteData:
-		default:
-		}
+		clientConn.SafeSend(deleteData)
 	}
 	// Send to agent
 	if agent := hub.GetAgent(conv.AgentID); agent != nil {
-		select {
-		case agent.send <- deleteData:
-		default:
-		}
+		agent.SafeSend(deleteData)
 	}
 
 	DefaultLogger.Info("message_deleted", map[string]interface{}{"message_id": messageID, "user_id": claims.UserID})

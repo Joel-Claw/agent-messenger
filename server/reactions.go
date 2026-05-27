@@ -172,19 +172,13 @@ func handleReact(w http.ResponseWriter, r *http.Request) {
 	// Send to agent if online
 	if agentID != "" {
 		if agent := hub.GetAgent(agentID); agent != nil {
-			select {
-			case agent.send <- wsData:
-			default:
-			}
+			agent.SafeSend(wsData)
 		}
 	}
 
 	// Send to all of the user's other devices (multi-device sync)
 	for _, client := range hub.GetClientConns(claims.UserID) {
-		select {
-		case client.send <- wsData:
-		default:
-		}
+		client.SafeSend(wsData)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

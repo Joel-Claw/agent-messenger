@@ -128,21 +128,9 @@ func (q *OfflineQueue) TotalDepth() int {
 // send-on-closed-channel panics. This is necessary because the hub's unregister
 // handler may close conn.send between the IsClosed() check and the channel send
 // in background goroutines like replayOfflineMessages.
-func safeSendToConn(conn *Connection, data []byte) (sent bool) {
-	defer func() {
-		if r := recover(); r != nil {
-			sent = false
-		}
-	}()
-	if conn.IsClosed() {
-		return false
-	}
-	select {
-	case conn.send <- data:
-		return true
-	default:
-		return false
-	}
+// Delegates to Connection.SafeSend which provides the same panic protection.
+func safeSendToConn(conn *Connection, data []byte) bool {
+	return conn.SafeSend(data)
 }
 
 func replayOfflineMessages(conn *Connection) {
