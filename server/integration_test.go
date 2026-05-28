@@ -15,6 +15,11 @@ import (
 // setupIntegrationServer creates a full test server with all routes for integration testing.
 func setupIntegrationServer(t *testing.T) (*httptest.Server, func()) {
 	t.Helper()
+
+	// Save and restore global state that heartbeat tests may have changed
+	origPresenceEnabled := agentPresenceEnabled
+	agentPresenceEnabled = false
+
 	setupTestDB(t)
 
 	hub = newHub()
@@ -40,6 +45,7 @@ func setupIntegrationServer(t *testing.T) (*httptest.Server, func()) {
 	cleanup := func() {
 		server.Close()
 		hub.Stop()
+		agentPresenceEnabled = origPresenceEnabled
 	}
 	return server, cleanup
 }

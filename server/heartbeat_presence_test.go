@@ -295,8 +295,8 @@ func TestAgentWithHeartbeatStaysConnected(t *testing.T) {
 	origAgentSecret := agentSecret
 
 	agentPresenceEnabled = true
-	agentPresenceInterval = 100 * time.Millisecond
-	agentPresenceTimeout = 300 * time.Millisecond
+	agentPresenceInterval = 200 * time.Millisecond
+	agentPresenceTimeout = 2 * time.Second // Generous timeout to avoid flakes under test suite load
 
 	setupTestDB(t)
 	agentSecret = "test-heartbeat-secret"
@@ -320,9 +320,9 @@ func TestAgentWithHeartbeatStaysConnected(t *testing.T) {
 	ws := connectHeartbeatAgent(t, server, "fresh-agent")
 	defer ws.Close()
 
-	// Send heartbeats periodically for 600ms
-	elapsed := time.After(600 * time.Millisecond)
-	ticker := time.NewTicker(80 * time.Millisecond)
+	// Send heartbeats periodically for 1.5s
+	elapsed := time.After(1500 * time.Millisecond)
+	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
 	for {

@@ -108,6 +108,9 @@ type Hub struct {
 	broadcast   chan []byte
 	done        chan struct{}
 
+	// monitorDone is closed when the heartbeat monitor goroutine exits
+	monitorDone chan struct{}
+
 	// counters for metrics
 	messagesRouted atomic.Int64
 
@@ -124,9 +127,12 @@ func newHub() *Hub {
 		unregister:  make(chan *Connection),
 		broadcast:   make(chan []byte),
 		done:        make(chan struct{}),
+		monitorDone: make(chan struct{}),
 	}
 	if agentPresenceEnabled {
 		go h.monitorAgentHeartbeats()
+	} else {
+		close(h.monitorDone) // Signal no monitor running
 	}
 	return h
 }
@@ -240,16 +246,18 @@ func (h *Hub) run() {
 	}
 }
 
-// Stop signals the hub to stop running and waits for the run goroutine to exit.
+// Stop signals the hub to stop running and waits for all goroutines to exit.
 func (h *Hub) Stop() {
 	close(h.done)
-	// Give goroutines time to notice done channel and exit
-	time.Sleep(50 * time.Millisecond)
+	// Wait for the monitor goroutine to exit (if running)
+	<-h.monitorDone
 }
 
 // monitorAgentHeartbeats periodically checks agent connections for stale heartbeats
 // and disconnects agents that haven't sent a heartbeat within the timeout period.
 func (h *Hub) monitorAgentHeartbeats() {
+	defer close(h.monitorDone)
+
 	if agentPresenceInterval == 0 {
 		return
 	}

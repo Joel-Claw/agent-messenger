@@ -29,6 +29,10 @@ func setupTestServerForMultiAgent(t *testing.T) *httptest.Server {
 		t.Fatal(err)
 	}
 
+	origPresence := agentPresenceEnabled
+	agentPresenceEnabled = false
+	t.Cleanup(func() { agentPresenceEnabled = origPresence })
+
 	hub = newHub()
 	go hub.run()
 	t.Cleanup(func() { hub.Stop() })

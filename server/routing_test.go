@@ -15,6 +15,11 @@ import (
 // setupTestServerForRouting creates a full test server with all routes
 func setupTestServerForRouting(t *testing.T) (*httptest.Server, func()) {
 	t.Helper()
+
+	// Ensure heartbeat monitoring is off (heartbeat tests may leave it enabled)
+	origPresence := agentPresenceEnabled
+	agentPresenceEnabled = false
+
 	setupTestDB(t)
 
 	hub = newHub()
@@ -39,6 +44,8 @@ func setupTestServerForRouting(t *testing.T) (*httptest.Server, func()) {
 	server := httptest.NewServer(mux)
 	cleanup := func() {
 		server.Close()
+		hub.Stop()
+		agentPresenceEnabled = origPresence
 	}
 	return server, cleanup
 }

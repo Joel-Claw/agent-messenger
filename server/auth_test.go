@@ -33,6 +33,12 @@ func setupTestDB(t *testing.T) {
 // setupTestServer initializes an in-memory DB, hub, and test HTTP server
 func setupTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
+
+	// Ensure heartbeat monitoring is off (heartbeat tests may leave it enabled)
+	origPresence := agentPresenceEnabled
+	agentPresenceEnabled = false
+	t.Cleanup(func() { agentPresenceEnabled = origPresence })
+
 	setupTestDB(t)
 
 	hub = newHub()
@@ -55,7 +61,7 @@ func setupTestServer(t *testing.T) *httptest.Server {
 	mux.HandleFunc("/metrics", handleMetrics)
 
 	server := httptest.NewServer(mux)
-	t.Cleanup(func() { server.Close() })
+	t.Cleanup(func() { server.Close(); hub.Stop() })
 
 	return server
 }
@@ -264,6 +270,7 @@ func TestHandleRegisterUser_UsernameWithUnderscore(t *testing.T) {
 func TestHandleHealth(t *testing.T) {
 	hub = newHub()
 	go hub.run()
+	t.Cleanup(func() { hub.Stop() })
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()

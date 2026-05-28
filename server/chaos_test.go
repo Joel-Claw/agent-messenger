@@ -25,6 +25,11 @@ import (
 // for chaos testing. Returns the server, a cleanup function, and helpers.
 func chaosSetupServer(t *testing.T) (*httptest.Server, func()) {
 	t.Helper()
+
+	// Save and restore global state
+	origPresence := agentPresenceEnabled
+	agentPresenceEnabled = false
+
 	setupTestDB(t)
 
 	hub = newHub()
@@ -49,6 +54,7 @@ func chaosSetupServer(t *testing.T) (*httptest.Server, func()) {
 	cleanup := func() {
 		server.Close()
 		hub.Stop()
+		agentPresenceEnabled = origPresence
 	}
 	return server, cleanup
 }
