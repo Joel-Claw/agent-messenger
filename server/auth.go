@@ -107,6 +107,13 @@ func (r *rateLimiter) Clean() {
 	}
 }
 
+// Reset clears all rate limit entries.
+func (r *rateLimiter) Reset() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.attempts = make(map[string]*rateLimitEntry)
+}
+
 // Claims represents JWT claims for user authentication
 type Claims struct {
 	UserID   string `json:"user_id"`

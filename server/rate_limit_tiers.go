@@ -58,6 +58,13 @@ type TieredRateLimiter struct {
 	limits map[string]*userRateLimitState
 }
 
+// Reset clears all rate limit tiers and counters.
+func (trl *TieredRateLimiter) Reset() {
+	trl.mu.Lock()
+	defer trl.mu.Unlock()
+	trl.limits = make(map[string]*userRateLimitState)
+}
+
 // NewTieredRateLimiter creates a new tiered rate limiter
 func NewTieredRateLimiter() *TieredRateLimiter {
 	trl := &TieredRateLimiter{

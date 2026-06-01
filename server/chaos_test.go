@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -54,6 +55,8 @@ func chaosSetupServer(t *testing.T) (*httptest.Server, func()) {
 	cleanup := func() {
 		server.Close()
 		hub.Stop()
+		// Give goroutines from this test time to wind down
+		runtime.Gosched()
 		agentPresenceEnabled = origPresence
 	}
 	return server, cleanup

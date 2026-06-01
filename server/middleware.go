@@ -78,6 +78,13 @@ func (rl *RateLimiter) cleanup() {
 	}
 }
 
+// Reset clears all rate limit counters.
+func (rl *RateLimiter) Reset() {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	rl.counters = make(map[string]*rateCounter)
+}
+
 // writeJSONError writes a JSON error response with the given status code
 func writeJSONError(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")

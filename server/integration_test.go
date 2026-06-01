@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +21,18 @@ func setupIntegrationServer(t *testing.T) (*httptest.Server, func()) {
 	// Save and restore global state that heartbeat tests may have changed
 	origPresenceEnabled := agentPresenceEnabled
 	agentPresenceEnabled = false
+
+	// Reset global rate limiters to avoid cross-test interference
+	messageRateLimiter.Reset()
+	userRateLimiter.Reset()
+	globalTieredLimiter.Reset()
+	ipRateLimiter.Reset()
+	authIPLimiter.Reset()
+	agentRateLimiter.Reset()
+
+	// Give goroutines from previous tests time to exit
+	runtime.Gosched()
+	time.Sleep(50 * time.Millisecond)
 
 	setupTestDB(t)
 
@@ -723,14 +737,39 @@ func TestIntegration_ConcurrentMessaging(t *testing.T) {
 	json.NewDecoder(resp.Body).Decode(&convResp)
 	convID := convResp["conversation_id"]
 
-	// Send 5 rapid messages from the client
+	// Verify hub state before sending
+	if agent := hub.GetAgent(agentID); agent == nil {
+		t.Fatalf("agent %q not found in hub", agentID)
+	}
+
+	// Start agent reader goroutine BEFORE sending messages to avoid race
 	numMessages := 5
+	type wsMsg struct {
+		data []byte
+		err  error
+	}
+	msgCh := make(chan wsMsg, numMessages+10)
+	agentDone := make(chan struct{})
+	go func() {
+		defer close(agentDone)
+		for {
+			agentConn.SetReadDeadline(time.Now().Add(10 * time.Second))
+			_, raw, err := agentConn.ReadMessage()
+			if err != nil {
+				msgCh <- wsMsg{data: raw, err: err}
+				return
+			}
+			msgCh <- wsMsg{data: raw, err: err}
+		}
+	}()
+
+	// Send 5 rapid messages from the client
 	for i := 0; i < numMessages; i++ {
 		msg := map[string]interface{}{
 			"type": "message",
 			"data": map[string]interface{}{
 				"conversation_id": convID,
-				"content":         "rapid",
+				"content":         fmt.Sprintf("rapid-%d", i),
 			},
 		}
 		msgBytes, _ := json.Marshal(msg)
@@ -739,19 +778,22 @@ func TestIntegration_ConcurrentMessaging(t *testing.T) {
 		}
 	}
 
-	// Agent should receive all 5 messages
+	// Collect messages from agent
 	received := 0
-	deadline := time.Now().Add(5 * time.Second)
+	deadline := time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) && received < numMessages {
-		agentConn.SetReadDeadline(deadline)
-		_, raw, err := agentConn.ReadMessage()
-		if err != nil {
-			t.Fatalf("agent read failed after %d messages: %v", received, err)
-		}
-		var msg map[string]interface{}
-		json.Unmarshal(raw, &msg)
-		if msg["type"] == "message" {
-			received++
+		select {
+		case m := <-msgCh:
+			if m.err != nil {
+				t.Fatalf("agent read failed after %d messages: %v", received, m.err)
+			}
+			var msg map[string]interface{}
+			json.Unmarshal(m.data, &msg)
+			if msg["type"] == "message" {
+				received++
+			}
+		case <-time.After(5 * time.Second):
+			t.Fatalf("timed out waiting for messages, got %d of %d", received, numMessages)
 		}
 	}
 	if received != numMessages {
