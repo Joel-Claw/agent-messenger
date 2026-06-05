@@ -1929,7 +1929,8 @@ func TestCb7SendWelcomeMessage(t *testing.T) {
 	defer db.Close()
 
 	send := make(chan []byte, 10)
-	sendWelcomeMessage("client", "welcome_user_1", "device-1", "1.0", send)
+	c := &Connection{connType: "client", id: "welcome_user_1", deviceID: "device-1", send: send, negotiatedVersion: "1.0"}
+	sendWelcomeMessage(c)
 
 	select {
 	case msg := <-send:

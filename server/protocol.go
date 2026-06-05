@@ -57,16 +57,18 @@ func upgradeWithProtocol(w http.ResponseWriter, r *http.Request, negotiated stri
 	}
 }
 
-// sendWelcomeMessage sends the initial welcome message with protocol version info
-func sendWelcomeMessage(connType, id, deviceID, protocolVersion string, send chan []byte) {
+// sendWelcomeMessage sends the initial welcome message with protocol version info.
+// Uses the Connection's SafeSend to avoid panics from send-on-closed-channel races
+// between hub unregister and the HTTP handler goroutine.
+func sendWelcomeMessage(c *Connection) {
 	welcomeData := map[string]interface{}{
-		"id":                 id,
+		"id":                 c.id,
 		"status":             "connected",
-		"protocol_version":   protocolVersion,
+		"protocol_version":   c.negotiatedVersion,
 		"supported_versions": strings.Split(SupportedVersions, ","),
 	}
-	if deviceID != "" {
-		welcomeData["device_id"] = deviceID
+	if c.deviceID != "" {
+		welcomeData["device_id"] = c.deviceID
 	}
 
 	welcome := OutgoingMessage{
@@ -78,9 +80,7 @@ func sendWelcomeMessage(connType, id, deviceID, protocolVersion string, send cha
 		DefaultLogger.Error("welcome_marshal_error", map[string]interface{}{"error": err.Error()})
 		return
 	}
-	select {
-	case send <- data:
-	default:
-		DefaultLogger.Warn("welcome_buffer_full", map[string]interface{}{"id": id})
+	if !c.SafeSend(data) {
+		DefaultLogger.Warn("welcome_send_failed", map[string]interface{}{"id": c.id, "conn_type": c.connType})
 	}
 }

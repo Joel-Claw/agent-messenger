@@ -89,12 +89,13 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 
 	// Create connection
 	c := &Connection{
-		hub:         hub,
-		connType:    "agent",
-		id:          agentID,
-		conn:        conn,
-		send:        make(chan []byte, 256),
-		connectedAt: time.Now(),
+		hub:              hub,
+		connType:         "agent",
+		id:               agentID,
+		conn:             conn,
+		send:             make(chan []byte, 256),
+		connectedAt:      time.Now(),
+		negotiatedVersion: protocolVersion,
 	}
 
 	// Register with hub
@@ -108,7 +109,7 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) {
 	go replayOfflineMessages(c)
 
 	// Send welcome message with protocol version
-	sendWelcomeMessage("agent", agentID, "", protocolVersion, c.send)
+	sendWelcomeMessage(c)
 }
 
 func handleClientConnect(w http.ResponseWriter, r *http.Request) {
@@ -157,13 +158,14 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	// Create connection
 	deviceID := r.URL.Query().Get("device_id")
 	c := &Connection{
-		hub:         hub,
-		connType:    "client",
-		id:          userID,
-		deviceID:    deviceID,
-		conn:        conn,
-		send:        make(chan []byte, 256),
-		connectedAt: time.Now(),
+		hub:              hub,
+		connType:         "client",
+		id:               userID,
+		deviceID:          deviceID,
+		conn:             conn,
+		send:             make(chan []byte, 256),
+		connectedAt:      time.Now(),
+		negotiatedVersion: protocolVersion,
 	}
 
 	// Register with hub
@@ -177,7 +179,7 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) {
 	go replayOfflineMessages(c)
 
 	// Send welcome message with device info + protocol version
-	sendWelcomeMessage("client", userID, deviceID, protocolVersion, c.send)
+	sendWelcomeMessage(c)
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {

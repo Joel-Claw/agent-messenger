@@ -105,7 +105,8 @@ func TestWelcomeMessageIncludesProtocol(t *testing.T) {
 
 	// Check sendWelcomeMessage output directly
 	sendCh := make(chan []byte, 256)
-	sendWelcomeMessage("client", "test-user", "phone", "v1", sendCh)
+	c := &Connection{connType: "client", id: "test-user", deviceID: "phone", send: sendCh, negotiatedVersion: "v1"}
+	sendWelcomeMessage(c)
 
 	var msg OutgoingMessage
 	data := <-sendCh

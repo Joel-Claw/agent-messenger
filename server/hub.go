@@ -83,6 +83,8 @@ type Connection struct {
 	// background goroutines that may still hold a reference.
 	closed  bool
 	closeMu sync.RWMutex
+	// negotiatedVersion is the WebSocket sub-protocol version negotiated during connect
+	negotiatedVersion string
 }
 
 // Hub manages all active connections

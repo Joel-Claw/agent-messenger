@@ -1414,8 +1414,8 @@ func TestCb9StoreEncrypted_InvalidJSON(t *testing.T) {
 
 func TestCb9SendWelcomeMessage(t *testing.T) {
 	send := make(chan []byte, 10)
-
-	sendWelcomeMessage("client", "user-welcome9", "device-1", "1.0", send)
+	c := &Connection{connType: "client", id: "user-welcome9", deviceID: "device-1", send: send, negotiatedVersion: "1.0"}
+	sendWelcomeMessage(c)
 
 	select {
 	case msg := <-send:

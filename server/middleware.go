@@ -85,6 +85,16 @@ func (rl *RateLimiter) Reset() {
 	rl.counters = make(map[string]*rateCounter)
 }
 
+// Count returns the current count for the given ID, or 0 if not tracked.
+func (rl *RateLimiter) Count(id string) int {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	if c, ok := rl.counters[id]; ok {
+		return c.count
+	}
+	return 0
+}
+
 // writeJSONError writes a JSON error response with the given status code
 func writeJSONError(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")
@@ -123,7 +133,9 @@ var userRateLimiter = NewRateLimiter(120, time.Minute)
 // If rate limited, it sends an error to the connection and returns false.
 func checkRateLimit(conn *Connection) bool {
 	// Check per-connection rate limit first
-	if !messageRateLimiter.Allow(conn.id) {
+	connAllowed := messageRateLimiter.Allow(conn.id)
+	if !connAllowed {
+		DefaultLogger.Warn("per_conn_rate_exceeded", map[string]interface{}{"conn_type": conn.connType, "id": conn.id, "count": messageRateLimiter.Count(conn.id), "limit": 60})
 		if ServerMetrics != nil {
 			ServerMetrics.RateLimited.Add(1)
 		}
@@ -135,7 +147,9 @@ func checkRateLimit(conn *Connection) bool {
 	}
 
 	// Check per-user rate limit (uses same ID, but could use different key)
-	if !userRateLimiter.Allow(conn.id) {
+	userAllowed := userRateLimiter.Allow(conn.id)
+	if !userAllowed {
+		DefaultLogger.Warn("per_user_rate_exceeded", map[string]interface{}{"conn_type": conn.connType, "id": conn.id, "count": userRateLimiter.Count(conn.id), "limit": 120})
 		if ServerMetrics != nil {
 			ServerMetrics.RateLimited.Add(1)
 		}

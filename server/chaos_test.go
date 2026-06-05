@@ -31,6 +31,19 @@ func chaosSetupServer(t *testing.T) (*httptest.Server, func()) {
 	origPresence := agentPresenceEnabled
 	agentPresenceEnabled = false
 
+	// Reset global rate limiters to avoid cross-test interference
+	// Recreate to ensure correct limits (other tests may replace them with different values)
+	messageRateLimiter = NewRateLimiter(60, time.Minute)
+	userRateLimiter = NewRateLimiter(120, time.Minute)
+	globalTieredLimiter = NewTieredRateLimiter()
+	ipRateLimiter = NewRateLimiter(300, time.Minute)
+	authIPLimiter = NewRateLimiter(30, time.Minute)
+	agentRateLimiter.Reset()
+
+	// Give goroutines from previous tests time to exit
+	runtime.Gosched()
+	time.Sleep(50 * time.Millisecond)
+
 	setupTestDB(t)
 
 	hub = newHub()
@@ -529,6 +542,8 @@ func TestChaos_MultiDeviceDisconnect(t *testing.T) {
 	}
 
 	// Verify all devices are connected
+	// Small delay to ensure hub has processed all registrations
+	time.Sleep(100 * time.Millisecond)
 	if hub.ClientConnCount() != numDevices {
 		t.Fatalf("expected %d client connections, got %d", numDevices, hub.ClientConnCount())
 	}

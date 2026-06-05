@@ -254,8 +254,14 @@ func TestCb10CheckRateLimit_Exceeded(t *testing.T) {
 	}
 
 	// Exhaust the per-connection rate limit
+	savedMsgLimiter := messageRateLimiter
+	savedUserLimiter := userRateLimiter
 	messageRateLimiter = NewRateLimiter(5, time.Minute) // 5 per minute for test
 	userRateLimiter = NewRateLimiter(100, time.Minute)  // high limit so per-connection hits first
+	defer func() {
+		messageRateLimiter = savedMsgLimiter
+		userRateLimiter = savedUserLimiter
+	}()
 
 	// Use up all allowances
 	for i := 0; i < 5; i++ {

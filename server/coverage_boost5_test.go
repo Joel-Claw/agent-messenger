@@ -264,7 +264,8 @@ func TestUpgradeWithProtocolEmpty(t *testing.T) {
 
 func TestSendWelcomeMessage(t *testing.T) {
 	ch := make(chan []byte, 1)
-	sendWelcomeMessage("agent", "agent-1", "", "v1", ch)
+	c := &Connection{connType: "agent", id: "agent-1", send: ch, negotiatedVersion: "v1"}
+	sendWelcomeMessage(c)
 
 	var msg OutgoingMessage
 	select {
@@ -294,7 +295,8 @@ func TestSendWelcomeMessage(t *testing.T) {
 
 func TestSendWelcomeMessageWithDeviceID(t *testing.T) {
 	ch := make(chan []byte, 1)
-	sendWelcomeMessage("client", "user-1", "device-abc", "v1", ch)
+	c := &Connection{connType: "client", id: "user-1", deviceID: "device-abc", send: ch, negotiatedVersion: "v1"}
+	sendWelcomeMessage(c)
 
 	var msg OutgoingMessage
 	select {
@@ -321,7 +323,8 @@ func TestSendWelcomeMessageBufferFull(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		sendWelcomeMessage("agent", "agent-1", "", "v1", ch)
+		c := &Connection{connType: "agent", id: "agent-1", send: ch, negotiatedVersion: "v1"}
+		sendWelcomeMessage(c)
 		close(done)
 	}()
 

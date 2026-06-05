@@ -742,8 +742,14 @@ func TestCheckRateLimitPerConnectionExceeded(t *testing.T) {
 	}
 
 	// Exhaust the per-connection rate limit
+	savedMsgLimiter := messageRateLimiter
+	savedUserLimiter := userRateLimiter
 	messageRateLimiter = NewRateLimiter(5, time.Minute)
 	userRateLimiter = NewRateLimiter(100, time.Minute)
+	defer func() {
+		messageRateLimiter = savedMsgLimiter
+		userRateLimiter = savedUserLimiter
+	}()
 
 	// First 5 should pass
 	for i := 0; i < 5; i++ {
@@ -780,8 +786,14 @@ func TestCheckRateLimitPerUserExceeded(t *testing.T) {
 		send: make(chan []byte, 100),
 	}
 
+	savedMsgLimiter2 := messageRateLimiter
+	savedUserLimiter2 := userRateLimiter
 	messageRateLimiter = NewRateLimiter(100, time.Minute)
 	userRateLimiter = NewRateLimiter(3, time.Minute)
+	defer func() {
+		messageRateLimiter = savedMsgLimiter2
+		userRateLimiter = savedUserLimiter2
+	}()
 
 	// First 3 should pass
 	for i := 0; i < 3; i++ {
@@ -822,8 +834,14 @@ func TestCheckRateLimitNilMetrics(t *testing.T) {
 		send: make(chan []byte, 10),
 	}
 
+	savedMsgLimiter := messageRateLimiter
+	savedUserLimiter := userRateLimiter
 	messageRateLimiter = NewRateLimiter(1, time.Minute)
 	userRateLimiter = NewRateLimiter(100, time.Minute)
+	defer func() {
+		messageRateLimiter = savedMsgLimiter
+		userRateLimiter = savedUserLimiter
+	}()
 
 	// First request passes
 	if !checkRateLimit(conn) {

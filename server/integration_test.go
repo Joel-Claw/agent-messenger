@@ -23,16 +23,27 @@ func setupIntegrationServer(t *testing.T) (*httptest.Server, func()) {
 	agentPresenceEnabled = false
 
 	// Reset global rate limiters to avoid cross-test interference
-	messageRateLimiter.Reset()
-	userRateLimiter.Reset()
-	globalTieredLimiter.Reset()
-	ipRateLimiter.Reset()
-	authIPLimiter.Reset()
+	// Recreate to ensure correct limits (other tests may replace them with different values)
+	messageRateLimiter = NewRateLimiter(60, time.Minute)
+	userRateLimiter = NewRateLimiter(120, time.Minute)
+	globalTieredLimiter = NewTieredRateLimiter()
+	ipRateLimiter = NewRateLimiter(300, time.Minute)
+	authIPLimiter = NewRateLimiter(30, time.Minute)
 	agentRateLimiter.Reset()
 
-	// Give goroutines from previous tests time to exit
+	// Give goroutines from previous tests time to exit and rate limiters to settle
+	// Stop previous hub if still running
+	if hub != nil {
+		select {
+		case <-hub.done:
+			// hub already stopped
+		default:
+			hub.Stop()
+		}
+	}
 	runtime.Gosched()
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
+	runtime.Gosched()
 
 	setupTestDB(t)
 
@@ -763,7 +774,29 @@ func TestIntegration_ConcurrentMessaging(t *testing.T) {
 		}
 	}()
 
-	// Send 5 rapid messages from the client
+	// Start client reader goroutine to check for rate-limit errors
+	clientErrCh := make(chan string, numMessages+5)
+	go func() {
+		for {
+			clientConn.SetReadDeadline(time.Now().Add(10 * time.Second))
+			_, raw, err := clientConn.ReadMessage()
+			if err != nil {
+				return
+			}
+			var msg map[string]interface{}
+			if json.Unmarshal(raw, &msg) == nil {
+				if msg["type"] == "error" {
+					if data, ok := msg["data"].(map[string]interface{}); ok {
+						clientErrCh <- fmt.Sprintf("%v", data["message"])
+					}
+				}
+			}
+		}
+	}()
+
+	// Send 5 messages from the client with delays to stay well under rate limits
+	// (60/min per-connection = 1/sec avg; 150ms gap gives ~7/sec which should be fine
+	// given the token-bucket burst allowance of 60)
 	for i := 0; i < numMessages; i++ {
 		msg := map[string]interface{}{
 			"type": "message",
@@ -775,6 +808,10 @@ func TestIntegration_ConcurrentMessaging(t *testing.T) {
 		msgBytes, _ := json.Marshal(msg)
 		if err := clientConn.WriteMessage(websocket.TextMessage, msgBytes); err != nil {
 			t.Fatalf("client write %d failed: %v", i, err)
+		}
+		t.Logf("sent message %d", i)
+		if i < numMessages-1 {
+			time.Sleep(150 * time.Millisecond)
 		}
 	}
 
@@ -789,7 +826,9 @@ func TestIntegration_ConcurrentMessaging(t *testing.T) {
 			}
 			var msg map[string]interface{}
 			json.Unmarshal(m.data, &msg)
-			if msg["type"] == "message" {
+			msgType, _ := msg["type"].(string)
+			t.Logf("agent received message type=%s", msgType)
+			if msgType == "message" {
 				received++
 			}
 		case <-time.After(5 * time.Second):
@@ -797,7 +836,20 @@ func TestIntegration_ConcurrentMessaging(t *testing.T) {
 		}
 	}
 	if received != numMessages {
+		// Check if client received rate-limit errors
+		select {
+		case errMsg := <-clientErrCh:
+			t.Fatalf("expected %d messages on agent, got %d (client error: %s)", numMessages, received, errMsg)
+		default:
+		}
 		t.Fatalf("expected %d messages on agent, got %d", numMessages, received)
+	}
+
+	// Verify no rate-limit errors were received by the client
+	select {
+	case errMsg := <-clientErrCh:
+		t.Errorf("unexpected rate-limit error on client: %s", errMsg)
+	default:
 	}
 }
 

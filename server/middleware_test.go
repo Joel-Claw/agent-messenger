@@ -81,7 +81,9 @@ func TestRateLimitOnWebSocket(t *testing.T) {
 	}
 
 	// Reset rate limiter with a small limit for testing
+	savedMsgLimiter := messageRateLimiter
 	messageRateLimiter = NewRateLimiter(3, time.Minute)
+	defer func() { messageRateLimiter = savedMsgLimiter }()
 
 	// Send 5 messages rapidly
 	blocked := false
@@ -118,9 +120,6 @@ Loop:
 	if !blocked {
 		t.Fatal("expected rate limit error after exceeding limit")
 	}
-
-	// Reset for other tests
-	messageRateLimiter = NewRateLimiter(60, time.Minute)
 }
 
 func TestWriteJSONError(t *testing.T) {

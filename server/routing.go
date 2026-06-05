@@ -40,6 +40,7 @@ func routeMessage(sender *Connection, raw []byte) {
 
 	// Rate limit check
 	if !checkRateLimit(sender) {
+		DefaultLogger.Warn("rate_limited_in_routeMessage", map[string]interface{}{"conn_type": sender.connType, "id": sender.id})
 		span.AddEvent("rate_limited", trace.WithAttributes(
 			attribute.String(attrConnType, sender.connType),
 			attribute.String(attrConnID, sender.id),
@@ -49,7 +50,6 @@ func routeMessage(sender *Connection, raw []byte) {
 
 	var msg IncomingMessage
 	if err := json.Unmarshal(raw, &msg); err != nil {
-		DefaultLogger.Warn("invalid_message", map[string]interface{}{"conn_type": sender.connType, "id": sender.id, "error": err.Error()})
 		DefaultLogger.Warn("invalid_message", map[string]interface{}{"conn_type": sender.connType, "id": sender.id, "error": err.Error()})
 		SpanError(span, err)
 		sendError(sender, "invalid message format")
@@ -68,7 +68,6 @@ func routeMessage(sender *Connection, raw []byte) {
 	case MsgTypeHeartbeat:
 		routeHeartbeat(sender)
 	default:
-		DefaultLogger.Warn("unknown_message_type", map[string]interface{}{"type": msg.Type, "conn_type": sender.connType, "id": sender.id})
 		DefaultLogger.Warn("unknown_message_type", map[string]interface{}{"type": msg.Type, "conn_type": sender.connType, "id": sender.id})
 		sendError(sender, "unknown message type: "+msg.Type)
 	}
@@ -145,7 +144,6 @@ func routeChatMessage(sender *Connection, data json.RawMessage) {
 	// Persist message (child span)
 	_, storeSpan := TraceStoreMessage(context.Background(), msg.ConversationID, sender.id)
 	if err := storeMessage(msg); err != nil {
-		DefaultLogger.Error("message_store_error", map[string]interface{}{"error": err.Error()})
 		DefaultLogger.Error("message_store_error", map[string]interface{}{"error": err.Error()})
 		SpanError(storeSpan, err)
 		storeSpan.End()

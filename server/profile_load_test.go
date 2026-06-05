@@ -39,8 +39,14 @@ func profileLoadSetupServer(t *testing.T) (*httptest.Server, func()) {
 	ServerMetrics = NewMetrics(hub)
 
 	// Increase rate limits for load testing
+	savedIPLimiter := ipRateLimiter
+	savedAuthIPLimiter := authIPLimiter
 	ipRateLimiter = NewRateLimiter(100000, time.Minute)
 	authIPLimiter = NewRateLimiter(100000, time.Minute)
+	defer func() {
+		ipRateLimiter = savedIPLimiter
+		authIPLimiter = savedAuthIPLimiter
+	}()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/agent/connect", handleAgentConnect)
