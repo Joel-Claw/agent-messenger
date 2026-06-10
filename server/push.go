@@ -161,11 +161,11 @@ func sendAPNSNotification(deviceToken, title, body, conversationID string) error
 	}
 
 	if response.StatusCode != http.StatusOK {
-		DefaultLogger.Warn("apns_push_rejected", map[string]interface{}{"token_prefix": deviceToken[:8], "reason": response.Reason})
+		DefaultLogger.Warn("apns_push_rejected", map[string]interface{}{"token_prefix": safeTruncate(deviceToken, 8), "reason": response.Reason})
 		return nil
 	}
 
-	DefaultLogger.Info("apns_push_sent", map[string]interface{}{"token_prefix": deviceToken[:8]})
+	DefaultLogger.Info("apns_push_sent", map[string]interface{}{"token_prefix": safeTruncate(deviceToken, 8)})
 	return nil
 }
 
@@ -201,7 +201,7 @@ func sendFCMNotification(deviceToken, title, body, conversationID string) error 
 		return fmt.Errorf("FCM send failed: %w", err)
 	}
 
-	DefaultLogger.Info("fcm_push_sent", map[string]interface{}{"token_prefix": deviceToken[:8]})
+	DefaultLogger.Info("fcm_push_sent", map[string]interface{}{"token_prefix": safeTruncate(deviceToken, 8)})
 	return nil
 }
 
@@ -266,7 +266,7 @@ func handleRegisterDeviceToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	DefaultLogger.Info("device_token_registered", map[string]interface{}{"user_id": claims.UserID[:8], "platform": req.Platform})
+	DefaultLogger.Info("device_token_registered", map[string]interface{}{"user_id": safeTruncate(claims.UserID, 8), "platform": req.Platform})
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
@@ -355,7 +355,7 @@ func notifyUser(userID, title, body, conversationID string) {
 
 	for _, t := range tokens {
 		if err := sendPushNotification(t.Token, title, body, conversationID, t.Platform); err != nil {
-			DefaultLogger.Warn("push_send_failed", map[string]interface{}{"token_prefix": t.Token[:8], "platform": t.Platform, "error": err.Error()})
+			DefaultLogger.Warn("push_send_failed", map[string]interface{}{"token_prefix": safeTruncate(t.Token, 8), "platform": t.Platform, "error": err.Error()})
 		}
 	}
 }
@@ -504,4 +504,12 @@ func handleWebPushUnsubscribe(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "unsubscribed"})
+}
+
+// safeTruncate returns the first n characters of s, or all of s if shorter than n.
+func safeTruncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
 }
