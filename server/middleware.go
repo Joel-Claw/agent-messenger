@@ -21,6 +21,7 @@ type RateLimiter struct {
 	counters map[string]*rateCounter
 	limit    int           // max messages per window
 	window   time.Duration // time window
+	stopCh   chan struct{}
 }
 
 type rateCounter struct {
@@ -34,9 +35,20 @@ func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
 		counters: make(map[string]*rateCounter),
 		limit:    limit,
 		window:   window,
+		stopCh:   make(chan struct{}),
 	}
 	go rl.cleanup()
 	return rl
+}
+
+// Stop terminates the background cleanup goroutine.
+func (rl *RateLimiter) Stop() {
+	select {
+	case <-rl.stopCh:
+		// already closed
+	default:
+		close(rl.stopCh)
+	}
 }
 
 // Allow checks if a message from the given ID is within rate limits.
@@ -66,15 +78,20 @@ func (rl *RateLimiter) Allow(id string) bool {
 func (rl *RateLimiter) cleanup() {
 	ticker := time.NewTicker(rl.window)
 	defer ticker.Stop()
-	for range ticker.C {
-		rl.mu.Lock()
-		now := time.Now()
-		for id, counter := range rl.counters {
-			if now.After(counter.expires) {
-				delete(rl.counters, id)
+	for {
+		select {
+		case <-ticker.C:
+			rl.mu.Lock()
+			now := time.Now()
+			for id, counter := range rl.counters {
+				if now.After(counter.expires) {
+					delete(rl.counters, id)
+				}
 			}
+			rl.mu.Unlock()
+		case <-rl.stopCh:
+			return
 		}
-		rl.mu.Unlock()
 	}
 }
 

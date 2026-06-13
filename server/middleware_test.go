@@ -303,9 +303,17 @@ func TestJWTSecretFromEnv(t *testing.T) {
 func TestConstantTimeAgentSecretCompare(t *testing.T) {
 	// Verify that the agent secret comparison uses constant-time comparison
 	// This is a behavioral test — timing attacks should not be possible
-	originalSecret := agentSecret
+	origAgentEnv := os.Getenv("AGENT_SECRET")
+	os.Setenv("AGENT_SECRET", "test-secret-12345")
 	agentSecret = "test-secret-12345"
-	defer func() { agentSecret = originalSecret }()
+	defer func() {
+		if origAgentEnv != "" {
+			os.Setenv("AGENT_SECRET", origAgentEnv)
+		} else {
+			os.Unsetenv("AGENT_SECRET")
+		}
+		resetAgentSecret()
+	}()
 
 	// Correct secret should succeed
 	err := ValidateAgentSecret("test-agent", "test-secret-12345")

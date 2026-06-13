@@ -397,9 +397,8 @@ func TestAuthenticateRequest_InvalidJWT(t *testing.T) {
 }
 
 func TestAuthenticateRequest_AgentNoID(t *testing.T) {
-	origAgentSecret := agentSecret
 	origEnv := os.Getenv("AGENT_SECRET")
-	defer func() { agentSecret = origAgentSecret; os.Setenv("AGENT_SECRET", origEnv) }()
+	defer func() { os.Setenv("AGENT_SECRET", origEnv); resetAgentSecret() }()
 	os.Setenv("AGENT_SECRET", "test-agent-secret")
 	agentSecret = "test-agent-secret"
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -415,9 +414,8 @@ func TestAuthenticateRequest_AgentNoID(t *testing.T) {
 }
 
 func TestAuthenticateRequest_ValidAgent(t *testing.T) {
-	origAgentSecret := agentSecret
 	origEnv := os.Getenv("AGENT_SECRET")
-	defer func() { agentSecret = origAgentSecret; os.Setenv("AGENT_SECRET", origEnv) }()
+	defer func() { os.Setenv("AGENT_SECRET", origEnv); resetAgentSecret() }()
 	os.Setenv("AGENT_SECRET", "test-agent-secret")
 	agentSecret = "test-agent-secret"
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -436,9 +434,8 @@ func TestAuthenticateRequest_ValidAgent(t *testing.T) {
 }
 
 func TestAuthenticateRequest_WrongAgentSecret(t *testing.T) {
-	origAgentSecret := agentSecret
 	origEnv := os.Getenv("AGENT_SECRET")
-	defer func() { agentSecret = origAgentSecret; os.Setenv("AGENT_SECRET", origEnv) }()
+	defer func() { os.Setenv("AGENT_SECRET", origEnv); resetAgentSecret() }()
 	os.Setenv("AGENT_SECRET", "test-agent-secret")
 	agentSecret = "test-agent-secret"
 	req := httptest.NewRequest(http.MethodGet, "/", nil)

@@ -42,15 +42,27 @@ func cb18SetupDB(t *testing.T) {
 func cb18SetupAuth(t *testing.T) (string, string) {
 	t.Helper()
 	origJwtSecret := jwtSecret
-	origAgentSecret := agentSecret
-	origAdminSecret := adminSecret
+	origAgentEnv := os.Getenv("AGENT_SECRET")
+	origAdminEnv := os.Getenv("ADMIN_SECRET")
 	jwtSecret = []byte("test-jwt-secret-cb18")
+	os.Setenv("AGENT_SECRET", "test-agent-secret-cb18")
 	agentSecret = "test-agent-secret-cb18"
+	os.Setenv("ADMIN_SECRET", "test-admin-secret-cb18")
 	adminSecret = "test-admin-secret-cb18"
 	t.Cleanup(func() {
 		jwtSecret = origJwtSecret
-		agentSecret = origAgentSecret
-		adminSecret = origAdminSecret
+		if origAgentEnv != "" {
+			os.Setenv("AGENT_SECRET", origAgentEnv)
+		} else {
+			os.Unsetenv("AGENT_SECRET")
+		}
+		if origAdminEnv != "" {
+			os.Setenv("ADMIN_SECRET", origAdminEnv)
+		} else {
+			os.Unsetenv("ADMIN_SECRET")
+		}
+		resetAgentSecret()
+		resetAdminSecret()
 	})
 	return "test-jwt-secret-cb18", "test-agent-secret-cb18"
 }

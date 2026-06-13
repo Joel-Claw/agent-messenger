@@ -20,6 +20,7 @@ var jwtSecret = []byte(getEnvOrDefault("JWT_SECRET", "agent-messenger-dev-secret
 // Set via AGENT_SECRET env var. All agents authenticate with this secret.
 // This replaces per-agent API keys - agents self-register on connect.
 var agentSecret = getAgentSecret()
+var agentSecretMu sync.RWMutex
 
 func getAgentSecret() string {
 	s := os.Getenv("AGENT_SECRET")
@@ -30,9 +31,18 @@ func getAgentSecret() string {
 	return s
 }
 
+// resetAgentSecret re-reads AGENT_SECRET from the environment and updates the global.
+// This is used by tests to restore state after modifying agentSecret.
+func resetAgentSecret() {
+	agentSecretMu.Lock()
+	defer agentSecretMu.Unlock()
+	agentSecret = getAgentSecret()
+}
+
 // ADMIN_SECRET is the secret for admin endpoints (rate limit tiers, agent listing, etc).
 // Set via ADMIN_SECRET env var. Separate from AGENT_SECRET for least-privilege.
 var adminSecret = getAdminSecret()
+var adminSecretMu sync.RWMutex
 
 func getAdminSecret() string {
 	s := os.Getenv("ADMIN_SECRET")
@@ -43,9 +53,19 @@ func getAdminSecret() string {
 	return s
 }
 
+// resetAdminSecret re-reads ADMIN_SECRET from the environment and updates the global.
+// This is used by tests to restore state after modifying adminSecret.
+func resetAdminSecret() {
+	adminSecretMu.Lock()
+	defer adminSecretMu.Unlock()
+	adminSecret = getAdminSecret()
+}
+
 // ValidateAdminSecret checks the provided secret against ADMIN_SECRET using
 // constant-time comparison to prevent timing attacks.
 func ValidateAdminSecret(secret string) error {
+	adminSecretMu.RLock()
+	defer adminSecretMu.RUnlock()
 	if subtle.ConstantTimeCompare([]byte(secret), []byte(adminSecret)) != 1 {
 		return errors.New("unauthorized: invalid admin secret")
 	}
@@ -131,7 +151,10 @@ func ValidateAgentSecret(agentID string, secret string) error {
 		DefaultLogger.Warn("agent_rate_limited", map[string]interface{}{"agent_id": agentID})
 		return errors.New("rate limited: too many connection attempts")
 	}
-	if subtle.ConstantTimeCompare([]byte(secret), []byte(agentSecret)) != 1 {
+	agentSecretMu.RLock()
+	currentSecret := agentSecret
+	agentSecretMu.RUnlock()
+	if subtle.ConstantTimeCompare([]byte(secret), []byte(currentSecret)) != 1 {
 		DefaultLogger.Warn("agent_auth_failed", map[string]interface{}{"agent_id": agentID})
 		return errors.New("invalid agent secret")
 	}

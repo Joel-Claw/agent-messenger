@@ -59,6 +59,10 @@ func initPushNotifications() {
 }
 
 func initAPNs() {
+	if pushConfig == nil {
+		DefaultLogger.Info("apns_no_config", nil)
+		return
+	}
 	if !pushConfig.APNSEnabled {
 		DefaultLogger.Info("apns_disabled", nil)
 		return
@@ -97,6 +101,10 @@ func initAPNs() {
 }
 
 func initFCM() {
+	if pushConfig == nil {
+		DefaultLogger.Info("fcm_no_config", nil)
+		return
+	}
 	if !pushConfig.FCMEnabled {
 		DefaultLogger.Info("fcm_disabled", nil)
 		return

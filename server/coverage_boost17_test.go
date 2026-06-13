@@ -42,15 +42,27 @@ func cb17SetupDB(t *testing.T) {
 func cb17SetupAuth(t *testing.T) (string, string) {
 	t.Helper()
 	origJwtSecret := jwtSecret
-	origAgentSecret := agentSecret
-	origAdminSecret := adminSecret
+	origAgentEnv := os.Getenv("AGENT_SECRET")
+	origAdminEnv := os.Getenv("ADMIN_SECRET")
 	jwtSecret = []byte("test-jwt-secret-cb17")
+	os.Setenv("AGENT_SECRET", "test-agent-secret-cb17")
 	agentSecret = "test-agent-secret-cb17"
+	os.Setenv("ADMIN_SECRET", "test-admin-secret-cb17")
 	adminSecret = "test-admin-secret-cb17"
 	t.Cleanup(func() {
 		jwtSecret = origJwtSecret
-		agentSecret = origAgentSecret
-		adminSecret = origAdminSecret
+		if origAgentEnv != "" {
+			os.Setenv("AGENT_SECRET", origAgentEnv)
+		} else {
+			os.Unsetenv("AGENT_SECRET")
+		}
+		if origAdminEnv != "" {
+			os.Setenv("ADMIN_SECRET", origAdminEnv)
+		} else {
+			os.Unsetenv("ADMIN_SECRET")
+		}
+		resetAgentSecret()
+		resetAdminSecret()
 	})
 	// Register user
 	hash, _ := HashAPIKey("password123")
@@ -692,7 +704,7 @@ func TestCB17_HandleGetAttachment_AgentAuth(t *testing.T) {
 	cb17SetupDB(t)
 	os.Setenv("AGENT_SECRET", "test-agent-secret-cb17")
 	agentSecret = "test-agent-secret-cb17"
-	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); agentSecret = "" })
+	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); resetAgentSecret() })
 
 	_, err := db.Exec("INSERT INTO attachments (id, user_id, filename, content_type, size, sha256, storage_path, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		"att_agent_test", "user1", "file.txt", "text/plain", 100, "abc123", "nonexistent_path.txt", time.Now().UTC())
@@ -729,7 +741,7 @@ func TestCB17_HandleGetAttachment_WrongAgentSecret(t *testing.T) {
 	cb17SetupDB(t)
 	os.Setenv("AGENT_SECRET", "test-agent-secret-cb17")
 	agentSecret = "test-agent-secret-cb17"
-	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); agentSecret = "" })
+	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); resetAgentSecret() })
 
 	req := httptest.NewRequest(http.MethodGet, "/attachments/att123", nil)
 	req.Header.Set("X-Agent-Secret", "wrong-secret")
@@ -1202,7 +1214,7 @@ func TestCB17_HandleStoreEncryptedMessage_AgentAuth(t *testing.T) {
 	cb17SetupDB(t)
 	os.Setenv("AGENT_SECRET", "test-agent-secret-cb17")
 	agentSecret = "test-agent-secret-cb17"
-	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); agentSecret = "" })
+	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); resetAgentSecret() })
 
 	_, userID := cb17SetupAuth(t)
 	agentID := cb17SetupAgent(t)
@@ -1375,7 +1387,7 @@ func TestCB17_GetEncryptedMessages_AgentAuth(t *testing.T) {
 	cb17SetupDB(t)
 	os.Setenv("AGENT_SECRET", "test-agent-secret-cb17")
 	agentSecret = "test-agent-secret-cb17"
-	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); agentSecret = "" })
+	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); resetAgentSecret() })
 
 	_, userID := cb17SetupAuth(t)
 	agentID := cb17SetupAgent(t)
@@ -2054,7 +2066,7 @@ func TestCB17_AuthenticateRequest_NoAuth(t *testing.T) {
 	cb17SetupDB(t)
 	os.Setenv("AGENT_SECRET", "test-agent-secret-cb17")
 	agentSecret = "test-agent-secret-cb17"
-	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); agentSecret = "" })
+	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); resetAgentSecret() })
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	id, typ, err := authenticateRequest(req)
@@ -2088,7 +2100,7 @@ func TestCB17_AuthenticateRequest_AgentSecret(t *testing.T) {
 	cb17SetupDB(t)
 	os.Setenv("AGENT_SECRET", "test-agent-secret-cb17")
 	agentSecret = "test-agent-secret-cb17"
-	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); agentSecret = "" })
+	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); resetAgentSecret() })
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("X-Agent-Secret", "test-agent-secret-cb17")
@@ -2109,7 +2121,7 @@ func TestCB17_AuthenticateRequest_AgentMissingID(t *testing.T) {
 	cb17SetupDB(t)
 	os.Setenv("AGENT_SECRET", "test-agent-secret-cb17")
 	agentSecret = "test-agent-secret-cb17"
-	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); agentSecret = "" })
+	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); resetAgentSecret() })
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("X-Agent-Secret", "test-agent-secret-cb17")
@@ -2126,7 +2138,7 @@ func TestCB17_AuthenticateRequest_WrongAgentSecret(t *testing.T) {
 	cb17SetupDB(t)
 	os.Setenv("AGENT_SECRET", "test-agent-secret-cb17")
 	agentSecret = "test-agent-secret-cb17"
-	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); agentSecret = "" })
+	t.Cleanup(func() { os.Unsetenv("AGENT_SECRET"); resetAgentSecret() })
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("X-Agent-Secret", "wrong-secret")

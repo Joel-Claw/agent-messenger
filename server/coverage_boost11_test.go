@@ -880,10 +880,15 @@ func TestAuthenticateRequestWithJWT(t *testing.T) {
 func TestAuthenticateRequestWithAgentSecret(t *testing.T) {
 	origSecret := os.Getenv("AGENT_SECRET")
 	os.Setenv("AGENT_SECRET", "test-agent-secret")
-	defer os.Unsetenv("AGENT_SECRET")
-	if origSecret != "" {
-		defer os.Setenv("AGENT_SECRET", origSecret)
-	}
+	agentSecret = "test-agent-secret"
+	defer func() {
+		if origSecret != "" {
+			os.Setenv("AGENT_SECRET", origSecret)
+		} else {
+			os.Unsetenv("AGENT_SECRET")
+		}
+		resetAgentSecret()
+	}()
 
 	req := httptest.NewRequest("GET", "/e2e/keys", nil)
 	req.Header.Set("X-Agent-Secret", "test-agent-secret")
@@ -904,10 +909,15 @@ func TestAuthenticateRequestWithAgentSecret(t *testing.T) {
 func TestAuthenticateRequestAgentSecretNoID(t *testing.T) {
 	origSecret := os.Getenv("AGENT_SECRET")
 	os.Setenv("AGENT_SECRET", "test-agent-secret")
-	defer os.Unsetenv("AGENT_SECRET")
-	if origSecret != "" {
-		defer os.Setenv("AGENT_SECRET", origSecret)
-	}
+	agentSecret = "test-agent-secret"
+	defer func() {
+		if origSecret != "" {
+			os.Setenv("AGENT_SECRET", origSecret)
+		} else {
+			os.Unsetenv("AGENT_SECRET")
+		}
+		resetAgentSecret()
+	}()
 
 	req := httptest.NewRequest("GET", "/e2e/keys", nil)
 	req.Header.Set("X-Agent-Secret", "test-agent-secret")
@@ -941,10 +951,15 @@ func TestAuthenticateRequestInvalidJWT(t *testing.T) {
 func TestAuthenticateRequestWrongAgentSecret(t *testing.T) {
 	origSecret := os.Getenv("AGENT_SECRET")
 	os.Setenv("AGENT_SECRET", "test-agent-secret")
-	defer os.Unsetenv("AGENT_SECRET")
-	if origSecret != "" {
-		defer os.Setenv("AGENT_SECRET", origSecret)
-	}
+	agentSecret = "test-agent-secret"
+	defer func() {
+		if origSecret != "" {
+			os.Setenv("AGENT_SECRET", origSecret)
+		} else {
+			os.Unsetenv("AGENT_SECRET")
+		}
+		resetAgentSecret()
+	}()
 
 	req := httptest.NewRequest("GET", "/e2e/keys", nil)
 	req.Header.Set("X-Agent-Secret", "wrong-secret")

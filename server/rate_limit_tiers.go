@@ -56,6 +56,7 @@ type userRateLimitState struct {
 type TieredRateLimiter struct {
 	mu     sync.Mutex
 	limits map[string]*userRateLimitState
+	stopCh chan struct{}
 }
 
 // Reset clears all rate limit tiers and counters.
@@ -69,9 +70,20 @@ func (trl *TieredRateLimiter) Reset() {
 func NewTieredRateLimiter() *TieredRateLimiter {
 	trl := &TieredRateLimiter{
 		limits: make(map[string]*userRateLimitState),
+		stopCh: make(chan struct{}),
 	}
 	go trl.cleanup()
 	return trl
+}
+
+// Stop terminates the background cleanup goroutine.
+func (trl *TieredRateLimiter) Stop() {
+	select {
+	case <-trl.stopCh:
+		// already closed
+	default:
+		close(trl.stopCh)
+	}
 }
 
 // Allow checks if a request from the given user is allowed under their tier.
@@ -170,15 +182,20 @@ func (trl *TieredRateLimiter) GetRemaining(userID string) int {
 func (trl *TieredRateLimiter) cleanup() {
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
-	for range ticker.C {
-		trl.mu.Lock()
-		now := time.Now()
-		for id, entry := range trl.limits {
-			if now.After(entry.windowEnd) && now.Sub(entry.windowEnd) > 10*time.Minute {
-				delete(trl.limits, id)
+	for {
+		select {
+		case <-ticker.C:
+			trl.mu.Lock()
+			now := time.Now()
+			for id, entry := range trl.limits {
+				if now.After(entry.windowEnd) && now.Sub(entry.windowEnd) > 10*time.Minute {
+					delete(trl.limits, id)
+				}
 			}
+			trl.mu.Unlock()
+		case <-trl.stopCh:
+			return
 		}
-		trl.mu.Unlock()
 	}
 }
 

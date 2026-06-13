@@ -1252,9 +1252,17 @@ func TestCB14_UnregisterDeviceToken_MissingToken(t *testing.T) {
 
 func TestCB14_RegisterAgent_MissingID(t *testing.T) {
 	cb14SetupDB(t)
-	origSecret := agentSecret
+	origEnv := os.Getenv("AGENT_SECRET")
+	os.Setenv("AGENT_SECRET", "test_secret")
 	agentSecret = "test_secret"
-	defer func() { agentSecret = origSecret }()
+	defer func() {
+		if origEnv != "" {
+			os.Setenv("AGENT_SECRET", origEnv)
+		} else {
+			os.Unsetenv("AGENT_SECRET")
+		}
+		resetAgentSecret()
+	}()
 
 	form := url.Values{}
 	form.Set("name", "Test Agent")
@@ -1271,9 +1279,17 @@ func TestCB14_RegisterAgent_MissingID(t *testing.T) {
 
 func TestCB14_RegisterAgent_Valid(t *testing.T) {
 	cb14SetupDB(t)
-	origSecret := agentSecret
+	origEnv := os.Getenv("AGENT_SECRET")
+	os.Setenv("AGENT_SECRET", "test_secret")
 	agentSecret = "test_secret"
-	defer func() { agentSecret = origSecret }()
+	defer func() {
+		if origEnv != "" {
+			os.Setenv("AGENT_SECRET", origEnv)
+		} else {
+			os.Unsetenv("AGENT_SECRET")
+		}
+		resetAgentSecret()
+	}()
 
 	form := url.Values{}
 	form.Set("agent_id", "test_agent_1")
