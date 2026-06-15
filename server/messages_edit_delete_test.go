@@ -15,6 +15,7 @@ func TestMessageEdit(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	// Register user and get token + user ID
@@ -105,6 +106,7 @@ func TestMessageEditUnauthorized(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token1 := registerUserAndGetToken(t, "owner", "password123")
@@ -144,6 +146,7 @@ func TestMessageEditNotFound(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "editnfuser", "password123")
@@ -168,6 +171,7 @@ func TestMessageDelete(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "deluser", "password123")
@@ -247,6 +251,7 @@ func TestMessageDeleteByConversationOwner(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "convowner", "password123")
@@ -284,6 +289,7 @@ func TestMessageDeleteAlreadyDeleted(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "deldupuser", "password123")
@@ -319,6 +325,7 @@ func TestEditDeletedMessage(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "editdeluser", "password123")
@@ -355,6 +362,7 @@ func TestMessageEditMissingFields(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "editmfuser", "password123")
@@ -389,6 +397,7 @@ func TestMessageDeleteMissingMessageID(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "delmfuser", "password123")

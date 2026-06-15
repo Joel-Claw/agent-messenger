@@ -15,6 +15,7 @@ func TestMultiDeviceClientConnect(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	// Connect device 1
@@ -60,6 +61,7 @@ func TestMultiDeviceSameDeviceReconnect(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	// Connect phone
@@ -133,6 +135,7 @@ func TestMultiDevicePartialDisconnect(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	phone := &Connection{
@@ -192,6 +195,7 @@ func TestMultiDeviceMessageDelivery(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	// Create agent
@@ -280,6 +284,7 @@ func TestMultiDeviceTypingIndicator(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	// Create agent
@@ -369,6 +374,7 @@ func TestMultiDeviceNoDeviceID(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	// Connect without device_id (legacy)
@@ -418,6 +424,7 @@ func TestMultiDeviceStatusUpdateToAll(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	// Create agent
@@ -509,6 +516,7 @@ func TestMultiDeviceReadReceiptToAllDevices(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	// Create agent
@@ -561,6 +569,7 @@ func TestMultiDeviceHealthMetrics(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	// Connect 1 user on 3 devices

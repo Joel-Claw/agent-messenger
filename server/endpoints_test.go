@@ -15,6 +15,7 @@ func TestChangePassword(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "pwuser", "oldpass123")
 
@@ -69,6 +70,7 @@ func TestChangePasswordWrongOld(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "pwuser2", "correct123")
 
@@ -90,6 +92,7 @@ func TestChangePasswordMissingFields(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "pwuser3", "pass123")
 
@@ -107,6 +110,7 @@ func TestChangePasswordShortNew(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "pwuser4", "oldpass123")
 
@@ -204,6 +208,7 @@ func TestDeleteConversationUnauthorized(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	// User A creates a conversation
 	tokenA := registerUserAndGetToken(t, "owner_user", "password123")
@@ -235,6 +240,7 @@ func TestDeleteConversationNotFound(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "nofound_user", "password123")
 	req := httptest.NewRequest(http.MethodDelete, "/conversations/delete?conversation_id=conv_nonexistent", nil)
@@ -251,6 +257,7 @@ func TestDeleteConversationMissingID(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "noid_user", "password123")
 	req := httptest.NewRequest(http.MethodDelete, "/conversations/delete", nil)
@@ -269,6 +276,7 @@ func TestSearchMessages(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "searchuser", "password123")
 
@@ -320,6 +328,7 @@ func TestSearchMessagesEmptyQuery(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "searchempty", "password123")
 
@@ -349,6 +358,7 @@ func TestSearchMessagesNoResults(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "searchnone", "password123")
 
@@ -374,6 +384,7 @@ func TestMarkMessagesRead(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "readuser", "password123")
 
@@ -446,6 +457,7 @@ func TestMarkReadUnauthorized(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	// User A creates conversation
 	tokenA := registerUserAndGetToken(t, "readowner", "password123")
@@ -480,6 +492,7 @@ func TestMarkReadMissingConversationID(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "readmiss", "password123")
 	req := httptest.NewRequest(http.MethodPost, "/conversations/mark-read", nil)
@@ -496,6 +509,7 @@ func TestMarkReadNonexistentConversation(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "readnone", "password123")
 	form := url.Values{}
@@ -515,6 +529,7 @@ func TestMarkReadIdempotent(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "readidem", "password123")
 

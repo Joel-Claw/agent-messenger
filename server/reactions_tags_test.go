@@ -12,6 +12,7 @@ func TestAddReaction(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "reactuser", "pass123")
 	userID := getUserIDFromToken(t, token)
@@ -75,6 +76,7 @@ func TestAddReactionUnauthorized(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "authuser", "pass123")
 	otherToken := registerUserAndGetToken(t, "otheruser", "pass123")
@@ -112,6 +114,7 @@ func TestGetReactions(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "getrxnuser", "pass123")
 	userID := getUserIDFromToken(t, token)
@@ -153,6 +156,7 @@ func TestReactionMessageNotFound(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "nfounduser", "pass123")
 
@@ -175,6 +179,7 @@ func TestReactionMissingFields(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "missrxnuser", "pass123")
 
@@ -198,6 +203,7 @@ func TestAddConversationTag(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "taguser", "pass123")
 	createTestAgent(t, "tag-agent", "Tag Bot")
@@ -228,6 +234,7 @@ func TestAddDuplicateTag(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "duptaguser", "pass123")
 	createTestAgent(t, "duptag-agent", "Bot")
@@ -258,6 +265,7 @@ func TestRemoveConversationTag(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "rmtaguser", "pass123")
 	userID := getUserIDFromToken(t, token)
@@ -291,6 +299,7 @@ func TestRemoveNonexistentTag(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "rmtag2user", "pass123")
 	createTestAgent(t, "rmtag2-agent", "Bot")
@@ -315,6 +324,7 @@ func TestGetConversationTags(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "gettaguser", "pass123")
 	userID := getUserIDFromToken(t, token)
@@ -344,6 +354,7 @@ func TestTagUnauthorized(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "tagauthuser", "pass123")
 	otherToken := registerUserAndGetToken(t, "tagotheruser", "pass123")

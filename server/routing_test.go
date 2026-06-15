@@ -24,6 +24,7 @@ func setupTestServerForRouting(t *testing.T) (*httptest.Server, func()) {
 
 	hub = newHub()
 	go hub.run()
+	t.Cleanup(func() { hub.Stop() })
 
 	ServerMetrics = NewMetrics(hub)
 
@@ -44,7 +45,6 @@ func setupTestServerForRouting(t *testing.T) (*httptest.Server, func()) {
 	server := httptest.NewServer(mux)
 	cleanup := func() {
 		server.Close()
-		hub.Stop()
 		agentPresenceEnabled = origPresence
 	}
 	return server, cleanup
@@ -141,6 +141,8 @@ func TestCreateConversationUnauthorized(t *testing.T) {
 	hub = newHub()
 	go hub.run()
 
+	t.Cleanup(func() { hub.Stop() })
+
 	req := httptest.NewRequest(http.MethodPost, "/conversations/create", nil)
 	w := httptest.NewRecorder()
 	handleCreateConversation(w, req)
@@ -181,6 +183,8 @@ func TestGetMessagesEmpty(t *testing.T) {
 	hub = newHub()
 	go hub.run()
 
+	t.Cleanup(func() { hub.Stop() })
+
 	token := registerUserAndGetToken(t, "msgs_tester", "password123")
 
 	// Create a conversation
@@ -211,6 +215,8 @@ func TestRouteMessageRequiresConversationID(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+
+	t.Cleanup(func() { hub.Stop() })
 
 	conn := &Connection{
 		hub:      hub,
@@ -244,6 +250,8 @@ func TestRouteMessageRequiresContent(t *testing.T) {
 	hub = newHub()
 	go hub.run()
 
+	t.Cleanup(func() { hub.Stop() })
+
 	conn := &Connection{
 		hub:      hub,
 		connType: "agent",
@@ -275,6 +283,8 @@ func TestRouteMessageUnknownType(t *testing.T) {
 	hub = newHub()
 	go hub.run()
 
+	t.Cleanup(func() { hub.Stop() })
+
 	conn := &Connection{
 		hub:      hub,
 		connType: "agent",
@@ -305,6 +315,8 @@ func TestRouteMessageAgentToClient(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+
+	t.Cleanup(func() { hub.Stop() })
 
 	// Create conversation in DB
 	conv, err := CreateConversation("user_1", "agent_1")
@@ -367,6 +379,8 @@ func TestRouteMessageClientToAgent(t *testing.T) {
 	hub = newHub()
 	go hub.run()
 
+	t.Cleanup(func() { hub.Stop() })
+
 	conv, err := CreateConversation("user_2", "agent_2")
 	if err != nil {
 		t.Fatal(err)
@@ -427,6 +441,8 @@ func TestRouteMessageUnauthorizedAgent(t *testing.T) {
 	hub = newHub()
 	go hub.run()
 
+	t.Cleanup(func() { hub.Stop() })
+
 	conv, err := CreateConversation("user_3", "agent_3")
 	if err != nil {
 		t.Fatal(err)
@@ -462,6 +478,8 @@ func TestRouteTypingIndicator(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+
+	t.Cleanup(func() { hub.Stop() })
 
 	conv, err := CreateConversation("user_4", "agent_4")
 	if err != nil {
@@ -661,6 +679,8 @@ func TestGetMessagesUnauthorizedUser(t *testing.T) {
 	hub = newHub()
 	go hub.run()
 
+	t.Cleanup(func() { hub.Stop() })
+
 	// User A creates a conversation
 	tokenA := registerUserAndGetToken(t, "user_a", "password123")
 	form := url.Values{}
@@ -691,6 +711,8 @@ func TestGetMessagesNonexistentConversation(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+
+	t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "no_conv", "password123")
 	req := httptest.NewRequest(http.MethodGet, "/conversations/messages?conversation_id=conv_nonexistent", nil)

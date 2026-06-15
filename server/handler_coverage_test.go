@@ -179,6 +179,7 @@ func TestHandleUploadSuccess(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "uploaduser", "pass123")
 
@@ -282,6 +283,7 @@ func TestHandleUploadMissingFile(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "nofileuser", "pass123")
 
@@ -305,6 +307,7 @@ func TestHandleListAttachments(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "listattuser", "pass123")
 	createTestAgent(t, "listatt-agent", "Bot")
@@ -346,6 +349,7 @@ func TestHandleListAttachmentsMissingConvID(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "listnomiduser", "pass123")
 
@@ -401,6 +405,7 @@ func TestHandleGetAttachmentNotFound(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "getattuser", "pass123")
 
@@ -432,6 +437,7 @@ func TestHandleGetTagsEmpty(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "emptytagsuser", "pass123")
 	createTestAgent(t, "emptytags-agent", "Bot")
@@ -461,6 +467,7 @@ func TestHandleGetTagsOtherUser(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "tagowner2", "pass123")
 	otherToken := registerUserAndGetToken(t, "tagother2", "pass123")
@@ -482,6 +489,7 @@ func TestHandleGetTagsMissingConvID(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "nomidtaguser", "pass123")
 
@@ -500,6 +508,7 @@ func TestHandleAddTagEmptyTag(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "emptytaguser", "pass123")
 	createTestAgent(t, "emptytag-agent", "Bot")
@@ -525,6 +534,7 @@ func TestHandleAddTagTooLong(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "longtaguser", "pass123")
 	createTestAgent(t, "longtag-agent", "Bot")
@@ -551,6 +561,7 @@ func TestHandleRemoveTagOtherUser(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	token := registerUserAndGetToken(t, "rmtagowner", "pass123")
 	otherToken := registerUserAndGetToken(t, "rmtagother", "pass123")

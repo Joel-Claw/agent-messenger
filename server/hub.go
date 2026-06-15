@@ -116,6 +116,9 @@ type Hub struct {
 	// runDone is closed when the run goroutine exits
 	runDone chan struct{}
 
+	// stopOnce ensures Stop() is only called once
+	stopOnce sync.Once
+
 	// counters for metrics
 	messagesRouted atomic.Int64
 
@@ -255,7 +258,9 @@ func (h *Hub) run() {
 
 // Stop signals the hub to stop running and waits for all goroutines to exit.
 func (h *Hub) Stop() {
-	close(h.done)
+	h.stopOnce.Do(func() {
+		close(h.done)
+	})
 	// Wait for the run goroutine to exit
 	<-h.runDone
 	// Wait for the monitor goroutine to exit (if running)

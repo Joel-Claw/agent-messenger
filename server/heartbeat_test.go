@@ -58,6 +58,7 @@ func TestReadDeadlineExpired(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	conn := &Connection{
@@ -93,6 +94,7 @@ func TestConnectionReplacement(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	// First connection
@@ -139,6 +141,7 @@ func TestClientReconnection(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	// First client connection
@@ -202,6 +205,7 @@ func TestUnregisterIdempotent(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	conn := &Connection{
@@ -229,6 +233,7 @@ func TestUnregisterOnlyMatchingConnection(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	conn1 := &Connection{
@@ -294,6 +299,7 @@ func TestConnectedAtTimestamp(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	before := time.Now()
@@ -322,6 +328,7 @@ func TestMessagesRoutedCounter(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	conn := &Connection{
@@ -350,6 +357,7 @@ func TestHealthEndpointWithMetrics(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
@@ -408,6 +416,7 @@ func TestMultipleDisconnectsSameID(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	for i := 0; i < 5; i++ {
@@ -437,6 +446,7 @@ func TestClientDisconnectCleansUpRouting(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	conv, err := CreateConversation("dc-user", "dc-agent")
@@ -500,6 +510,7 @@ func TestConcurrentRegisterUnregister(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	done := make(chan struct{})
@@ -537,6 +548,7 @@ func TestAgentAndClientCountMethods(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	if hub.AgentCount() != 0 || hub.ClientCount() != 0 {

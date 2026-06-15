@@ -75,6 +75,7 @@ func TestWelcomeMessageIncludesProtocol(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "protouser", "password123")

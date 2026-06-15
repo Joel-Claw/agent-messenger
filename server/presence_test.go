@@ -13,6 +13,7 @@ func TestGetAgentPresence(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "presenceuser", "password123")
@@ -68,6 +69,7 @@ func TestGetAgentPresenceOffline(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "offlineuser", "password123")
@@ -99,6 +101,7 @@ func TestGetUserPresence(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "selfpresuser", "password123")
@@ -143,6 +146,7 @@ func TestGetUserPresenceOffline(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "offuser", "password123")
@@ -180,6 +184,7 @@ func TestPresenceUpdateEvent(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "presEvtUser", "password123")

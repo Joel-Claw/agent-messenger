@@ -66,6 +66,7 @@ func TestRateLimitOnWebSocket(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	conn := &Connection{
 		hub:      hub,
@@ -149,6 +150,7 @@ func TestMethodNotAllowedJSON(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	// GET on a POST-only endpoint
 	req := httptest.NewRequest(http.MethodGet, "/auth/login", nil)
@@ -170,6 +172,7 @@ func TestInvalidMessageFormatJSON(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	conn := &Connection{
 		hub:      hub,
@@ -197,6 +200,7 @@ func TestMessageTooLong(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	// Create a message that exceeds maxMessageSize (64KB)
 	longContent := strings.Repeat("x", 70000)
@@ -234,6 +238,7 @@ func TestEmptyBodyMessage(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	conn := &Connection{
 		hub:      hub,

@@ -15,6 +15,7 @@ func TestConversationMetadata(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "metauser", "password123")
@@ -107,6 +108,7 @@ func TestConversationMetadataEmpty(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "emptyuser", "password123")
@@ -157,6 +159,7 @@ func TestConversationMetadataDeletedExcluded(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	token := registerUserAndGetToken(t, "delmetauser", "password123")

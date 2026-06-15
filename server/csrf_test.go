@@ -215,6 +215,7 @@ func TestCSRFMiddleware_IntegrationWithLogin(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	// Login POST without CSRF headers should fail
 	form := url.Values{"email": {"test@example.com"}, "password": {"testpass"}}

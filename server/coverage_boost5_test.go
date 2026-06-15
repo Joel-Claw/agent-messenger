@@ -1337,6 +1337,7 @@ func TestHealthEndpointTracingField(t *testing.T) {
 
 	hub = newHub()
 	go hub.run()
+	t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	mux := http.NewServeMux()

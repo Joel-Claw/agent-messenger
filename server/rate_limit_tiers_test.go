@@ -146,6 +146,7 @@ func TestHandleSetRateLimitTier(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	// Set tier for a user
 	form := url.Values{
@@ -182,6 +183,7 @@ func TestHandleSetRateLimitTierUnauthorized(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	form := url.Values{
 		"user_id": {"usr_testuser"},
@@ -202,6 +204,7 @@ func TestHandleSetRateLimitTierUnknownTier(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	form := url.Values{
 		"user_id": {"usr_testuser"},
@@ -222,6 +225,7 @@ func TestHandleGetRateLimitTier(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	// Set a tier first
 	globalTieredLimiter.SetTier("usr_gettest", TierEnterprise)
@@ -248,6 +252,7 @@ func TestHandleGetRateLimitTierMissingUserID(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	req := httptest.NewRequest("GET", "/admin/rate-limit/tier?admin_secret=admin-dev-secret", nil)
 	w := httptest.NewRecorder()
@@ -262,6 +267,7 @@ func TestTieredRateLimitMiddleware(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	// Create a simple handler that returns 200
 	innerHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -361,6 +367,7 @@ func TestPersistTierToDB(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	// Persist a pro tier
 	err := persistTierToDB("usr_persist_test", TierPro)
@@ -387,6 +394,7 @@ func TestLoadTiersFromDB(t *testing.T) {
 	setupTestDB(t)
 	hub = newHub()
 	go hub.run()
+ t.Cleanup(func() { hub.Stop() })
 
 	// Insert some tiers directly into DB
 	persistTierToDB("usr_load1", TierPro)

@@ -15,6 +15,7 @@ func setupWebPushTestServer(t *testing.T) (*httptest.Server, string) {
 
 	hub = newHub()
 	go hub.run()
+	t.Cleanup(func() { hub.Stop() })
 	ServerMetrics = NewMetrics(hub)
 
 	mux := http.NewServeMux()
