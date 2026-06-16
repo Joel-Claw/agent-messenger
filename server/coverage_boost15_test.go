@@ -284,6 +284,7 @@ func TestCB15_NotifyUser_PushSendError(t *testing.T) {
 
 func TestCB15_RateLimiter_Reset(t *testing.T) {
 	rl := NewRateLimiter(60, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 
 	// Add some entries
 	rl.Allow("user1")
@@ -313,6 +314,7 @@ func TestCB15_RateLimiter_Reset(t *testing.T) {
 
 func TestCB15_TieredRateLimiter_Reset(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.SetTier("user1", TierPro)
 
 	// Use some quota
@@ -338,6 +340,7 @@ func TestCB15_TieredRateLimiter_Reset(t *testing.T) {
 
 func TestCB15_TieredRateLimiter_CleanupRemovesStaleEntries(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// Add an entry that's already expired (window ended 20 minutes ago)
 	trl.mu.Lock()
@@ -850,6 +853,7 @@ func TestCB15_LoadTiersFromDB_ProTier(t *testing.T) {
 	}
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	err = loadTiersFromDB(trl)
 	if err != nil {
 		t.Fatalf("loadTiersFromDB: %v", err)
@@ -870,6 +874,7 @@ func TestCB15_LoadTiersFromDB_EnterpriseTier(t *testing.T) {
 	}
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	err = loadTiersFromDB(trl)
 	if err != nil {
 		t.Fatalf("loadTiersFromDB: %v", err)
@@ -891,6 +896,7 @@ func TestCB15_LoadTiersFromDB_FreeTierNotLoaded(t *testing.T) {
 	}
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	err = loadTiersFromDB(trl)
 	if err != nil {
 		t.Fatalf("loadTiersFromDB: %v", err)
@@ -914,6 +920,7 @@ func TestCB15_LoadTiersFromDB_InvalidTierDefaultsToFree(t *testing.T) {
 	}
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	err = loadTiersFromDB(trl)
 	if err != nil {
 		t.Fatalf("loadTiersFromDB: %v", err)
@@ -2765,6 +2772,7 @@ func TestCB15_GetPresence_NoAuth(t *testing.T) {
 
 func TestCB15_TieredRateLimiter_AllowExceedsLimit(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// Free tier: 60/min
 	for i := 0; i < 60; i++ {
@@ -2780,6 +2788,7 @@ func TestCB15_TieredRateLimiter_AllowExceedsLimit(t *testing.T) {
 
 func TestCB15_TieredRateLimiter_WindowReset(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// Use up the limit
 	for i := 0; i < TierFree.Burst; i++ {
@@ -2802,6 +2811,7 @@ func TestCB15_TieredRateLimiter_WindowReset(t *testing.T) {
 
 func TestCB15_TieredRateLimiter_GetTierDefault(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	tier := trl.GetTier("unknown-user")
 	if tier.Name != "free" {
 		t.Errorf("expected free tier for unknown user, got %s", tier.Name)
@@ -2810,6 +2820,7 @@ func TestCB15_TieredRateLimiter_GetTierDefault(t *testing.T) {
 
 func TestCB15_TieredRateLimiter_SetAndGetTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.SetTier("pro-user", TierPro)
 	tier := trl.GetTier("pro-user")
 	if tier.Name != "pro" {

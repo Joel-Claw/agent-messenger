@@ -1017,6 +1017,7 @@ func TestCb10HandleCPUProfileStart_InvalidDuration(t *testing.T) {
 
 func TestCb10RateLimitCleanup(t *testing.T) {
 	rl := NewRateLimiter(100, 100*time.Millisecond)
+	t.Cleanup(func() { rl.Stop() })
 
 	// Use some entries
 	rl.Allow("user1")

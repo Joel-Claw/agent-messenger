@@ -42,7 +42,9 @@ func profileLoadSetupServer(t *testing.T) (*httptest.Server, func()) {
 	savedIPLimiter := ipRateLimiter
 	savedAuthIPLimiter := authIPLimiter
 	ipRateLimiter = NewRateLimiter(100000, time.Minute)
+	t.Cleanup(func() { ipRateLimiter.Stop() })
 	authIPLimiter = NewRateLimiter(100000, time.Minute)
+	t.Cleanup(func() { authIPLimiter.Stop() })
 	defer func() {
 		ipRateLimiter = savedIPLimiter
 		authIPLimiter = savedAuthIPLimiter

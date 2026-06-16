@@ -641,6 +641,7 @@ func TestCb20_GetMessages_WithConversationID(t *testing.T) {
 
 func TestCb20_RateLimiter_Stop(t *testing.T) {
 	rl := NewRateLimiter(10, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 	rl.Allow("test1")
 	rl.Stop()
 	// Verify Stop is idempotent
@@ -649,6 +650,7 @@ func TestCb20_RateLimiter_Stop(t *testing.T) {
 
 func TestCb20_TieredRateLimiter_Stop(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.Allow("test1")
 	trl.Stop()
 	// Verify Stop is idempotent

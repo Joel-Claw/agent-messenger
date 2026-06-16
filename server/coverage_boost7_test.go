@@ -2318,6 +2318,7 @@ func TestCb7Truncate(t *testing.T) {
 
 func TestCb7RateLimiter_Basic(t *testing.T) {
 	rl := NewRateLimiter(5, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 	if !rl.Allow("user1") {
 		t.Error("Expected request to be allowed under limit")
 	}
@@ -2328,6 +2329,7 @@ func TestCb7RateLimiter_Basic(t *testing.T) {
 
 func TestCb7RateLimiter_BlocksOverLimit(t *testing.T) {
 	rl := NewRateLimiter(2, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 	rl.Allow("user2")
 	rl.Allow("user2")
 	if rl.Allow("user2") {

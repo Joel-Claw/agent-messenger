@@ -149,6 +149,7 @@ func TestCb19_SendFCM_FCMClientNil(t *testing.T) {
 
 func TestCb19_TieredRateLimiterCleanup_ExpiredEntries(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	defer trl.Stop()
 	trl.SetTier("user1", TierPro)
 	trl.SetTier("user2", TierFree)
@@ -180,6 +181,7 @@ func TestCb19_TieredRateLimiterCleanup_ExpiredEntries(t *testing.T) {
 
 func TestCb19_TieredRateLimiterCleanup_RecentEntriesPreserved(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	defer trl.Stop()
 	trl.SetTier("user1", TierPro)
 
@@ -252,6 +254,7 @@ func TestCb19_PersistTierToDB_Upsert(t *testing.T) {
 func TestCb19_LoadTiersFromDB_Empty(t *testing.T) {
 	cb19SetupDB(t)
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	defer trl.Stop()
 	err := loadTiersFromDB(trl)
 	if err != nil {
@@ -275,6 +278,7 @@ func TestCb19_LoadTiersFromDB_WithData(t *testing.T) {
 	}
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	defer trl.Stop()
 	err = loadTiersFromDB(trl)
 	if err != nil {
@@ -1062,6 +1066,7 @@ func TestCb19_SafeTruncate_EmptyString(t *testing.T) {
 
 func TestCb19_TieredRateLimiter_GetRemaining_NoEntry(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	defer trl.Stop()
 	remaining := trl.GetRemaining("nonexistent")
 	if remaining != TierFree.Burst {
@@ -1071,6 +1076,7 @@ func TestCb19_TieredRateLimiter_GetRemaining_NoEntry(t *testing.T) {
 
 func TestCb19_TieredRateLimiter_SetTier_Overwrite(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	defer trl.Stop()
 	trl.SetTier("user1", TierFree)
 	trl.SetTier("user1", TierEnterprise)
@@ -1083,6 +1089,7 @@ func TestCb19_TieredRateLimiter_SetTier_Overwrite(t *testing.T) {
 
 func TestCb19_TieredRateLimiter_WindowReset(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	defer trl.Stop()
 	trl.SetTier("user1", TierPro)
 

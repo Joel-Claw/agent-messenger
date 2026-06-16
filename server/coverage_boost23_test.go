@@ -910,6 +910,7 @@ func TestCB23_EnvDurationOrDefault(t *testing.T) {
 
 func TestCB23_RateLimiter_Stop(t *testing.T) {
 	rl := NewRateLimiter(10, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 	rl.Stop()
 	// After Stop, the cleanup goroutine should have exited
 	// Verify by trying Allow - it should still work (map is still there)
@@ -920,6 +921,7 @@ func TestCB23_RateLimiter_Stop(t *testing.T) {
 
 func TestCB23_RateLimiter_Count(t *testing.T) {
 	rl := NewRateLimiter(10, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 	defer rl.Stop()
 
 	rl.Allow("user1")

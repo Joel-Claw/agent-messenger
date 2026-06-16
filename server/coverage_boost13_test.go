@@ -866,6 +866,7 @@ func TestCB13_CleanStaleQueueMessages_NilDB(t *testing.T) {
 
 func TestCB13_TieredRateLimiter_Reset(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.SetTier("user1", TierPro)
 	trl.SetTier("user2", TierEnterprise)
 	trl.Reset()
@@ -882,6 +883,7 @@ func TestCB13_TieredRateLimiter_Reset(t *testing.T) {
 
 func TestCB13_TieredRateLimiter_CleanupRemovesStale(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.mu.Lock()
 	trl.limits["stale-cb13-user"] = &userRateLimitState{
 		count:     5,
@@ -909,6 +911,7 @@ func TestCB13_TieredRateLimiter_CleanupRemovesStale(t *testing.T) {
 
 func TestCB13_TieredRateLimiter_CleanupKeepsRecent(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.SetTier("recent-cb13-user", TierPro)
 	trl.Allow("recent-cb13-user")
 
@@ -982,6 +985,7 @@ func TestCB13_LoadTiersFromDB(t *testing.T) {
 	persistTierToDB("load_cb13_ent", TierEnterprise)
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	err := loadTiersFromDB(trl)
 	if err != nil {
 		t.Errorf("unexpected error loading tiers: %v", err)
@@ -1003,6 +1007,7 @@ func TestCB13_LoadTiersFromDB_NilDB(t *testing.T) {
 	defer func() { db = origDB }()
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	err := loadTiersFromDB(trl)
 	if err != nil {
 		t.Errorf("expected nil error with nil db, got %v", err)
@@ -1015,6 +1020,7 @@ func TestCB13_LoadTiersFromDB_NilDB(t *testing.T) {
 
 func TestCB13_RateLimiter_Count(t *testing.T) {
 	rl := NewRateLimiter(60, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 	if count := rl.Count("user1"); count != 0 {
 		t.Errorf("expected count 0, got %d", count)
 	}

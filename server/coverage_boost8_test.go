@@ -603,6 +603,7 @@ func TestCb8GetUserPresence_MissingUserID(t *testing.T) {
 
 func TestCb8CheckRateLimit_Blocked(t *testing.T) {
 	rl := NewRateLimiter(1, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 
 	conn := &Connection{
 		id:   "rate8conn1",

@@ -77,10 +77,15 @@ func cb14SetupHub(t *testing.T) {
 	t.Cleanup(func() { agentPresenceEnabled = origPresence })
 
 	messageRateLimiter = NewRateLimiter(60, time.Minute)
+	t.Cleanup(func() { messageRateLimiter.Stop() })
 	userRateLimiter = NewRateLimiter(120, time.Minute)
+	t.Cleanup(func() { userRateLimiter.Stop() })
 	globalTieredLimiter = NewTieredRateLimiter()
+	t.Cleanup(func() { globalTieredLimiter.Stop() })
 	ipRateLimiter = NewRateLimiter(300, time.Minute)
+	t.Cleanup(func() { ipRateLimiter.Stop() })
 	authIPLimiter = NewRateLimiter(30, time.Minute)
+	t.Cleanup(func() { authIPLimiter.Stop() })
 	agentRateLimiter.Reset()
 
 	hub = newHub()
@@ -226,6 +231,7 @@ func TestCB14_NotifyUser_MutedConversation(t *testing.T) {
 
 func TestCB14_RateLimitCleanup_StaleEntries(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.mu.Lock()
 	trl.limits["expired_user"] = &userRateLimitState{
 		tier:      TierFree,
@@ -264,6 +270,7 @@ func TestCB14_RateLimitCleanup_StaleEntries(t *testing.T) {
 
 func TestCB14_RateLimitReset(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.Allow("user1")
 	trl.Allow("user2")
 	trl.SetTier("user3", TierEnterprise)
@@ -1505,6 +1512,7 @@ func TestCB14_LoadTiersFromDB_NilDB(t *testing.T) {
 	defer func() { db = origDB }()
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	loadTiersFromDB(trl)
 	// Should not panic
 }
@@ -1518,6 +1526,7 @@ func TestCB14_LoadTiersFromDB_ValidTiers(t *testing.T) {
 	db.Exec("INSERT INTO user_rate_limit_tiers (user_id, tier_name, updated_at) VALUES (?, ?, datetime('now'))", "free_user_1", "free")
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	loadTiersFromDB(trl)
 
 	// Pro user should have pro tier

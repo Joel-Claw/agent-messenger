@@ -22,6 +22,7 @@ import (
 
 func TestTieredRateLimiterCleanup_RemovesStale(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	// Manually add a stale entry (window long expired)
 	trl.mu.Lock()
 	trl.limits["stale-user"] = &userRateLimitState{
@@ -51,6 +52,7 @@ func TestTieredRateLimiterCleanup_RemovesStale(t *testing.T) {
 
 func TestTieredRateLimiterCleanup_KeepsRecent(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	// Add a recent entry (still within window)
 	trl.mu.Lock()
 	trl.limits["recent-user"] = &userRateLimitState{
@@ -80,6 +82,7 @@ func TestTieredRateLimiterCleanup_KeepsRecent(t *testing.T) {
 
 func TestTieredRateLimiterCleanup_KeepsRecentlyExpired(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	// Add an entry that expired just 2 minutes ago (not yet stale enough)
 	trl.mu.Lock()
 	trl.limits["just-expired"] = &userRateLimitState{
@@ -109,6 +112,7 @@ func TestTieredRateLimiterCleanup_KeepsRecentlyExpired(t *testing.T) {
 
 func TestTieredRateLimiterWindowResetAfterExhaust(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// Exhaust the free tier (60 requests)
 	for i := 0; i < 60; i++ {
@@ -146,6 +150,7 @@ func TestTieredRateLimiterWindowResetAfterExhaust(t *testing.T) {
 
 func TestTieredRateLimiterTierUpgradeDowngrade(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// Start as free tier
 	allowed, remaining, _ := trl.Allow("tier-user")

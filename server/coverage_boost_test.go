@@ -116,6 +116,7 @@ func TestHubStopAndCheckStale(t *testing.T) {
 // TestRateLimiterCleanDirect tests rate limiter cleanup
 func TestRateLimiterCleanDirect(t *testing.T) {
 	rl := NewRateLimiter(100, 50*time.Millisecond)
+	t.Cleanup(func() { rl.Stop() })
 
 	// Fill the limiter
 	for i := 0; i < 10; i++ {

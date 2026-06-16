@@ -271,7 +271,9 @@ func TestCb9CheckRateLimit_PerConnExceeded(t *testing.T) {
 	oldMsgLimiter := messageRateLimiter
 	oldUserLimiter := userRateLimiter
 	messageRateLimiter = NewRateLimiter(2, time.Minute)
+	t.Cleanup(func() { messageRateLimiter.Stop() })
 	userRateLimiter = NewRateLimiter(100, time.Minute)
+	t.Cleanup(func() { userRateLimiter.Stop() })
 	defer func() {
 		messageRateLimiter = oldMsgLimiter
 		userRateLimiter = oldUserLimiter
@@ -899,6 +901,7 @@ func TestCb9LoadTiersFromDB(t *testing.T) {
 	persistTierToDB("user-load-ent", TierEnterprise)
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	err := loadTiersFromDB(trl)
 	if err != nil {
 		t.Fatalf("loadTiersFromDB failed: %v", err)

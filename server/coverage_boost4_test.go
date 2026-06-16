@@ -19,6 +19,7 @@ import (
 
 func TestRateLimiterAllowAndExpiry(t *testing.T) {
 	rl := NewRateLimiter(10, 50*time.Millisecond)
+	t.Cleanup(func() { rl.Stop() })
 
 	// Should allow within limit
 	if !rl.Allow("key1") {
@@ -493,7 +494,9 @@ func TestCheckRateLimitBlocksOverLimit(t *testing.T) {
 	savedMsgLimiter := messageRateLimiter
 	savedUserLimiter := userRateLimiter
 	messageRateLimiter = NewRateLimiter(2, time.Minute)
+	t.Cleanup(func() { messageRateLimiter.Stop() })
 	userRateLimiter = NewRateLimiter(2, time.Minute)
+	t.Cleanup(func() { userRateLimiter.Stop() })
 	defer func() {
 		messageRateLimiter = savedMsgLimiter
 		userRateLimiter = savedUserLimiter

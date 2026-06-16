@@ -12,6 +12,7 @@ import (
 
 func TestRateLimiterAllowsUnderLimit(t *testing.T) {
 	rl := NewRateLimiter(3, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 
 	for i := 0; i < 3; i++ {
 		if !rl.Allow("user1") {
@@ -22,6 +23,7 @@ func TestRateLimiterAllowsUnderLimit(t *testing.T) {
 
 func TestRateLimiterBlocksOverLimit(t *testing.T) {
 	rl := NewRateLimiter(3, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 
 	for i := 0; i < 3; i++ {
 		rl.Allow("user1")
@@ -34,6 +36,7 @@ func TestRateLimiterBlocksOverLimit(t *testing.T) {
 
 func TestRateLimiterIndependentUsers(t *testing.T) {
 	rl := NewRateLimiter(2, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 
 	rl.Allow("user1")
 	rl.Allow("user1")
@@ -46,6 +49,7 @@ func TestRateLimiterIndependentUsers(t *testing.T) {
 
 func TestRateLimiterResetsAfterWindow(t *testing.T) {
 	rl := NewRateLimiter(2, 50*time.Millisecond)
+	t.Cleanup(func() { rl.Stop() })
 
 	rl.Allow("user1")
 	rl.Allow("user1")
@@ -84,6 +88,7 @@ func TestRateLimitOnWebSocket(t *testing.T) {
 	// Reset rate limiter with a small limit for testing
 	savedMsgLimiter := messageRateLimiter
 	messageRateLimiter = NewRateLimiter(3, time.Minute)
+	t.Cleanup(func() { messageRateLimiter.Stop() })
 	defer func() { messageRateLimiter = savedMsgLimiter }()
 
 	// Send 5 messages rapidly

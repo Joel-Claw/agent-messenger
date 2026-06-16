@@ -771,6 +771,7 @@ func TestCB18_RateLimiter_CleanupExpired(t *testing.T) {
 	// Test that expired entries are cleaned up when Allow is called
 	// after their window expires (automatic cleanup via ticker)
 	rl := NewRateLimiter(10, 50*time.Millisecond)
+	t.Cleanup(func() { rl.Stop() })
 	rl.Allow("user1")
 	if rl.Count("user1") != 1 {
 		t.Errorf("expected 1, got %d", rl.Count("user1"))
@@ -788,6 +789,7 @@ func TestCB18_RateLimiter_CleanupExpired(t *testing.T) {
 
 func TestCB18_RateLimiter_Count(t *testing.T) {
 	rl := NewRateLimiter(100, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 	rl.Allow("user1")
 	rl.Allow("user1")
 	rl.Allow("user1")
@@ -799,6 +801,7 @@ func TestCB18_RateLimiter_Count(t *testing.T) {
 
 func TestCB18_RateLimiter_CountNonexistentUser(t *testing.T) {
 	rl := NewRateLimiter(100, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 	count := rl.Count("nonexistent")
 	if count != 0 {
 		t.Errorf("expected 0, got %d", count)
@@ -1889,6 +1892,7 @@ func TestCB18_CreateConversation_DBError(t *testing.T) {
 
 func TestCB18_TieredRateLimiter_FreeLimit(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	allowed, remaining, _ := trl.Allow("free-user-1")
 	if !allowed {
 		t.Error("first request should be allowed")
@@ -1901,6 +1905,7 @@ func TestCB18_TieredRateLimiter_FreeLimit(t *testing.T) {
 
 func TestCB18_TieredRateLimiter_ProTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.SetTier("pro-user-1", TierPro)
 	allowed, remaining, _ := trl.Allow("pro-user-1")
 	if !allowed {
@@ -1914,6 +1919,7 @@ func TestCB18_TieredRateLimiter_ProTier(t *testing.T) {
 
 func TestCB18_TieredRateLimiter_EnterpriseTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.SetTier("ent-user-1", TierEnterprise)
 	allowed, remaining, _ := trl.Allow("ent-user-1")
 	if !allowed {

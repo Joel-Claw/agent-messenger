@@ -253,6 +253,7 @@ func TestCb22_GetEnvOrDefault(t *testing.T) {
 
 func TestCb22_TieredRateLimiter_Cleanup(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	defer trl.Stop()
 
 	// Add some entries
@@ -317,6 +318,7 @@ func TestCb22_LoadTiersFromDB_NilDB(t *testing.T) {
 	defer func() { db = savedDB }()
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	defer trl.Stop()
 
 	err := loadTiersFromDB(trl)
@@ -335,6 +337,7 @@ func TestCb22_LoadTiersFromDB_WithData(t *testing.T) {
 	db.Exec("INSERT OR REPLACE INTO user_rate_limit_tiers (user_id, tier_name) VALUES (?, 'enterprise')", "user2")
 
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	defer trl.Stop()
 
 	err := loadTiersFromDB(trl)
@@ -353,6 +356,7 @@ func TestCb22_LoadTiersFromDB_WithData(t *testing.T) {
 func TestCb22_HandleSetRateLimitTier(t *testing.T) {
 	cb22SetupDB(t)
 	globalTieredLimiter = NewTieredRateLimiter()
+	t.Cleanup(func() { globalTieredLimiter.Stop() })
 	defer globalTieredLimiter.Stop()
 
 	// Create admin secret for testing
@@ -432,6 +436,7 @@ func TestCb22_HandleSetRateLimitTier(t *testing.T) {
 func TestCb22_HandleGetRateLimitTier(t *testing.T) {
 	cb22SetupDB(t)
 	globalTieredLimiter = NewTieredRateLimiter()
+	t.Cleanup(func() { globalTieredLimiter.Stop() })
 	defer globalTieredLimiter.Stop()
 
 	origSecret := os.Getenv("ADMIN_SECRET")
@@ -498,6 +503,7 @@ func TestCb22_HandleGetRateLimitTier(t *testing.T) {
 func TestCb22_HandleAdminRateLimitTier_Routing(t *testing.T) {
 	cb22SetupDB(t)
 	globalTieredLimiter = NewTieredRateLimiter()
+	t.Cleanup(func() { globalTieredLimiter.Stop() })
 	defer globalTieredLimiter.Stop()
 
 	origSecret := os.Getenv("ADMIN_SECRET")
@@ -547,6 +553,7 @@ func TestCb22_Itoa(t *testing.T) {
 
 func TestCb22_TieredRateLimiter_Reset(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	defer trl.Stop()
 
 	trl.SetTier("user1", TierPro)

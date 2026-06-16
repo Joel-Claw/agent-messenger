@@ -25,10 +25,15 @@ func setupIntegrationServer(t *testing.T) (*httptest.Server, func()) {
 	// Reset global rate limiters to avoid cross-test interference
 	// Recreate to ensure correct limits (other tests may replace them with different values)
 	messageRateLimiter = NewRateLimiter(60, time.Minute)
+	t.Cleanup(func() { messageRateLimiter.Stop() })
 	userRateLimiter = NewRateLimiter(120, time.Minute)
+	t.Cleanup(func() { userRateLimiter.Stop() })
 	globalTieredLimiter = NewTieredRateLimiter()
+	t.Cleanup(func() { globalTieredLimiter.Stop() })
 	ipRateLimiter = NewRateLimiter(300, time.Minute)
+	t.Cleanup(func() { ipRateLimiter.Stop() })
 	authIPLimiter = NewRateLimiter(30, time.Minute)
+	t.Cleanup(func() { authIPLimiter.Stop() })
 	agentRateLimiter.Reset()
 
 	// Give goroutines from previous tests time to exit and rate limiters to settle

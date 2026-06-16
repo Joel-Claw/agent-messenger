@@ -75,6 +75,7 @@ func TestExtractIP(t *testing.T) {
 func TestIPRateLimitMiddleware(t *testing.T) {
 	// Create a fresh rate limiter for testing
 	testLimiter := NewRateLimiter(5, time.Minute)
+	t.Cleanup(func() { testLimiter.Stop() })
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -133,6 +134,7 @@ func TestAuthRateLimitMiddleware(t *testing.T) {
 
 func TestIPRateLimitWithXForwardedFor(t *testing.T) {
 	testLimiter := NewRateLimiter(3, time.Minute)
+	t.Cleanup(func() { testLimiter.Stop() })
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

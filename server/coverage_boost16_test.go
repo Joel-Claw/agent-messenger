@@ -1060,6 +1060,7 @@ func TestCB16_CleanStaleQueueMessages_RemovesOld(t *testing.T) {
 
 func TestCB16_TieredRateLimiter_CleanupRemovesStaleEntries(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// Add an entry that's already expired (window ended 15 min ago)
 	trl.mu.Lock()
@@ -1096,6 +1097,7 @@ func TestCB16_TieredRateLimiter_CleanupRemovesStaleEntries(t *testing.T) {
 
 func TestCB16_TieredRateLimiter_GetRemaining_WindowExpired(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.SetTier("user1", TierPro)
 
 	// Expire the window manually
@@ -1115,6 +1117,7 @@ func TestCB16_TieredRateLimiter_GetRemaining_WindowExpired(t *testing.T) {
 
 func TestCB16_TieredRateLimiter_GetRemaining_NonexistentUser(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	remaining := trl.GetRemaining("nonexistent_user")
 	if remaining != TierFree.Burst {

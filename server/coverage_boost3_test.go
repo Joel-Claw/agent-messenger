@@ -23,6 +23,7 @@ import (
 func TestIPRateLimitMiddlewareAllowsRequests(t *testing.T) {
 	saved := ipRateLimiter
 	ipRateLimiter = NewRateLimiter(10, time.Minute)
+	t.Cleanup(func() { ipRateLimiter.Stop() })
 	defer func() { ipRateLimiter = saved }()
 
 	handler := ipRateLimitMiddleware(func(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +46,7 @@ func TestIPRateLimitMiddlewareBlocksExcess(t *testing.T) {
 	// Create a test handler that uses ipRateLimiter directly
 	saved := ipRateLimiter
 	ipRateLimiter = NewRateLimiter(5, time.Minute)
+	t.Cleanup(func() { ipRateLimiter.Stop() })
 	defer func() { ipRateLimiter = saved }()
 
 	handler := ipRateLimitMiddleware(func(w http.ResponseWriter, r *http.Request) {
@@ -77,6 +79,7 @@ func TestIPRateLimitMiddlewareBlocksExcess(t *testing.T) {
 func TestIPRateLimitMiddlewareDifferentIPs(t *testing.T) {
 	saved := ipRateLimiter
 	ipRateLimiter = NewRateLimiter(3, time.Minute)
+	t.Cleanup(func() { ipRateLimiter.Stop() })
 	defer func() { ipRateLimiter = saved }()
 
 	handler := ipRateLimitMiddleware(func(w http.ResponseWriter, r *http.Request) {
@@ -107,6 +110,7 @@ func TestIPRateLimitMiddlewareDifferentIPs(t *testing.T) {
 func TestAuthRateLimitMiddlewareBlocksExcess(t *testing.T) {
 	saved := authIPLimiter
 	authIPLimiter = NewRateLimiter(3, time.Minute)
+	t.Cleanup(func() { authIPLimiter.Stop() })
 	defer func() { authIPLimiter = saved }()
 
 	handler := authRateLimitMiddleware(func(w http.ResponseWriter, r *http.Request) {
@@ -148,6 +152,7 @@ func TestInitAuthRateLimitCustom(t *testing.T) {
 	os.Unsetenv("AUTH_RATE_LIMIT")
 	// Reset for other tests
 	authIPLimiter = NewRateLimiter(30, time.Minute)
+	t.Cleanup(func() { authIPLimiter.Stop() })
 }
 
 func TestInitAuthRateLimitInvalid(t *testing.T) {
@@ -159,6 +164,7 @@ func TestInitAuthRateLimitInvalid(t *testing.T) {
 	}
 	os.Unsetenv("AUTH_RATE_LIMIT")
 	authIPLimiter = NewRateLimiter(30, time.Minute)
+	t.Cleanup(func() { authIPLimiter.Stop() })
 }
 
 func TestAdminAuthMiddlewareWithHeader(t *testing.T) {
@@ -857,6 +863,7 @@ func TestLoadTiersFromDBEmpty(t *testing.T) {
 	setupTestDB(t)
 
 	limiter := NewTieredRateLimiter()
+	t.Cleanup(func() { limiter.Stop() })
 	err := loadTiersFromDB(limiter)
 	if err != nil {
 		t.Errorf("loadTiersFromDB failed: %v", err)
@@ -874,6 +881,7 @@ func TestPersistAndLoadTiers(t *testing.T) {
 
 	// Load from DB
 	limiter := NewTieredRateLimiter()
+	t.Cleanup(func() { limiter.Stop() })
 	err = loadTiersFromDB(limiter)
 	if err != nil {
 		t.Fatalf("loadTiersFromDB failed: %v", err)
@@ -895,6 +903,7 @@ func TestPersistEnterpriseAndLoadTiers(t *testing.T) {
 	}
 
 	limiter := NewTieredRateLimiter()
+	t.Cleanup(func() { limiter.Stop() })
 	err = loadTiersFromDB(limiter)
 	if err != nil {
 		t.Fatalf("loadTiersFromDB failed: %v", err)
@@ -923,6 +932,7 @@ func TestLoadTiersFromDBNilDB(t *testing.T) {
 	defer func() { db = savedDB }()
 
 	limiter := NewTieredRateLimiter()
+	t.Cleanup(func() { limiter.Stop() })
 	err := loadTiersFromDB(limiter)
 	if err != nil {
 		t.Errorf("loadTiersFromDB should succeed with nil DB, got: %v", err)
@@ -937,6 +947,7 @@ func TestLoadTiersFromDBIgnoresFree(t *testing.T) {
 		"free-user", "free")
 
 	limiter := NewTieredRateLimiter()
+	t.Cleanup(func() { limiter.Stop() })
 	err := loadTiersFromDB(limiter)
 	if err != nil {
 		t.Fatalf("loadTiersFromDB failed: %v", err)

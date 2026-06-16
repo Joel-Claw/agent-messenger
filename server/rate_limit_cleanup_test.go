@@ -69,6 +69,7 @@ func TestTieredRateLimiterCleanup(t *testing.T) {
 // under concurrent access.
 func TestTieredRateLimiterConcurrentAccess(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	var wg sync.WaitGroup
 	numGoroutines := 100
@@ -157,6 +158,7 @@ func TestTieredRateLimiterWindowResetAfterExpiry(t *testing.T) {
 // TestTieredRateLimiterUpgradeTier tests upgrading a user's tier mid-window.
 func TestTieredRateLimiterUpgradeTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// User starts as free tier
 	trl.SetTier("upgrade-user", TierPro)
@@ -179,6 +181,7 @@ func TestTieredRateLimiterUpgradeTier(t *testing.T) {
 // TestTieredRateLimiterDowngradeTier tests downgrading a user's tier.
 func TestTieredRateLimiterDowngradeTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// Set to enterprise, then downgrade to free
 	trl.SetTier("downgrade-user", TierEnterprise)
@@ -245,6 +248,7 @@ func TestTieredRateLimiterPersistAndLoadDB(t *testing.T) {
 
 	// Load from DB
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	err = loadTiersFromDB(trl)
 	if err != nil {
 		t.Fatalf("loadTiersFromDB failed: %v", err)

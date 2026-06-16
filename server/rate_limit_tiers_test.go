@@ -12,6 +12,7 @@ import (
 
 func TestTieredRateLimiterAllow(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// Default (free tier): 60 req/min
 	for i := 0; i < 60; i++ {
@@ -42,6 +43,7 @@ func TestTieredRateLimiterAllow(t *testing.T) {
 
 func TestTieredRateLimiterSetTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// Set pro tier (300 req/min)
 	trl.SetTier("user1", TierPro)
@@ -63,6 +65,7 @@ func TestTieredRateLimiterSetTier(t *testing.T) {
 
 func TestTieredRateLimiterEnterpriseTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	trl.SetTier("bigcorp", TierEnterprise)
 
@@ -82,6 +85,7 @@ func TestTieredRateLimiterEnterpriseTier(t *testing.T) {
 
 func TestTieredRateLimiterGetTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// Default is free
 	tier := trl.GetTier("user1")
@@ -98,6 +102,7 @@ func TestTieredRateLimiterGetTier(t *testing.T) {
 
 func TestTieredRateLimiterGetRemaining(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 
 	// Initially full
 	remaining := trl.GetRemaining("user1")
@@ -117,6 +122,7 @@ func TestTieredRateLimiterGetRemaining(t *testing.T) {
 
 func TestTieredRateLimiterWindowReset(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.SetTier("user1", RateLimitTier{
 		Name:   "test",
 		Burst:  5,
@@ -402,6 +408,7 @@ func TestLoadTiersFromDB(t *testing.T) {
 
 	// Create a fresh limiter and load from DB
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	if err := loadTiersFromDB(trl); err != nil {
 		t.Fatalf("Failed to load tiers: %v", err)
 	}

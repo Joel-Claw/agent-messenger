@@ -1792,6 +1792,7 @@ func TestCB17_GetEnvOrDefault_Empty(t *testing.T) {
 
 func TestCB17_TieredRateLimiter_CleanupRemovesStale(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	t.Cleanup(func() { trl.Stop() })
 	trl.SetTier("user_stale", TierPro)
 
 	// Manually expire the entry

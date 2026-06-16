@@ -302,6 +302,7 @@ func TestOfflineQueueEnqueueOnOfflineRecipient(t *testing.T) {
 
 func TestPerUserRateLimiting(t *testing.T) {
 	rl := NewRateLimiter(5, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 
 	// Should allow 5 messages
 	for i := 0; i < 5; i++ {
@@ -323,6 +324,7 @@ func TestPerUserRateLimiting(t *testing.T) {
 
 func TestPerUserRateLimitCounterReset(t *testing.T) {
 	rl := NewRateLimiter(2, 50*time.Millisecond)
+	t.Cleanup(func() { rl.Stop() })
 
 	if !rl.Allow("user-1") {
 		t.Error("First message should be allowed")

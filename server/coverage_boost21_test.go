@@ -708,6 +708,7 @@ func TestCb21_Logger_Error(t *testing.T) {
 
 func TestCb21_RateLimiter_Reset(t *testing.T) {
 	rl := NewRateLimiter(10, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 	rl.Allow("user1")
 	rl.Allow("user1")
 	rl.Allow("user1")
@@ -725,6 +726,7 @@ func TestCb21_RateLimiter_Reset(t *testing.T) {
 
 func TestCb21_RateLimiter_Count_Empty(t *testing.T) {
 	rl := NewRateLimiter(10, time.Minute)
+	t.Cleanup(func() { rl.Stop() })
 	defer rl.Stop()
 	count := rl.Count("nonexistent")
 	if count != 0 {

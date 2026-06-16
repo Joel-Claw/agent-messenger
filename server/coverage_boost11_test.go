@@ -709,6 +709,7 @@ func TestGetNotificationPrefsWithData(t *testing.T) {
 
 func TestRateLimiterCleanup(t *testing.T) {
 	rl := NewRateLimiter(5, 100*time.Millisecond)
+	t.Cleanup(func() { rl.Stop() })
 
 	// Use all 5 allowances
 	for i := 0; i < 5; i++ {
@@ -745,7 +746,9 @@ func TestCheckRateLimitPerConnectionExceeded(t *testing.T) {
 	savedMsgLimiter := messageRateLimiter
 	savedUserLimiter := userRateLimiter
 	messageRateLimiter = NewRateLimiter(5, time.Minute)
+	t.Cleanup(func() { messageRateLimiter.Stop() })
 	userRateLimiter = NewRateLimiter(100, time.Minute)
+	t.Cleanup(func() { userRateLimiter.Stop() })
 	defer func() {
 		messageRateLimiter = savedMsgLimiter
 		userRateLimiter = savedUserLimiter
@@ -789,7 +792,9 @@ func TestCheckRateLimitPerUserExceeded(t *testing.T) {
 	savedMsgLimiter2 := messageRateLimiter
 	savedUserLimiter2 := userRateLimiter
 	messageRateLimiter = NewRateLimiter(100, time.Minute)
+	t.Cleanup(func() { messageRateLimiter.Stop() })
 	userRateLimiter = NewRateLimiter(3, time.Minute)
+	t.Cleanup(func() { userRateLimiter.Stop() })
 	defer func() {
 		messageRateLimiter = savedMsgLimiter2
 		userRateLimiter = savedUserLimiter2
@@ -837,7 +842,9 @@ func TestCheckRateLimitNilMetrics(t *testing.T) {
 	savedMsgLimiter := messageRateLimiter
 	savedUserLimiter := userRateLimiter
 	messageRateLimiter = NewRateLimiter(1, time.Minute)
+	t.Cleanup(func() { messageRateLimiter.Stop() })
 	userRateLimiter = NewRateLimiter(100, time.Minute)
+	t.Cleanup(func() { userRateLimiter.Stop() })
 	defer func() {
 		messageRateLimiter = savedMsgLimiter
 		userRateLimiter = savedUserLimiter
