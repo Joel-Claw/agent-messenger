@@ -1316,7 +1316,11 @@ func TestValidateAdminSecretMissing(t *testing.T) {
 }
 
 func TestValidateAdminSecretCorrect(t *testing.T) {
-	// adminSecret is a package-level var, use the dev default directly
+	// Ensure we're using the dev default (another test may have changed it)
+	os.Unsetenv("ADMIN_SECRET")
+	resetAdminSecret()
+	defer resetAdminSecret()
+
 	result := ValidateAdminSecret("admin-dev-secret")
 	if result != nil {
 		t.Errorf("expected nil for correct admin secret, got %v", result)

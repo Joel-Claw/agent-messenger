@@ -2585,16 +2585,24 @@ func TestCB15_ExtractIP_RemoteAddr(t *testing.T) {
 
 func TestCB15_ValidateAdminSecret_Correct(t *testing.T) {
 	os.Setenv("ADMIN_SECRET", "test-admin-secret-12345")
-	defer os.Unsetenv("ADMIN_SECRET")
+	resetAdminSecret()
+	defer func() {
+		os.Unsetenv("ADMIN_SECRET")
+		resetAdminSecret()
+	}()
 
-	if err := ValidateAdminSecret("admin-dev-secret"); err != nil {
+	if err := ValidateAdminSecret("test-admin-secret-12345"); err != nil {
 		t.Error("expected admin secret to validate")
 	}
 }
 
 func TestCB15_ValidateAdminSecret_Wrong(t *testing.T) {
 	os.Setenv("ADMIN_SECRET", "test-admin-secret-12345")
-	defer os.Unsetenv("ADMIN_SECRET")
+	resetAdminSecret()
+	defer func() {
+		os.Unsetenv("ADMIN_SECRET")
+		resetAdminSecret()
+	}()
 
 	if err := ValidateAdminSecret("wrong-secret"); err == nil {
 		t.Error("expected admin secret to fail validation")
@@ -2603,6 +2611,11 @@ func TestCB15_ValidateAdminSecret_Wrong(t *testing.T) {
 
 func TestCB15_ValidateAdminSecret_Empty(t *testing.T) {
 	os.Unsetenv("ADMIN_SECRET")
+	resetAdminSecret()
+	defer func() {
+		os.Setenv("ADMIN_SECRET", "")
+		resetAdminSecret()
+	}()
 
 	if err := ValidateAdminSecret("any-secret"); err == nil {
 		t.Error("expected admin secret to fail when not set")

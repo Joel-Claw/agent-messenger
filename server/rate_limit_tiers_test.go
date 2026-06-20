@@ -150,9 +150,21 @@ func TestTieredRateLimiterWindowReset(t *testing.T) {
 
 func TestHandleSetRateLimitTier(t *testing.T) {
 	setupTestDB(t)
+
+	// Ensure admin secret is set correctly
+	origAdminSecret := adminSecret
+	adminSecretMu.Lock()
+	adminSecret = "admin-dev-secret"
+	adminSecretMu.Unlock()
+	defer func() {
+		adminSecretMu.Lock()
+		adminSecret = origAdminSecret
+		adminSecretMu.Unlock()
+	}()
+
 	hub = newHub()
 	go hub.run()
- t.Cleanup(func() { hub.Stop() })
+	t.Cleanup(func() { hub.Stop() })
 
 	// Set tier for a user
 	form := url.Values{
@@ -187,9 +199,21 @@ func TestHandleSetRateLimitTier(t *testing.T) {
 
 func TestHandleSetRateLimitTierUnauthorized(t *testing.T) {
 	setupTestDB(t)
+
+	// Ensure admin secret is set correctly
+	origAdminSecret := adminSecret
+	adminSecretMu.Lock()
+	adminSecret = "admin-dev-secret"
+	adminSecretMu.Unlock()
+	defer func() {
+		adminSecretMu.Lock()
+		adminSecret = origAdminSecret
+		adminSecretMu.Unlock()
+	}()
+
 	hub = newHub()
 	go hub.run()
- t.Cleanup(func() { hub.Stop() })
+	t.Cleanup(func() { hub.Stop() })
 
 	form := url.Values{
 		"user_id": {"usr_testuser"},
@@ -208,9 +232,21 @@ func TestHandleSetRateLimitTierUnauthorized(t *testing.T) {
 
 func TestHandleSetRateLimitTierUnknownTier(t *testing.T) {
 	setupTestDB(t)
+
+	// Ensure admin secret is set correctly
+	origAdminSecret := adminSecret
+	adminSecretMu.Lock()
+	adminSecret = "admin-dev-secret"
+	adminSecretMu.Unlock()
+	defer func() {
+		adminSecretMu.Lock()
+		adminSecret = origAdminSecret
+		adminSecretMu.Unlock()
+	}()
+
 	hub = newHub()
 	go hub.run()
- t.Cleanup(func() { hub.Stop() })
+	t.Cleanup(func() { hub.Stop() })
 
 	form := url.Values{
 		"user_id": {"usr_testuser"},
@@ -229,9 +265,21 @@ func TestHandleSetRateLimitTierUnknownTier(t *testing.T) {
 
 func TestHandleGetRateLimitTier(t *testing.T) {
 	setupTestDB(t)
+
+	// Ensure admin secret is set correctly (global state may be contaminated by other tests)
+	origAdminSecret := adminSecret
+	adminSecretMu.Lock()
+	adminSecret = "admin-dev-secret"
+	adminSecretMu.Unlock()
+	defer func() {
+		adminSecretMu.Lock()
+		adminSecret = origAdminSecret
+		adminSecretMu.Unlock()
+	}()
+
 	hub = newHub()
 	go hub.run()
- t.Cleanup(func() { hub.Stop() })
+	t.Cleanup(func() { hub.Stop() })
 
 	// Set a tier first
 	globalTieredLimiter.SetTier("usr_gettest", TierEnterprise)
@@ -256,9 +304,21 @@ func TestHandleGetRateLimitTier(t *testing.T) {
 
 func TestHandleGetRateLimitTierMissingUserID(t *testing.T) {
 	setupTestDB(t)
+
+	// Ensure admin secret is set correctly (global state may be contaminated by other tests)
+	origAdminSecret := adminSecret
+	adminSecretMu.Lock()
+	adminSecret = "admin-dev-secret"
+	adminSecretMu.Unlock()
+	defer func() {
+		adminSecretMu.Lock()
+		adminSecret = origAdminSecret
+		adminSecretMu.Unlock()
+	}()
+
 	hub = newHub()
 	go hub.run()
- t.Cleanup(func() { hub.Stop() })
+	t.Cleanup(func() { hub.Stop() })
 
 	req := httptest.NewRequest("GET", "/admin/rate-limit/tier?admin_secret=admin-dev-secret", nil)
 	w := httptest.NewRecorder()

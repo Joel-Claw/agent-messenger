@@ -946,6 +946,11 @@ func TestCb9HandleAdminRateLimitTier_PostMethod(t *testing.T) {
 	setupTestDB(t)
 	defer db.Close()
 
+	// Ensure admin secret is in known state (dev default)
+	os.Unsetenv("ADMIN_SECRET")
+	resetAdminSecret()
+	defer resetAdminSecret()
+
 	form := "user_id=test-user&tier=pro&admin_secret=" + getAdminSecret()
 	req := httptest.NewRequest("POST", "/admin/rate-limit/tier", strings.NewReader(form))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
