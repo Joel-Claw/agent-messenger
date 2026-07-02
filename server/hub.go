@@ -116,8 +116,14 @@ type Hub struct {
 	// runDone is closed when the run goroutine exits
 	runDone chan struct{}
 
+	// runStarted indicates whether run() was started
+	runStarted atomic.Bool
+
 	// stopOnce ensures Stop() is only called once
 	stopOnce sync.Once
+
+	// runDoneOnce ensures runDone is closed only once
+	runDoneOnce sync.Once
 
 	// counters for metrics
 	messagesRouted atomic.Int64
@@ -147,7 +153,8 @@ func newHub() *Hub {
 }
 
 func (h *Hub) run() {
-	defer close(h.runDone)
+	h.runStarted.Store(true)
+	defer h.runDoneOnce.Do(func() { close(h.runDone) })
 	for {
 		select {
 		case <-h.done:
@@ -261,6 +268,11 @@ func (h *Hub) Stop() {
 	h.stopOnce.Do(func() {
 		close(h.done)
 	})
+	// If run() was never started, close runDone so callers don't block.
+	// runDoneOnce ensures we don't double-close if run() races with us.
+	if !h.runStarted.Load() {
+		h.runDoneOnce.Do(func() { close(h.runDone) })
+	}
 	// Wait for the run goroutine to exit
 	<-h.runDone
 	// Wait for the monitor goroutine to exit (if running)

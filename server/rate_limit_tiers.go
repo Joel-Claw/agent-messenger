@@ -178,6 +178,19 @@ func (trl *TieredRateLimiter) GetRemaining(userID string) int {
 	return remaining
 }
 
+// cleanupOnce removes stale entries whose window expired more than 10 minutes ago.
+// This is extracted from cleanup() for direct testability without waiting for the ticker.
+func (trl *TieredRateLimiter) cleanupOnce() {
+	trl.mu.Lock()
+	now := time.Now()
+	for id, entry := range trl.limits {
+		if now.After(entry.windowEnd) && now.Sub(entry.windowEnd) > 10*time.Minute {
+			delete(trl.limits, id)
+		}
+	}
+	trl.mu.Unlock()
+}
+
 // cleanup removes stale entries periodically
 func (trl *TieredRateLimiter) cleanup() {
 	ticker := time.NewTicker(5 * time.Minute)
@@ -185,14 +198,7 @@ func (trl *TieredRateLimiter) cleanup() {
 	for {
 		select {
 		case <-ticker.C:
-			trl.mu.Lock()
-			now := time.Now()
-			for id, entry := range trl.limits {
-				if now.After(entry.windowEnd) && now.Sub(entry.windowEnd) > 10*time.Minute {
-					delete(trl.limits, id)
-				}
-			}
-			trl.mu.Unlock()
+			trl.cleanupOnce()
 		case <-trl.stopCh:
 			return
 		}
