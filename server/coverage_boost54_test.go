@@ -1349,8 +1349,8 @@ func TestCB54_GetVAPIDKey_Success(t *testing.T) {
 	}
 	var resp map[string]string
 	json.NewDecoder(w.Body).Decode(&resp)
-	if resp["vapid_public_key"] != "test-vapid-key-123" {
-		t.Errorf("Expected 'test-vapid-key-123', got '%s'", resp["vapid_public_key"])
+	if resp["public_key"] != "test-vapid-key-123" {
+		t.Errorf("Expected 'test-vapid-key-123', got '%s'", resp["public_key"])
 	}
 }
 
