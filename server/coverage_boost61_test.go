@@ -607,7 +607,7 @@ func TestCB61_InitSchema_FullSchemaVerification(t *testing.T) {
 func TestCB61_HandleUpload_FileCreateError(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	// Set upload dir to a read-only path
 	tmpDir := t.TempDir()
@@ -699,7 +699,7 @@ func TestCB61_HandleUpload_DBInsertError(t *testing.T) {
 func TestCB61_HandleUpload_NoExtensionGuess(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	tmpDir := t.TempDir()
 	oldPath := serverDBPath
@@ -735,7 +735,7 @@ func TestCB61_HandleUpload_NoExtensionGuess(t *testing.T) {
 func TestCB61_HandleUpload_InvalidToken(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	tmpDir := t.TempDir()
 	oldPath := serverDBPath
@@ -757,7 +757,7 @@ func TestCB61_HandleUpload_InvalidToken(t *testing.T) {
 func TestCB61_HandleUpload_MultipartParseError(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	tmpDir := t.TempDir()
 	oldPath := serverDBPath
@@ -881,7 +881,7 @@ func TestCB61_ReadPump_UnexpectedCloseError(t *testing.T) {
 	defer srv.Close()
 
 	// Connect as a client
-	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http://")
+	wsURL := "ws://" + strings.TrimPrefix(srv.URL, "http://")
 	wsClient, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	if err != nil {
 		t.Fatalf("failed to dial: %v", err)
@@ -924,7 +924,7 @@ func TestCB61_ReadPump_NormalClosure(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http://")
+	wsURL := "ws://" + strings.TrimPrefix(srv.URL, "http://")
 	wsClient, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	if err != nil {
 		t.Fatalf("failed to dial: %v", err)
@@ -1012,7 +1012,7 @@ func TestCB61_LoadQueueFromDB_MultipleRows(t *testing.T) {
 func TestCB61_HandleListAttachments_ScanError(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	// Create a conversation owned by test-user
 	_, err := db.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
@@ -1055,12 +1055,13 @@ func TestCB61_HandleListAttachments_ScanError(t *testing.T) {
 func TestCB61_HandleGetAttachment_AgentSecret(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
-	// Set agent secret
+	// Set agent secret via env (getAgentSecret reads from env, not the global)
 	oldSecret := agentSecret
-	agentSecret = "test-agent-secret"
-	defer func() { agentSecret = oldSecret }()
+	t.Setenv("AGENT_SECRET", "test-agent-secret")
+	resetAgentSecret()
+	defer func() { os.Unsetenv("AGENT_SECRET"); resetAgentSecret(); agentSecret = oldSecret }()
 
 	// Create test data
 	_, err := db.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
@@ -1097,7 +1098,7 @@ func TestCB61_HandleGetAttachment_AgentSecret(t *testing.T) {
 func TestCB61_HandleGetAttachment_InvalidAgentSecret(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	oldSecret := agentSecret
 	agentSecret = "correct-secret"
@@ -1118,7 +1119,7 @@ func TestCB61_HandleGetAttachment_InvalidAgentSecret(t *testing.T) {
 func TestCB61_HandleGetAttachment_NoAuth(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	req := httptest.NewRequest(http.MethodGet, "/attachments/some-id", nil)
 
@@ -1134,7 +1135,7 @@ func TestCB61_HandleGetAttachment_NoAuth(t *testing.T) {
 func TestCB61_HandleGetAttachment_NotFound(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	token := generateTestToken_CB61("test-user")
 	req := httptest.NewRequest(http.MethodGet, "/attachments/nonexistent-id", nil)
@@ -1153,7 +1154,7 @@ func TestCB61_HandleGetAttachment_NotFound(t *testing.T) {
 func TestCB61_HandleGetAttachment_ForbiddenOtherUser(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	// Create attachment owned by user-1
 	_, err := db.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
@@ -1352,6 +1353,10 @@ func TestCB61_LoadTiersFromDB_ClosedDB(t *testing.T) {
 	}
 	testDB.Close()
 
+	oldDB := db
+	db = testDB
+	defer func() { db = oldDB }()
+
 	trl := NewTieredRateLimiter()
 	defer trl.Stop()
 
@@ -1388,7 +1393,7 @@ func TestCB61_MarshalOutgoingMessage_Success(t *testing.T) {
 func TestCB61_HandleAdminRateLimitTier_Post(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	oldSecret := adminSecret
 	adminSecret = "test-admin-secret"
@@ -1964,12 +1969,18 @@ func TestCB61_HandleAgentConnect_DBError(t *testing.T) {
 
 // TestCB61_HandleGetNotificationPrefs_NoConversationID tests with missing conversation_id.
 func TestCB61_HandleGetNotificationPrefs_NoConversationID(t *testing.T) {
+	oldDB := db
+	db = setupTestDB_CB61(t)
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
+
 	req := authReqCB61(http.MethodGet, "/notifications/preferences", "", "user-1")
 	rr := httptest.NewRecorder()
 	handleGetNotificationPrefs(rr, req)
 
-	if rr.Code != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d", rr.Code)
+	// With no conversation_id, the handler returns all prefs for the user.
+	// Since there are none, it returns an empty list.
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rr.Code)
 	}
 }
 
@@ -1986,18 +1997,27 @@ func TestCB61_HandleSetNotificationPrefs_NoConversationID(t *testing.T) {
 	}
 }
 
-// TestCB61_HandleSetNotificationPrefs_InvalidBody tests with invalid JSON body.
+// TestCB61_HandleSetNotificationPrefs_InvalidBody tests that handler ignores invalid JSON body
+// and reads form values instead.
 func TestCB61_HandleSetNotificationPrefs_InvalidBody(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
-	req := authReqCB61(http.MethodPost, "/notifications/preferences?conversation_id=conv-1", "not json", "user-1")
+	// Insert a conversation so the ownership check passes
+	_, err := db.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
+		"conv-1", "user-1", "agent-1", time.Now().UTC().Format(time.RFC3339))
+	if err != nil {
+		t.Fatalf("failed to insert conversation: %v", err)
+	}
+
+	// Handler reads form values, not JSON body. Invalid body is simply ignored.
+	req := authReqCB61(http.MethodPost, "/notifications/preferences?conversation_id=conv-1&muted=true", "not json", "user-1")
 	rr := httptest.NewRecorder()
 	handleSetNotificationPrefs(rr, req)
 
-	if rr.Code != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d", rr.Code)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 (handler ignores body, reads form values), got %d", rr.Code)
 	}
 }
 
@@ -2046,7 +2066,7 @@ func TestCB61_NotifyUser_BothDisabled(t *testing.T) {
 
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	// Should not panic, just return
 	notifyUser("user-1", "Title", "Body", "conv-1")
@@ -2259,7 +2279,7 @@ func TestCB61_HandleGetTags_DBError(t *testing.T) {
 func TestCB61_AddConversationTag_NotFound(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	_, err := addConversationTag("nonexistent-conv", "user-1", "test-tag")
 	if err == nil {
@@ -2273,7 +2293,7 @@ func TestCB61_AddConversationTag_NotFound(t *testing.T) {
 func TestCB61_GetConversationMessages_LargeLimit(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	// Create conversation
 	_, err := db.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
@@ -2309,7 +2329,7 @@ func TestCB61_GetConversationMessages_LargeLimit(t *testing.T) {
 func TestCB61_DeleteConversation_NotFound(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	err := deleteConversation("nonexistent-conv-id", "user-1")
 	if err == nil {
@@ -2323,7 +2343,7 @@ func TestCB61_DeleteConversation_NotFound(t *testing.T) {
 func TestCB61_SearchMessages_NegativeLimit(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	// Create conversation and messages
 	_, err := db.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
@@ -2349,18 +2369,24 @@ func TestCB61_SearchMessages_NegativeLimit(t *testing.T) {
 
 // --- storeMessagesBatch additional paths (92.6% → higher) ---
 
-// TestCB61_StoreMessagesBatch_NilDB tests storeMessagesBatch with nil DB.
+// TestCB61_StoreMessagesBatch_NilDB tests storeMessagesBatch with a closed DB.
 func TestCB61_StoreMessagesBatch_NilDB(t *testing.T) {
+	testDB, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("failed to open DB: %v", err)
+	}
+	testDB.Close()
+
 	oldDB := db
-	db = nil
+	db = testDB
 	defer func() { db = oldDB }()
 
 	msgs := []RoutedMessage{
 		{Type: "chat", ConversationID: "conv-1", SenderType: "client", SenderID: "user-1", Content: "hello"},
 	}
-	_, err := storeMessagesBatch(msgs)
+	_, err = storeMessagesBatch(msgs)
 	if err == nil {
-		t.Error("expected error with nil db")
+		t.Error("expected error with closed db")
 	}
 }
 
@@ -2558,8 +2584,8 @@ func TestCB61_GetEnvOrDefault(t *testing.T) {
 // TestCB61_GenerateID tests the generateID helper.
 func TestCB61_GenerateID(t *testing.T) {
 	id1 := generateID("test")
-	if !strings.HasPrefix(id1, "test-") {
-		t.Errorf("expected prefix 'test-', got '%s'", id1)
+	if !strings.HasPrefix(id1, "test_") {
+		t.Errorf("expected prefix 'test_', got '%s'", id1)
 	}
 
 	id2 := generateID("test")
@@ -2629,14 +2655,13 @@ func TestCB61_GetAgentSecret(t *testing.T) {
 	}
 }
 
-// TestCB61_SetAgentSecret tests changing agentSecret directly.
+// TestCB61_SetAgentSecret tests changing agentSecret via env.
 func TestCB61_SetAgentSecret(t *testing.T) {
-	oldSecret := agentSecret
-	agentSecret = "new-test-secret-cb61"
+	t.Setenv("AGENT_SECRET", "new-test-secret-cb61")
+	resetAgentSecret()
 	if getAgentSecret() != "new-test-secret-cb61" {
 		t.Errorf("expected 'new-test-secret-cb61', got '%s'", getAgentSecret())
 	}
-	agentSecret = oldSecret
 }
 
 // --- ValidateAdminSecret (utility) ---
@@ -2764,7 +2789,7 @@ func TestCB61_Snapshot_WithQueueAndPresence(t *testing.T) {
 func TestCB61_GetConversation_NotFound(t *testing.T) {
 	oldDB := db
 	db = setupTestDB_CB61(t)
-	defer func() { db = oldDB; db.Close() }()
+	defer func() { testDB := db; db = oldDB; if testDB != nil { testDB.Close() } }()
 
 	conv, err := getConversation("nonexistent-conv")
 	if err != nil {
