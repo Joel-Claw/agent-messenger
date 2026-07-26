@@ -1716,7 +1716,7 @@ func TestCB66_HandleRegisterAgent_Success(t *testing.T) {
 	defer func() { db = nil }()
 
 	agentSecret = "test-secret"
-	defer func() { agentSecret = "" }()
+	defer resetAgentSecret()
 
 	form := strings.NewReader("agent_id=agent1&name=Test+Agent&model=gpt-4&personality=friendly&specialty=general")
 	req := httptest.NewRequest("POST", "/auth/agent", form)
@@ -1741,7 +1741,7 @@ func TestCB66_HandleRegisterAgent_Success(t *testing.T) {
 
 func TestCB66_HandleRegisterAgent_WrongSecret(t *testing.T) {
 	agentSecret = "test-secret"
-	defer func() { agentSecret = "" }()
+	defer resetAgentSecret()
 
 	form := strings.NewReader("agent_id=agent1&name=Test")
 	req := httptest.NewRequest("POST", "/auth/agent", form)
@@ -1757,7 +1757,7 @@ func TestCB66_HandleRegisterAgent_WrongSecret(t *testing.T) {
 
 func TestCB66_HandleRegisterAgent_MissingSecret(t *testing.T) {
 	agentSecret = "test-secret"
-	defer func() { agentSecret = "" }()
+	defer resetAgentSecret()
 
 	form := strings.NewReader("agent_id=agent1")
 	req := httptest.NewRequest("POST", "/auth/agent", form)
@@ -1772,7 +1772,7 @@ func TestCB66_HandleRegisterAgent_MissingSecret(t *testing.T) {
 
 func TestCB66_HandleRegisterAgent_MissingAgentID(t *testing.T) {
 	agentSecret = "test-secret"
-	defer func() { agentSecret = "" }()
+	defer resetAgentSecret()
 
 	db = setupTestDB_CB66(t)
 	defer db.Close()
@@ -1805,6 +1805,7 @@ func TestCB66_HandleRegisterAgent_MethodNotAllowed(t *testing.T) {
 func TestCB66_ResetAdminSecret(t *testing.T) {
 	// Set a custom env var to verify resetAdminSecret re-reads it
 	os.Setenv("ADMIN_SECRET", "new-test-admin-secret")
+	defer resetAdminSecret()
 	defer os.Unsetenv("ADMIN_SECRET")
 
 	resetAdminSecret()
