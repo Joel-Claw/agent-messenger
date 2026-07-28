@@ -628,26 +628,26 @@ func TestCB64_handleMarkRead_Success(t *testing.T) {
 	defer func() { hub.Stop(); hub = oldHub }()
 
 	// Create user and conversation with agent messages
-	_, err := testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)",
+	_, err := testDB64.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)",
 		"user-mark-ok", "markuser", "$2a$10$somehash")
 	if err != nil {
 		t.Fatalf("Failed to create user: %v", err)
 	}
 
-	_, err = testDB.Exec("INSERT INTO agents (id, name, model) VALUES (?, ?, ?)",
+	_, err = testDB64.Exec("INSERT INTO agents (id, name, model) VALUES (?, ?, ?)",
 		"agent-mark-ok", "TestAgent", "test-model")
 	if err != nil {
 		t.Fatalf("Failed to create agent: %v", err)
 	}
 
-	_, err = testDB.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
+	_, err = testDB64.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
 		"conv-mark-ok", "user-mark-ok", "agent-mark-ok", time.Now().UTC())
 	if err != nil {
 		t.Fatalf("Failed to create conversation: %v", err)
 	}
 
 	// Insert an unread agent message
-	_, err = testDB.Exec(`INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, created_at)
+	_, err = testDB64.Exec(`INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, created_at)
 		VALUES (?, ?, ?, ?, ?, ?)`,
 		"msg-mark-1", "conv-mark-ok", "agent", "agent-mark-ok", "Hello", time.Now().UTC())
 	if err != nil {
@@ -779,17 +779,17 @@ func TestCB64_handleStoreEncryptedMessage_ForbiddenNotParticipant(t *testing.T) 
 	defer func() { db = nil; testDB64.Close() }()
 
 	// Create conversation owned by different user
-	_, err := testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)",
+	_, err := testDB64.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)",
 		"user-owner", "owner", "$2a$10$hash")
 	if err != nil {
 		t.Fatalf("Failed to create user: %v", err)
 	}
-	_, err = testDB.Exec("INSERT INTO agents (id, name, model) VALUES (?, ?, ?)",
+	_, err = testDB64.Exec("INSERT INTO agents (id, name, model) VALUES (?, ?, ?)",
 		"agent-enc-1", "Agent", "model")
 	if err != nil {
 		t.Fatalf("Failed to create agent: %v", err)
 	}
-	_, err = testDB.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
+	_, err = testDB64.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
 		"conv-enc-1", "user-owner", "agent-enc-1", time.Now().UTC())
 	if err != nil {
 		t.Fatalf("Failed to create conversation: %v", err)
@@ -814,17 +814,17 @@ func TestCB64_handleStoreEncryptedMessage_Success(t *testing.T) {
 	defer func() { db = nil; testDB64.Close() }()
 
 	// Create user, agent, conversation
-	_, err := testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)",
+	_, err := testDB64.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)",
 		"user-enc-ok", "encuser", "$2a$10$hash")
 	if err != nil {
 		t.Fatalf("Failed to create user: %v", err)
 	}
-	_, err = testDB.Exec("INSERT INTO agents (id, name, model) VALUES (?, ?, ?)",
+	_, err = testDB64.Exec("INSERT INTO agents (id, name, model) VALUES (?, ?, ?)",
 		"agent-enc-ok", "Agent", "model")
 	if err != nil {
 		t.Fatalf("Failed to create agent: %v", err)
 	}
-	_, err = testDB.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
+	_, err = testDB64.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
 		"conv-enc-ok", "user-enc-ok", "agent-enc-ok", time.Now().UTC())
 	if err != nil {
 		t.Fatalf("Failed to create conversation: %v", err)
