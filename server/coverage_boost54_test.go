@@ -36,6 +36,7 @@ func setupTestServer_CB54(t *testing.T) (*sql.DB, func()) {
 		if h.done != nil {
 			close(h.done)
 		}
+		testDB.Close()
 	}
 	return testDB, cleanup
 }

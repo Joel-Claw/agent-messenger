@@ -540,8 +540,9 @@ func TestCB64_newOfflineQueue_CustomValues(t *testing.T) {
 // --- handleMarkRead ---
 
 func TestCB64_handleMarkRead_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	req := httptest.NewRequest("GET", "/conversations/mark-read", nil)
 	w := httptest.NewRecorder()
@@ -553,8 +554,9 @@ func TestCB64_handleMarkRead_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB64_handleMarkRead_NoToken(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	req := httptest.NewRequest("POST", "/conversations/mark-read", nil)
 	w := httptest.NewRecorder()
@@ -566,8 +568,9 @@ func TestCB64_handleMarkRead_NoToken(t *testing.T) {
 }
 
 func TestCB64_handleMarkRead_InvalidToken(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	req := httptest.NewRequest("POST", "/conversations/mark-read", nil)
 	req.Header.Set("Authorization", "Bearer invalid-token-xxx")
@@ -580,8 +583,9 @@ func TestCB64_handleMarkRead_InvalidToken(t *testing.T) {
 }
 
 func TestCB64_handleMarkRead_MissingConversationID(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	token := generateTestToken_CB64("user-mark-1")
 	req := httptest.NewRequest("POST", "/conversations/mark-read", nil)
@@ -595,8 +599,9 @@ func TestCB64_handleMarkRead_MissingConversationID(t *testing.T) {
 }
 
 func TestCB64_handleMarkRead_ConversationNotFound(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	token := generateTestToken_CB64("user-mark-2")
 	form := "conversation_id=nonexistent-conv"
@@ -612,9 +617,9 @@ func TestCB64_handleMarkRead_ConversationNotFound(t *testing.T) {
 }
 
 func TestCB64_handleMarkRead_Success(t *testing.T) {
-	testDB := setupTestDB_CB64(t)
-	db = testDB
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	// Set up hub for read receipt notification
 	oldHub := hub
@@ -671,8 +676,9 @@ func TestCB64_handleMarkRead_Success(t *testing.T) {
 // --- e2e: handleStoreEncryptedMessage ---
 
 func TestCB64_handleStoreEncryptedMessage_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	req := httptest.NewRequest("GET", "/messages/encrypted", nil)
 	w := httptest.NewRecorder()
@@ -684,8 +690,9 @@ func TestCB64_handleStoreEncryptedMessage_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB64_handleStoreEncryptedMessage_NoAuth(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	req := httptest.NewRequest("POST", "/messages/encrypted", nil)
 	w := httptest.NewRecorder()
@@ -697,8 +704,9 @@ func TestCB64_handleStoreEncryptedMessage_NoAuth(t *testing.T) {
 }
 
 func TestCB64_handleStoreEncryptedMessage_InvalidJSON(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	token := generateTestToken_CB64("user-enc-1")
 	req := httptest.NewRequest("POST", "/messages/encrypted", strings.NewReader("not json"))
@@ -712,8 +720,9 @@ func TestCB64_handleStoreEncryptedMessage_InvalidJSON(t *testing.T) {
 }
 
 func TestCB64_handleStoreEncryptedMessage_MissingFields(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	token := generateTestToken_CB64("user-enc-2")
 	body := `{"conversation_id": "", "ciphertext": "", "iv": "", "algorithm": ""}`
@@ -728,8 +737,9 @@ func TestCB64_handleStoreEncryptedMessage_MissingFields(t *testing.T) {
 }
 
 func TestCB64_handleStoreEncryptedMessage_InvalidAlgorithm(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	token := generateTestToken_CB64("user-enc-3")
 	body := `{"conversation_id": "conv-1", "ciphertext": "cipher", "iv": "iv123", "algorithm": "bad-algo"}`
@@ -747,8 +757,9 @@ func TestCB64_handleStoreEncryptedMessage_InvalidAlgorithm(t *testing.T) {
 }
 
 func TestCB64_handleStoreEncryptedMessage_ConversationNotFound(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	token := generateTestToken_CB64("user-enc-4")
 	body := `{"conversation_id": "nonexistent", "ciphertext": "cipher", "iv": "iv123", "algorithm": "aes-256-gcm"}`
@@ -763,9 +774,9 @@ func TestCB64_handleStoreEncryptedMessage_ConversationNotFound(t *testing.T) {
 }
 
 func TestCB64_handleStoreEncryptedMessage_ForbiddenNotParticipant(t *testing.T) {
-	testDB := setupTestDB_CB64(t)
-	db = testDB
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	// Create conversation owned by different user
 	_, err := testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)",
@@ -798,9 +809,9 @@ func TestCB64_handleStoreEncryptedMessage_ForbiddenNotParticipant(t *testing.T) 
 }
 
 func TestCB64_handleStoreEncryptedMessage_Success(t *testing.T) {
-	testDB := setupTestDB_CB64(t)
-	db = testDB
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	// Create user, agent, conversation
 	_, err := testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)",
@@ -1362,8 +1373,9 @@ func TestCB64_requestIDMiddleware_PreservesExistingID(t *testing.T) {
 // --- handleAgentConnect edge cases ---
 
 func TestCB64_handleAgentConnect_MissingAgentID(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	req := httptest.NewRequest("GET", "/agent/connect", nil)
 	w := httptest.NewRecorder()
@@ -1375,8 +1387,9 @@ func TestCB64_handleAgentConnect_MissingAgentID(t *testing.T) {
 }
 
 func TestCB64_handleAgentConnect_MissingSecret(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	req := httptest.NewRequest("GET", "/agent/connect?agent_id=test-agent", nil)
 	w := httptest.NewRecorder()
@@ -1388,8 +1401,9 @@ func TestCB64_handleAgentConnect_MissingSecret(t *testing.T) {
 }
 
 func TestCB64_handleAgentConnect_InvalidSecret(t *testing.T) {
-	db = setupTestDB_CB64(t)
-	defer func() { db = nil }()
+	testDB64 := setupTestDB_CB64(t)
+	db = testDB64
+	defer func() { db = nil; testDB64.Close() }()
 
 	resetAgentSecret()
 

@@ -472,6 +472,7 @@ func TestCB63_HandleUpload_SuccessWithMessageID(t *testing.T) {
 	})
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 	tmpDir := t.TempDir()
 	os.Setenv("UPLOAD_DIR", tmpDir)
@@ -526,6 +527,7 @@ func TestCB63_HandleUpload_DBError(t *testing.T) {
 	})
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	testDB.Exec("DROP TABLE attachments")
 	db = testDB
 	tmpDir := t.TempDir()
@@ -567,6 +569,7 @@ func TestCB63_HandleUpload_NoContentTypeDetection(t *testing.T) {
 	})
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 	tmpDir := t.TempDir()
 	os.Setenv("UPLOAD_DIR", tmpDir)
@@ -744,6 +747,7 @@ func TestCB63_HandleListAgents_WithAgents(t *testing.T) {
 	})
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 	h := newTestHub()
 	
@@ -779,6 +783,7 @@ func TestCB63_HandleListAgents_ScanError(t *testing.T) {
 	})
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 	h := newTestHub()
 	
@@ -808,6 +813,7 @@ func TestCB63_HandleAdminAgents_ScanError(t *testing.T) {
 	})
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 	h := newTestHub()
 	
@@ -836,6 +842,7 @@ func TestCB63_HandleAdminAgents_Success(t *testing.T) {
 	})
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 	h := newTestHub()
 	
@@ -869,6 +876,7 @@ func TestCB63_GetDeviceTokensForUser_MultipleTokens(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO device_tokens (user_id, device_token, platform) VALUES (?, ?, ?)", "user-multi-dev", "token-ios-1", "ios")
@@ -888,6 +896,7 @@ func TestCB63_GetDeviceTokensForUser_NoTokens(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	tokens, err := getDeviceTokensForUser("user-no-devices")
@@ -918,6 +927,7 @@ func TestCB63_NotifyUser_NoTokens(t *testing.T) {
 	})
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 	pushConfig = &PushNotificationConfig{APNSEnabled: false, FCMEnabled: false}
 
@@ -933,6 +943,7 @@ func TestCB63_NotifyUser_MutedConversation(t *testing.T) {
 	})
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 	pushConfig = &PushNotificationConfig{APNSEnabled: true, FCMEnabled: true}
 
@@ -973,6 +984,7 @@ func TestCB63_HandleListAttachments_Empty(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-no-att", "noatt@test.com", "hash")
@@ -1003,6 +1015,7 @@ func TestCB63_HandleGetMessages_Success(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-msg-1", "msg@test.com", "hash")
@@ -1089,6 +1102,7 @@ func TestCB63_HandleLogin_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	req := httptest.NewRequest("POST", "/auth/login", strings.NewReader("not json"))
@@ -1105,6 +1119,7 @@ func TestCB63_HandleLogin_EmptyPassword(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	body := `{"username":"user@test.com","password":""}`
@@ -1125,6 +1140,7 @@ func TestCB63_HandleRegisterUser_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	req := httptest.NewRequest("POST", "/auth/register", strings.NewReader("bad json"))
@@ -1143,6 +1159,7 @@ func TestCB63_HandleMessageDelete_NotFound(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-del-1")
@@ -1163,6 +1180,7 @@ func TestCB63_HandleMessageEdit_NotFound(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-edit-1")
@@ -1183,6 +1201,7 @@ func TestCB63_HandleGetNotificationPrefs_NoPrefs(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	req := authReqCB63("GET", "/notifications/preferences", "", "user-nopref")
@@ -1211,6 +1230,7 @@ func TestCB63_HandleGetPresence_NoAgents(t *testing.T) {
 	})
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 	h := newTestHub()
 	
@@ -1234,6 +1254,7 @@ func TestCB63_HandleSearchMessages_NumericLimit(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-search-1", "search@test.com", "hash")
@@ -1266,6 +1287,7 @@ func TestCB63_GetConversationMessages_Empty(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-empty-conv", "empty@test.com", "hash")
@@ -1288,6 +1310,7 @@ func TestCB63_AddReaction_DifferentEmoji(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-react-multi", "react@test.com", "hash")
@@ -1318,6 +1341,7 @@ func TestCB63_HandleReact_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-react-bad")
@@ -1339,6 +1363,7 @@ func TestCB63_AddConversationTag_Duplicate(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-tag-dup", "tagdup@test.com", "hash")
@@ -1361,6 +1386,7 @@ func TestCB63_GetConversationTags_WithTags(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-tags-get", "tagsget@test.com", "hash")
@@ -1386,6 +1412,7 @@ func TestCB63_HandleGetTags_SuccessWithTags(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-tags-list", "tagslist@test.com", "hash")
@@ -1497,6 +1524,7 @@ func TestCB63_LoadTiersFromDB_WithTiers(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO user_rate_limit_tiers (user_id, tier_name) VALUES (?, ?)", "user-load-tier", "enterprise")
@@ -1518,6 +1546,7 @@ func TestCB63_HandleSetNotificationPrefs_Success(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-notif-set", "notifset@test.com", "hash")
@@ -1548,6 +1577,7 @@ func TestCB63_HandleCreateConversation_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-conv-bad")
@@ -1567,6 +1597,7 @@ func TestCB63_HandleCreateConversation_Success(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-cc-1", "cc@test.com", "hash")
@@ -1598,6 +1629,7 @@ func TestCB63_HandleChangePassword_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-pw-bad")
@@ -1619,6 +1651,7 @@ func TestCB63_HandleMarkRead_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-mr-bad")
@@ -1640,6 +1673,7 @@ func TestCB63_HandleDeleteConversation_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-dc-bad")
@@ -1677,6 +1711,7 @@ func TestCB63_IsConversationMuted_NotMuted(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-mute-check", "mutecheck@test.com", "hash")
@@ -1693,6 +1728,7 @@ func TestCB63_IsConversationMuted_Muted(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-muted-2", "muted2@test.com", "hash")
@@ -1791,6 +1827,7 @@ func TestCB63_GetOrCreateConversation_New(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-goc-1", "goc@test.com", "hash")
@@ -2025,6 +2062,7 @@ func TestCB63_HandleGetAttachment_NotFound(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-att-nf")
@@ -2045,6 +2083,7 @@ func TestCB63_HandleAgentConnect_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	req := httptest.NewRequest("POST", "/auth/agent", strings.NewReader("bad json"))
@@ -2063,6 +2102,7 @@ func TestCB63_HandleAgentConnect_WrongSecret(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	req := httptest.NewRequest("POST", "/auth/agent?agent_id=agent-ws-1&agent_secret=wrong-secret", nil)
@@ -2081,6 +2121,7 @@ func TestCB63_HandleSetRateLimitTier_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	req := httptest.NewRequest("POST", "/admin/rate-limit/tier", strings.NewReader("bad json"))
@@ -2099,6 +2140,7 @@ func TestCB63_HandleSetRateLimitTier_UnknownTier(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	body := `{"user_id":"user-unk-tier","tier":"platinum"}`
@@ -2120,6 +2162,7 @@ func TestCB63_HandleGetRateLimitTier_Success(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	globalTieredLimiter.SetTier("user-get-tier", TierPro)
@@ -2147,6 +2190,7 @@ func TestCB63_HandleStoreEncryptedMessage_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-e2e-bad")
@@ -2166,6 +2210,7 @@ func TestCB63_HandleGetEncryptedMessages_Empty(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	_, _ = testDB.Exec("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)", "user-e2e-empty", "e2eempty@test.com", "hash")
@@ -2188,6 +2233,7 @@ func TestCB63_HandleGetKeyBundle_AgentNotFound(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-kb-1")
@@ -2206,6 +2252,7 @@ func TestCB63_HandleListOneTimePreKeys_AgentNotFound(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-otpk-1")
@@ -2232,6 +2279,7 @@ func TestCB63_HandleWebPushSubscribe_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-wps-bad")
@@ -2251,6 +2299,7 @@ func TestCB63_HandleRegisterDeviceToken_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-rt-bad")
@@ -2270,6 +2319,7 @@ func TestCB63_HandleUnregisterDeviceToken_InvalidJSON(t *testing.T) {
 	t.Cleanup(func() { db = origDB })
 
 	testDB := setupTestDB_CB63(t)
+	defer testDB.Close()
 	db = testDB
 
 	token := generateTestToken_CB63("user-urt-bad")

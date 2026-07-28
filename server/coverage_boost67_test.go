@@ -80,8 +80,9 @@ func insertEncryptedMessage_CB67(testDB *sql.DB, convID, senderID, senderType, c
 // ==================== handleUploadPublicKey (0% → target 90%+) ====================
 
 func TestCB67_UploadPublicKey_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/keys/upload", nil)
 	w := httptest.NewRecorder()
@@ -92,8 +93,9 @@ func TestCB67_UploadPublicKey_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_UploadPublicKey_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodPost, "/keys/upload", strings.NewReader("{}"))
 	req.Header.Set("Content-Type", "application/json")
@@ -105,8 +107,9 @@ func TestCB67_UploadPublicKey_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_UploadPublicKey_InvalidJSON(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodPost, "/keys/upload", strings.NewReader("not json"))
 	req.Header.Set("Content-Type", "application/json")
@@ -119,8 +122,9 @@ func TestCB67_UploadPublicKey_InvalidJSON(t *testing.T) {
 }
 
 func TestCB67_UploadPublicKey_MissingPublicKey(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"key_type":"identity","public_key":""}`
 	req := httptest.NewRequest(http.MethodPost, "/keys/upload", strings.NewReader(body))
@@ -134,8 +138,9 @@ func TestCB67_UploadPublicKey_MissingPublicKey(t *testing.T) {
 }
 
 func TestCB67_UploadPublicKey_InvalidKeyType(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"key_type":"bad_type","public_key":"abc123"}`
 	req := httptest.NewRequest(http.MethodPost, "/keys/upload", strings.NewReader(body))
@@ -149,8 +154,9 @@ func TestCB67_UploadPublicKey_InvalidKeyType(t *testing.T) {
 }
 
 func TestCB67_UploadPublicKey_IdentityKey_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"key_type":"identity","public_key":"base64key123","signature":"sig123"}`
 	req := httptest.NewRequest(http.MethodPost, "/keys/upload", strings.NewReader(body))
@@ -172,8 +178,9 @@ func TestCB67_UploadPublicKey_IdentityKey_Success(t *testing.T) {
 }
 
 func TestCB67_UploadPublicKey_IdentityKey_Replace(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	// First upload
 	body1 := `{"key_type":"identity","public_key":"oldkey","signature":"oldsig"}`
@@ -212,8 +219,9 @@ func TestCB67_UploadPublicKey_IdentityKey_Replace(t *testing.T) {
 }
 
 func TestCB67_UploadPublicKey_SignedPreKey_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"key_type":"signed_prekey","public_key":"spk123","signature":"spk_sig"}`
 	req := httptest.NewRequest(http.MethodPost, "/keys/upload", strings.NewReader(body))
@@ -227,8 +235,9 @@ func TestCB67_UploadPublicKey_SignedPreKey_Success(t *testing.T) {
 }
 
 func TestCB67_UploadPublicKey_OneTimePreKey_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"key_type":"one_time_prekey","public_key":"otpk1","signature":"","key_id":1}`
 	req := httptest.NewRequest(http.MethodPost, "/keys/upload", strings.NewReader(body))
@@ -247,8 +256,9 @@ func TestCB67_UploadPublicKey_OneTimePreKey_Success(t *testing.T) {
 }
 
 func TestCB67_UploadPublicKey_AgentAuth(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"key_type":"identity","public_key":"agentkey","signature":"agentsig"}`
 	req := httptest.NewRequest(http.MethodPost, "/keys/upload", strings.NewReader(body))
@@ -268,8 +278,9 @@ func TestCB67_UploadPublicKey_AgentAuth(t *testing.T) {
 }
 
 func TestCB67_UploadPublicKey_AgentAuth_MissingAgentID(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"key_type":"identity","public_key":"agentkey","signature":"agentsig"}`
 	req := httptest.NewRequest(http.MethodPost, "/keys/upload", strings.NewReader(body))
@@ -285,8 +296,9 @@ func TestCB67_UploadPublicKey_AgentAuth_MissingAgentID(t *testing.T) {
 // ==================== handleGetKeyBundle (43.8% → target 90%+) ====================
 
 func TestCB67_GetKeyBundle_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodPost, "/keys/bundle", nil)
 	w := httptest.NewRecorder()
@@ -297,8 +309,9 @@ func TestCB67_GetKeyBundle_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_GetKeyBundle_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/keys/bundle", nil)
 	w := httptest.NewRecorder()
@@ -309,8 +322,9 @@ func TestCB67_GetKeyBundle_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_GetKeyBundle_MissingOwnerID(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/keys/bundle", nil)
 	req.Header.Set("Authorization", "Bearer "+generateTestToken_CB67("user1"))
@@ -322,8 +336,9 @@ func TestCB67_GetKeyBundle_MissingOwnerID(t *testing.T) {
 }
 
 func TestCB67_GetKeyBundle_NoIdentityKey(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/keys/bundle?owner_id=nonexistent", nil)
 	req.Header.Set("Authorization", "Bearer "+generateTestToken_CB67("user1"))
@@ -335,8 +350,9 @@ func TestCB67_GetKeyBundle_NoIdentityKey(t *testing.T) {
 }
 
 func TestCB67_GetKeyBundle_Success_IdentityOnly(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	insertKeyBundle_CB67(db, "user1", "user", "identity", "idkey123", "idsig", 0)
 
 	req := httptest.NewRequest(http.MethodGet, "/keys/bundle?owner_id=user1", nil)
@@ -360,8 +376,9 @@ func TestCB67_GetKeyBundle_Success_IdentityOnly(t *testing.T) {
 }
 
 func TestCB67_GetKeyBundle_Success_FullBundle(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	insertKeyBundle_CB67(db, "user1", "user", "identity", "idkey123", "idsig", 0)
 	insertKeyBundle_CB67(db, "user1", "user", "signed_prekey", "spk123", "spksig", 0)
 	insertKeyBundle_CB67(db, "user1", "user", "one_time_prekey", "otpk1", "", 1)
@@ -387,8 +404,9 @@ func TestCB67_GetKeyBundle_Success_FullBundle(t *testing.T) {
 }
 
 func TestCB67_GetKeyBundle_OTPK_Consumed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	insertKeyBundle_CB67(db, "user1", "user", "identity", "idkey123", "idsig", 0)
 	insertKeyBundle_CB67(db, "user1", "user", "one_time_prekey", "otpk1", "", 1)
 	insertKeyBundle_CB67(db, "user1", "user", "one_time_prekey", "otpk2", "", 2)
@@ -410,8 +428,9 @@ func TestCB67_GetKeyBundle_OTPK_Consumed(t *testing.T) {
 }
 
 func TestCB67_GetKeyBundle_AgentType(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	insertKeyBundle_CB67(db, "agent1", "agent", "identity", "agentidkey", "agentsig", 0)
 
 	req := httptest.NewRequest(http.MethodGet, "/keys/bundle?owner_id=agent1&owner_type=agent", nil)
@@ -431,8 +450,9 @@ func TestCB67_GetKeyBundle_AgentType(t *testing.T) {
 // ==================== handleListOneTimePreKeys (63.6% → target 100%) ====================
 
 func TestCB67_ListOneTimePreKeys_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodPost, "/keys/otpk-count", nil)
 	w := httptest.NewRecorder()
@@ -443,8 +463,9 @@ func TestCB67_ListOneTimePreKeys_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_ListOneTimePreKeys_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/keys/otpk-count", nil)
 	w := httptest.NewRecorder()
@@ -455,8 +476,9 @@ func TestCB67_ListOneTimePreKeys_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_ListOneTimePreKeys_ZeroCount(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/keys/otpk-count", nil)
 	req.Header.Set("Authorization", "Bearer "+generateTestToken_CB67("user1"))
@@ -473,8 +495,9 @@ func TestCB67_ListOneTimePreKeys_ZeroCount(t *testing.T) {
 }
 
 func TestCB67_ListOneTimePreKeys_WithKeys(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	insertKeyBundle_CB67(db, "user1", "user", "one_time_prekey", "otpk1", "", 1)
 	insertKeyBundle_CB67(db, "user1", "user", "one_time_prekey", "otpk2", "", 2)
 	insertKeyBundle_CB67(db, "user1", "user", "one_time_prekey", "otpk3", "", 3)
@@ -496,8 +519,9 @@ func TestCB67_ListOneTimePreKeys_WithKeys(t *testing.T) {
 // ==================== handleGetEncryptedMessages (48.8% → target 90%+) ====================
 
 func TestCB67_GetEncryptedMessages_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodPost, "/messages/encrypted", nil)
 	w := httptest.NewRecorder()
@@ -508,8 +532,9 @@ func TestCB67_GetEncryptedMessages_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_GetEncryptedMessages_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/messages/encrypted", nil)
 	w := httptest.NewRecorder()
@@ -520,8 +545,9 @@ func TestCB67_GetEncryptedMessages_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_GetEncryptedMessages_MissingConvID(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/messages/encrypted", nil)
 	req.Header.Set("Authorization", "Bearer "+generateTestToken_CB67("user1"))
@@ -533,8 +559,9 @@ func TestCB67_GetEncryptedMessages_MissingConvID(t *testing.T) {
 }
 
 func TestCB67_GetEncryptedMessages_ConvNotFound(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/messages/encrypted?conversation_id=nonexistent", nil)
 	req.Header.Set("Authorization", "Bearer "+generateTestToken_CB67("user1"))
@@ -546,8 +573,9 @@ func TestCB67_GetEncryptedMessages_ConvNotFound(t *testing.T) {
 }
 
 func TestCB67_GetEncryptedMessages_UserNotParticipant(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	req := httptest.NewRequest(http.MethodGet, "/messages/encrypted?conversation_id="+convID, nil)
@@ -560,8 +588,9 @@ func TestCB67_GetEncryptedMessages_UserNotParticipant(t *testing.T) {
 }
 
 func TestCB67_GetEncryptedMessages_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 	insertEncryptedMessage_CB67(db, convID, "user1", "user", "ciphertext1", "iv1", "recip1", "aes-256-gcm")
 	insertEncryptedMessage_CB67(db, convID, "agent1", "agent", "ciphertext2", "iv2", "recip2", "aes-256-gcm")
@@ -581,8 +610,9 @@ func TestCB67_GetEncryptedMessages_Success(t *testing.T) {
 }
 
 func TestCB67_GetEncryptedMessages_WithLimit(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 	for i := 0; i < 5; i++ {
 		insertEncryptedMessage_CB67(db, convID, "user1", "user", "ct"+string(rune('a'+i)), "iv", "recip", "aes-256-gcm")
@@ -603,8 +633,9 @@ func TestCB67_GetEncryptedMessages_WithLimit(t *testing.T) {
 }
 
 func TestCB67_GetEncryptedMessages_LimitOverMax(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 	insertEncryptedMessage_CB67(db, convID, "user1", "user", "ct1", "iv1", "recip", "aes-256-gcm")
 
@@ -618,8 +649,9 @@ func TestCB67_GetEncryptedMessages_LimitOverMax(t *testing.T) {
 }
 
 func TestCB67_GetEncryptedMessages_AgentAccess(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 	insertEncryptedMessage_CB67(db, convID, "user1", "user", "ct1", "iv1", "recip", "aes-256-gcm")
 
@@ -634,8 +666,9 @@ func TestCB67_GetEncryptedMessages_AgentAccess(t *testing.T) {
 }
 
 func TestCB67_GetEncryptedMessages_AgentNotParticipant(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	req := httptest.NewRequest(http.MethodGet, "/messages/encrypted?conversation_id="+convID, nil)
@@ -649,8 +682,9 @@ func TestCB67_GetEncryptedMessages_AgentNotParticipant(t *testing.T) {
 }
 
 func TestCB67_GetEncryptedMessages_EmptyResult(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	req := httptest.NewRequest(http.MethodGet, "/messages/encrypted?conversation_id="+convID, nil)
@@ -670,8 +704,9 @@ func TestCB67_GetEncryptedMessages_EmptyResult(t *testing.T) {
 // ==================== handleChangePassword (61.5% → target 90%+) ====================
 
 func TestCB67_ChangePassword_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/auth/change-password", nil)
 	w := httptest.NewRecorder()
@@ -682,8 +717,9 @@ func TestCB67_ChangePassword_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_ChangePassword_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	form := strings.NewReader("old_password=pass&new_password=newpass")
 	req := httptest.NewRequest(http.MethodPost, "/auth/change-password", form)
@@ -696,8 +732,9 @@ func TestCB67_ChangePassword_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_ChangePassword_MissingFields(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodPost, "/auth/change-password", strings.NewReader(""))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -710,8 +747,9 @@ func TestCB67_ChangePassword_MissingFields(t *testing.T) {
 }
 
 func TestCB67_ChangePassword_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "testuser", "oldpass123")
 
 	form := strings.NewReader("old_password=oldpass123&new_password=newpass456")
@@ -731,8 +769,9 @@ func TestCB67_ChangePassword_Success(t *testing.T) {
 }
 
 func TestCB67_ChangePassword_WrongOldPassword(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "testuser", "oldpass123")
 
 	form := strings.NewReader("old_password=wrongpass&new_password=newpass456")
@@ -747,8 +786,9 @@ func TestCB67_ChangePassword_WrongOldPassword(t *testing.T) {
 }
 
 func TestCB67_ChangePassword_UserNotFound(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	form := strings.NewReader("old_password=oldpass&new_password=newpass456")
 	req := httptest.NewRequest(http.MethodPost, "/auth/change-password", form)
@@ -764,8 +804,9 @@ func TestCB67_ChangePassword_UserNotFound(t *testing.T) {
 // ==================== handleDeleteConversation (63% → target 90%+) ====================
 
 func TestCB67_DeleteConversation_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/conversations/delete", nil)
 	w := httptest.NewRecorder()
@@ -776,8 +817,9 @@ func TestCB67_DeleteConversation_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_DeleteConversation_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodDelete, "/conversations/delete?conversation_id=conv1", nil)
 	w := httptest.NewRecorder()
@@ -788,8 +830,9 @@ func TestCB67_DeleteConversation_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_DeleteConversation_MissingConvID(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodDelete, "/conversations/delete", nil)
 	req.Header.Set("Authorization", "Bearer "+generateTestToken_CB67("user1"))
@@ -801,8 +844,9 @@ func TestCB67_DeleteConversation_MissingConvID(t *testing.T) {
 }
 
 func TestCB67_DeleteConversation_NotFound(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodDelete, "/conversations/delete?conversation_id=nonexistent", nil)
 	req.Header.Set("Authorization", "Bearer "+generateTestToken_CB67("user1"))
@@ -814,8 +858,9 @@ func TestCB67_DeleteConversation_NotFound(t *testing.T) {
 }
 
 func TestCB67_DeleteConversation_UnauthorizedOwner(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	req := httptest.NewRequest(http.MethodDelete, "/conversations/delete?conversation_id="+convID, nil)
@@ -828,8 +873,9 @@ func TestCB67_DeleteConversation_UnauthorizedOwner(t *testing.T) {
 }
 
 func TestCB67_DeleteConversation_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 	// Add a message
@@ -857,8 +903,9 @@ func TestCB67_DeleteConversation_Success(t *testing.T) {
 }
 
 func TestCB67_DeleteConversation_FormValue(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 
@@ -874,8 +921,9 @@ func TestCB67_DeleteConversation_FormValue(t *testing.T) {
 // ==================== handleSearchMessages (68.8% → target 90%+) ====================
 
 func TestCB67_SearchMessages_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodPost, "/messages/search", nil)
 	w := httptest.NewRecorder()
@@ -886,8 +934,9 @@ func TestCB67_SearchMessages_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_SearchMessages_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/messages/search?q=test", nil)
 	w := httptest.NewRecorder()
@@ -898,8 +947,9 @@ func TestCB67_SearchMessages_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_SearchMessages_MissingQuery(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/messages/search", nil)
 	req.Header.Set("Authorization", "Bearer "+generateTestToken_CB67("user1"))
@@ -911,8 +961,9 @@ func TestCB67_SearchMessages_MissingQuery(t *testing.T) {
 }
 
 func TestCB67_SearchMessages_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 	db.Exec("INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -935,8 +986,9 @@ func TestCB67_SearchMessages_Success(t *testing.T) {
 }
 
 func TestCB67_SearchMessages_NoResults(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 	db.Exec("INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -952,8 +1004,9 @@ func TestCB67_SearchMessages_NoResults(t *testing.T) {
 }
 
 func TestCB67_SearchMessages_WithLimit(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 	for i := 0; i < 5; i++ {
@@ -978,8 +1031,9 @@ func TestCB67_SearchMessages_WithLimit(t *testing.T) {
 // ==================== storeMessage (63.6% → target 90%+) ====================
 
 func TestCB67_StoreMessage_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	msg := RoutedMessage{
@@ -1002,8 +1056,9 @@ func TestCB67_StoreMessage_Success(t *testing.T) {
 }
 
 func TestCB67_StoreMessage_WithAttachments(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 	// Create an attachment first
 	db.Exec("INSERT INTO attachments (id, user_id, filename, content_type, size, sha256, storage_path) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -1031,8 +1086,9 @@ func TestCB67_StoreMessage_WithAttachments(t *testing.T) {
 }
 
 func TestCB67_StoreMessage_InvalidConversation(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	// Enable FK enforcement for this test
 	db.Exec("PRAGMA foreign_keys=ON")
@@ -1053,8 +1109,9 @@ func TestCB67_StoreMessage_InvalidConversation(t *testing.T) {
 // ==================== handleCreateConversation (80% → target 90%+) ====================
 
 func TestCB67_CreateConversation_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/conversations/create", nil)
 	w := httptest.NewRecorder()
@@ -1065,8 +1122,9 @@ func TestCB67_CreateConversation_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_CreateConversation_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	form := strings.NewReader("agent_id=agent1")
 	req := httptest.NewRequest(http.MethodPost, "/conversations/create", form)
@@ -1079,8 +1137,9 @@ func TestCB67_CreateConversation_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_CreateConversation_MissingAgentID(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodPost, "/conversations/create", strings.NewReader(""))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -1093,8 +1152,9 @@ func TestCB67_CreateConversation_MissingAgentID(t *testing.T) {
 }
 
 func TestCB67_CreateConversation_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	createAgent_CB67(db, "agent1")
 
 	form := strings.NewReader("agent_id=agent1")
@@ -1117,8 +1177,9 @@ func TestCB67_CreateConversation_Success(t *testing.T) {
 }
 
 func TestCB67_CreateConversation_GetOrCreate(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	createAgent_CB67(db, "agent1")
 
 	// First call creates
@@ -1155,8 +1216,9 @@ func TestCB67_CreateConversation_GetOrCreate(t *testing.T) {
 // ==================== handleListConversations (80.6% → target 90%+) ====================
 
 func TestCB67_ListConversations_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodPost, "/conversations/list", nil)
 	w := httptest.NewRecorder()
@@ -1167,8 +1229,9 @@ func TestCB67_ListConversations_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_ListConversations_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/conversations/list", nil)
 	w := httptest.NewRecorder()
@@ -1179,8 +1242,9 @@ func TestCB67_ListConversations_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_ListConversations_Empty(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/conversations/list", nil)
 	req.Header.Set("Authorization", "Bearer "+generateTestToken_CB67("user1"))
@@ -1197,8 +1261,9 @@ func TestCB67_ListConversations_Empty(t *testing.T) {
 }
 
 func TestCB67_ListConversations_WithData(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID1 := createConversation_CB67(db, userID, "agent1")
 	createConversation_CB67(db, userID, "agent2")
@@ -1225,8 +1290,9 @@ func TestCB67_ListConversations_WithData(t *testing.T) {
 // ==================== handleRegisterDeviceToken (37% → target 90%+) ====================
 
 func TestCB67_RegisterDeviceToken_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/devices/register", nil)
 	w := httptest.NewRecorder()
@@ -1237,8 +1303,9 @@ func TestCB67_RegisterDeviceToken_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_RegisterDeviceToken_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"device_token":"token123","platform":"ios"}`
 	req := httptest.NewRequest(http.MethodPost, "/devices/register", strings.NewReader(body))
@@ -1251,8 +1318,9 @@ func TestCB67_RegisterDeviceToken_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_RegisterDeviceToken_InvalidJSON(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodPost, "/devices/register", strings.NewReader("not json"))
 	req.Header.Set("Content-Type", "application/json")
@@ -1265,8 +1333,9 @@ func TestCB67_RegisterDeviceToken_InvalidJSON(t *testing.T) {
 }
 
 func TestCB67_RegisterDeviceToken_MissingToken(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"platform":"ios"}`
 	req := httptest.NewRequest(http.MethodPost, "/devices/register", strings.NewReader(body))
@@ -1280,8 +1349,9 @@ func TestCB67_RegisterDeviceToken_MissingToken(t *testing.T) {
 }
 
 func TestCB67_RegisterDeviceToken_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"device_token":"token123","platform":"ios"}`
 	req := httptest.NewRequest(http.MethodPost, "/devices/register", strings.NewReader(body))
@@ -1302,8 +1372,9 @@ func TestCB67_RegisterDeviceToken_Success(t *testing.T) {
 }
 
 func TestCB67_RegisterDeviceToken_DefaultPlatform(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"device_token":"token456"}`
 	req := httptest.NewRequest(http.MethodPost, "/devices/register", strings.NewReader(body))
@@ -1323,8 +1394,9 @@ func TestCB67_RegisterDeviceToken_DefaultPlatform(t *testing.T) {
 }
 
 func TestCB67_RegisterDeviceToken_Android(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"device_token":"android_tok","platform":"android"}`
 	req := httptest.NewRequest(http.MethodPost, "/devices/register", strings.NewReader(body))
@@ -1346,8 +1418,9 @@ func TestCB67_RegisterDeviceToken_Android(t *testing.T) {
 // ==================== handleUnregisterDeviceToken (52.2% → target 90%+) ====================
 
 func TestCB67_UnregisterDeviceToken_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/devices/unregister", nil)
 	w := httptest.NewRecorder()
@@ -1358,8 +1431,9 @@ func TestCB67_UnregisterDeviceToken_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_UnregisterDeviceToken_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"device_token":"token123"}`
 	req := httptest.NewRequest(http.MethodDelete, "/devices/unregister", strings.NewReader(body))
@@ -1372,8 +1446,9 @@ func TestCB67_UnregisterDeviceToken_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_UnregisterDeviceToken_InvalidJSON(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodDelete, "/devices/unregister", strings.NewReader("not json"))
 	req.Header.Set("Content-Type", "application/json")
@@ -1386,8 +1461,9 @@ func TestCB67_UnregisterDeviceToken_InvalidJSON(t *testing.T) {
 }
 
 func TestCB67_UnregisterDeviceToken_MissingToken(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{}`
 	req := httptest.NewRequest(http.MethodDelete, "/devices/unregister", strings.NewReader(body))
@@ -1401,8 +1477,9 @@ func TestCB67_UnregisterDeviceToken_MissingToken(t *testing.T) {
 }
 
 func TestCB67_UnregisterDeviceToken_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	// Insert a token first
 	db.Exec("INSERT INTO device_tokens (user_id, device_token, platform) VALUES (?, ?, ?)",
 		"user1", "token123", "ios")
@@ -1427,8 +1504,9 @@ func TestCB67_UnregisterDeviceToken_Success(t *testing.T) {
 // ==================== handleSetNotificationPrefs (55.6% → target 90%+) ====================
 
 func TestCB67_SetNotificationPrefs_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	form := strings.NewReader("conversation_id=conv1&muted=true")
 	req := httptest.NewRequest(http.MethodPost, "/notifications/prefs", form)
@@ -1441,8 +1519,9 @@ func TestCB67_SetNotificationPrefs_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_SetNotificationPrefs_MissingConvID(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	form := strings.NewReader("muted=true")
 	req := httptest.NewRequest(http.MethodPost, "/notifications/prefs", form)
@@ -1457,8 +1536,9 @@ func TestCB67_SetNotificationPrefs_MissingConvID(t *testing.T) {
 }
 
 func TestCB67_SetNotificationPrefs_ConvNotFound(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	form := strings.NewReader("conversation_id=nonexistent&muted=true")
 	req := httptest.NewRequest(http.MethodPost, "/notifications/prefs", form)
@@ -1473,8 +1553,9 @@ func TestCB67_SetNotificationPrefs_ConvNotFound(t *testing.T) {
 }
 
 func TestCB67_SetNotificationPrefs_NotOwner(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	form := strings.NewReader("conversation_id="+convID+"&muted=true")
@@ -1490,8 +1571,9 @@ func TestCB67_SetNotificationPrefs_NotOwner(t *testing.T) {
 }
 
 func TestCB67_SetNotificationPrefs_MuteSuccess(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 
@@ -1514,8 +1596,9 @@ func TestCB67_SetNotificationPrefs_MuteSuccess(t *testing.T) {
 }
 
 func TestCB67_SetNotificationPrefs_UnmuteSuccess(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 	// First mute
@@ -1611,8 +1694,9 @@ func TestCB67_AuthenticateRequest_AgentSecretWrong(t *testing.T) {
 // ==================== GetOrCreateConversation (85.7% → target 100%) ====================
 
 func TestCB67_GetOrCreateConversation_Create(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	conv, err := GetOrCreateConversation("user1", "agent1")
 	if err != nil {
@@ -1624,8 +1708,9 @@ func TestCB67_GetOrCreateConversation_Create(t *testing.T) {
 }
 
 func TestCB67_GetOrCreateConversation_GetExisting(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	// Create first
 	conv1, err := GetOrCreateConversation("user1", "agent1")
@@ -1646,8 +1731,9 @@ func TestCB67_GetOrCreateConversation_GetExisting(t *testing.T) {
 // ==================== markMessagesRead (81.8% → target 90%+) ====================
 
 func TestCB67_MarkMessagesRead_ConvNotFound(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	_, err := markMessagesRead("nonexistent", "user1")
 	if err != sql.ErrNoRows {
@@ -1656,8 +1742,9 @@ func TestCB67_MarkMessagesRead_ConvNotFound(t *testing.T) {
 }
 
 func TestCB67_MarkMessagesRead_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	_, err := markMessagesRead(convID, "otheruser")
@@ -1667,8 +1754,9 @@ func TestCB67_MarkMessagesRead_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_MarkMessagesRead_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 	// Insert unread agent messages
@@ -1687,8 +1775,9 @@ func TestCB67_MarkMessagesRead_Success(t *testing.T) {
 }
 
 func TestCB67_MarkMessagesRead_Idempotent(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 	db.Exec("INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -1709,8 +1798,9 @@ func TestCB67_MarkMessagesRead_Idempotent(t *testing.T) {
 // ==================== deleteConversation (75% → target 90%+) ====================
 
 func TestCB67_DeleteConversationFn_NotFound(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	err := deleteConversation("nonexistent", "user1")
 	if err != sql.ErrNoRows {
@@ -1719,8 +1809,9 @@ func TestCB67_DeleteConversationFn_NotFound(t *testing.T) {
 }
 
 func TestCB67_DeleteConversationFn_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	err := deleteConversation(convID, "otheruser")
@@ -1730,8 +1821,9 @@ func TestCB67_DeleteConversationFn_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_DeleteConversationFn_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 	db.Exec("INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -1752,8 +1844,9 @@ func TestCB67_DeleteConversationFn_Success(t *testing.T) {
 // ==================== changeUserPassword (69.2% → target 90%+) ====================
 
 func TestCB67_ChangeUserPasswordFn_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "testuser", "oldpass123")
 
 	err := changeUserPassword(userID, "oldpass123", "newpass456")
@@ -1770,8 +1863,9 @@ func TestCB67_ChangeUserPasswordFn_Success(t *testing.T) {
 }
 
 func TestCB67_ChangeUserPasswordFn_WrongOld(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "testuser", "oldpass123")
 
 	err := changeUserPassword(userID, "wrongpass", "newpass456")
@@ -1781,8 +1875,9 @@ func TestCB67_ChangeUserPasswordFn_WrongOld(t *testing.T) {
 }
 
 func TestCB67_ChangeUserPasswordFn_UserNotFound(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	err := changeUserPassword("nonexistent", "old", "new")
 	if err != sql.ErrNoRows {
@@ -1791,8 +1886,9 @@ func TestCB67_ChangeUserPasswordFn_UserNotFound(t *testing.T) {
 }
 
 func TestCB67_ChangeUserPasswordFn_ShortNew(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "testuser", "oldpass123")
 
 	err := changeUserPassword(userID, "oldpass123", "short")
@@ -1804,8 +1900,9 @@ func TestCB67_ChangeUserPasswordFn_ShortNew(t *testing.T) {
 // ==================== storeMessagesBatch (81.5% → target 90%+) ====================
 
 func TestCB67_StoreMessagesBatch_Empty(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	ids, err := storeMessagesBatch(nil)
 	if err != nil {
@@ -1817,8 +1914,9 @@ func TestCB67_StoreMessagesBatch_Empty(t *testing.T) {
 }
 
 func TestCB67_StoreMessagesBatch_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	msgs := []RoutedMessage{
@@ -1845,8 +1943,9 @@ func TestCB67_StoreMessagesBatch_Success(t *testing.T) {
 // ==================== searchMessages (68.8% → target 90%+) ====================
 
 func TestCB67_SearchMessagesFn_EmptyQuery(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	_, err := searchMessages("user1", "", 50)
 	if err == nil {
@@ -1855,8 +1954,9 @@ func TestCB67_SearchMessagesFn_EmptyQuery(t *testing.T) {
 }
 
 func TestCB67_SearchMessagesFn_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 	db.Exec("INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -1872,8 +1972,9 @@ func TestCB67_SearchMessagesFn_Success(t *testing.T) {
 }
 
 func TestCB67_SearchMessagesFn_NoResults(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	userID := createUser_CB67(db, "user1", "pass123")
 	convID := createConversation_CB67(db, userID, "agent1")
 	db.Exec("INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -1891,8 +1992,9 @@ func TestCB67_SearchMessagesFn_NoResults(t *testing.T) {
 // ==================== getConversationMessages (already high but test cursor pagination) ====================
 
 func TestCB67_GetConversationMessages_CursorPagination(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	// Insert 5 messages with different timestamps
@@ -1939,8 +2041,9 @@ func TestCB67_GetConversationMessages_CursorPagination(t *testing.T) {
 // ==================== CreateConversation (80% → target 100%) ====================
 
 func TestCB67_CreateConversationFn_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	conv, err := CreateConversation("user1", "agent1")
 	if err != nil {
@@ -1961,8 +2064,9 @@ func TestCB67_CreateConversationFn_Success(t *testing.T) {
 // ==================== handleStoreEncryptedMessage (79.2% → target 90%+) ====================
 
 func TestCB67_StoreEncryptedMessage_MethodNotAllowed(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodGet, "/messages/encrypted", nil)
 	w := httptest.NewRecorder()
@@ -1973,8 +2077,9 @@ func TestCB67_StoreEncryptedMessage_MethodNotAllowed(t *testing.T) {
 }
 
 func TestCB67_StoreEncryptedMessage_Unauthorized(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"conversation_id":"conv1","ciphertext":"ct","iv":"iv","algorithm":"aes-256-gcm"}`
 	req := httptest.NewRequest(http.MethodPost, "/messages/encrypted", strings.NewReader(body))
@@ -1987,8 +2092,9 @@ func TestCB67_StoreEncryptedMessage_Unauthorized(t *testing.T) {
 }
 
 func TestCB67_StoreEncryptedMessage_InvalidJSON(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	req := httptest.NewRequest(http.MethodPost, "/messages/encrypted", strings.NewReader("not json"))
 	req.Header.Set("Content-Type", "application/json")
@@ -2001,8 +2107,9 @@ func TestCB67_StoreEncryptedMessage_InvalidJSON(t *testing.T) {
 }
 
 func TestCB67_StoreEncryptedMessage_MissingFields(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"conversation_id":"conv1"}`
 	req := httptest.NewRequest(http.MethodPost, "/messages/encrypted", strings.NewReader(body))
@@ -2016,8 +2123,9 @@ func TestCB67_StoreEncryptedMessage_MissingFields(t *testing.T) {
 }
 
 func TestCB67_StoreEncryptedMessage_InvalidAlgorithm(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"conversation_id":"conv1","ciphertext":"ct","iv":"iv","algorithm":"bad-algo"}`
 	req := httptest.NewRequest(http.MethodPost, "/messages/encrypted", strings.NewReader(body))
@@ -2031,8 +2139,9 @@ func TestCB67_StoreEncryptedMessage_InvalidAlgorithm(t *testing.T) {
 }
 
 func TestCB67_StoreEncryptedMessage_ConvNotFound(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 
 	body := `{"conversation_id":"nonexistent","ciphertext":"ct","iv":"iv","algorithm":"aes-256-gcm"}`
 	req := httptest.NewRequest(http.MethodPost, "/messages/encrypted", strings.NewReader(body))
@@ -2046,8 +2155,9 @@ func TestCB67_StoreEncryptedMessage_ConvNotFound(t *testing.T) {
 }
 
 func TestCB67_StoreEncryptedMessage_UserNotParticipant(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	body := `{"conversation_id":"` + convID + `","ciphertext":"ct","iv":"iv","algorithm":"aes-256-gcm"}`
@@ -2062,8 +2172,9 @@ func TestCB67_StoreEncryptedMessage_UserNotParticipant(t *testing.T) {
 }
 
 func TestCB67_StoreEncryptedMessage_Success(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	body := `{"conversation_id":"` + convID + `","ciphertext":"ct123","iv":"iv123","algorithm":"aes-256-gcm","recipient_key_id":"rk1"}`
@@ -2083,8 +2194,9 @@ func TestCB67_StoreEncryptedMessage_Success(t *testing.T) {
 }
 
 func TestCB67_StoreEncryptedMessage_AgentSender(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 	hub = makeTestHub_CB67()
 	defer func() { hub.Stop(); hub = nil }()
@@ -2102,8 +2214,9 @@ func TestCB67_StoreEncryptedMessage_AgentSender(t *testing.T) {
 }
 
 func TestCB67_StoreEncryptedMessage_AgentNotParticipant(t *testing.T) {
-	db = setupTestDB_CB67(t)
-	defer func() { db = nil }()
+	testDB67 := setupTestDB_CB67(t)
+	db = testDB67
+	defer func() { db = nil; testDB67.Close() }()
 	convID := createConversation_CB67(db, "user1", "agent1")
 
 	body := `{"conversation_id":"` + convID + `","ciphertext":"ct","iv":"iv","algorithm":"aes-256-gcm"}`
