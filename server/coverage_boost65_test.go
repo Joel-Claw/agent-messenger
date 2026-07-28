@@ -363,10 +363,13 @@ func TestCB65_handleAgentConnect_Success(t *testing.T) {
 	// Create a test server with the actual handler
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Set up hub if not already
-		if hub == nil {
-			hub = newHub()
-			go hub.run()
+		// Always create fresh hub to avoid stale hub whose run() has exited
+		if hub != nil {
+			close(hub.done)
+			<-hub.runDone
 		}
+		hub = newHub()
+		go hub.run()
 		handleAgentConnect(w, r)
 	}))
 	defer srv.Close()
@@ -1328,10 +1331,13 @@ func TestCB65_handleAgentConnect_WithProtocolVersion(t *testing.T) {
 	secret := getAgentSecret()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if hub == nil {
-			hub = newHub()
-			go hub.run()
+		// Always create fresh hub to avoid stale hub whose run() has exited
+		if hub != nil {
+			close(hub.done)
+			<-hub.runDone
 		}
+		hub = newHub()
+		go hub.run()
 		handleAgentConnect(w, r)
 	}))
 	defer func() {
@@ -1381,10 +1387,13 @@ func TestCB65_handleAgentConnect_UnsupportedProtocolVersion(t *testing.T) {
 	secret := getAgentSecret()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if hub == nil {
-			hub = newHub()
-			go hub.run()
+		// Always create fresh hub to avoid stale hub whose run() has exited
+		if hub != nil {
+			close(hub.done)
+			<-hub.runDone
 		}
+		hub = newHub()
+		go hub.run()
 		handleAgentConnect(w, r)
 	}))
 	defer func() {
@@ -1635,10 +1644,13 @@ func TestCB65_handleAgentConnect_WithMetadata(t *testing.T) {
 	secret := getAgentSecret()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if hub == nil {
-			hub = newHub()
-			go hub.run()
+		// Always create fresh hub to avoid stale hub whose run() has exited
+		if hub != nil {
+			close(hub.done)
+			<-hub.runDone
 		}
+		hub = newHub()
+		go hub.run()
 		handleAgentConnect(w, r)
 	}))
 	defer func() {
