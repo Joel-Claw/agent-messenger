@@ -1741,12 +1741,10 @@ func TestCB60_InitTracing_Disabled(t *testing.T) {
 	tp = nil
 	oldEnabled := tracingEnabled
 	tracingEnabled = false
-	oldOnce := tracingMu
 	tracingMu = sync.Once{}
 	defer func() {
 		tp = oldTp
 		tracingEnabled = oldEnabled
-		tracingMu = oldOnce
 	}()
 
 	os.Unsetenv("OTEL_ENABLED")
@@ -1764,12 +1762,10 @@ func TestCB60_InitTracing_NoEndpoint(t *testing.T) {
 	tp = nil
 	oldEnabled := tracingEnabled
 	tracingEnabled = false
-	oldOnce := tracingMu
 	tracingMu = sync.Once{}
 	defer func() {
 		tp = oldTp
 		tracingEnabled = oldEnabled
-		tracingMu = oldOnce
 		os.Unsetenv("OTEL_ENABLED")
 		os.Unsetenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 		os.Unsetenv("OTEL_EXPORTER_OTLP_HTTP_ENDPOINT")
