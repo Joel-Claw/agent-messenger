@@ -190,12 +190,15 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 
 	// Check database connectivity
 	dbStatus := "ok"
+	dbHealthy := true
 	if db != nil {
 		if err := db.Ping(); err != nil {
 			dbStatus = "error: " + err.Error()
+			dbHealthy = false
 		}
 	} else {
 		dbStatus = "not initialized"
+		dbHealthy = false
 	}
 
 	var snapshot map[string]interface{}
@@ -204,11 +207,19 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	} else {
 		snapshot = make(map[string]interface{})
 	}
-	snapshot["status"] = "ok"
 	snapshot["version"] = ServerVersion
 	snapshot["db"] = dbStatus
 	snapshot["tracing_enabled"] = IsTracingEnabled()
 
+	if !dbHealthy {
+		snapshot["status"] = "degraded"
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(snapshot)
+		return
+	}
+
+	snapshot["status"] = "ok"
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(snapshot)
 }
