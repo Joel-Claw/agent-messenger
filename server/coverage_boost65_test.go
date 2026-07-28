@@ -365,8 +365,7 @@ func TestCB65_handleAgentConnect_Success(t *testing.T) {
 		// Set up hub if not already
 		// Always create fresh hub to avoid stale hub whose run() has exited
 		if hub != nil {
-			close(hub.done)
-			<-hub.runDone
+			hub.Stop()
 		}
 		hub = newHub()
 		go hub.run()
@@ -1333,8 +1332,7 @@ func TestCB65_handleAgentConnect_WithProtocolVersion(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Always create fresh hub to avoid stale hub whose run() has exited
 		if hub != nil {
-			close(hub.done)
-			<-hub.runDone
+			hub.Stop()
 		}
 		hub = newHub()
 		go hub.run()
@@ -1389,8 +1387,7 @@ func TestCB65_handleAgentConnect_UnsupportedProtocolVersion(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Always create fresh hub to avoid stale hub whose run() has exited
 		if hub != nil {
-			close(hub.done)
-			<-hub.runDone
+			hub.Stop()
 		}
 		hub = newHub()
 		go hub.run()
@@ -1646,8 +1643,7 @@ func TestCB65_handleAgentConnect_WithMetadata(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Always create fresh hub to avoid stale hub whose run() has exited
 		if hub != nil {
-			close(hub.done)
-			<-hub.runDone
+			hub.Stop()
 		}
 		hub = newHub()
 		go hub.run()

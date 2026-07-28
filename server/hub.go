@@ -498,8 +498,13 @@ func (c *Connection) SafeSend(data []byte) bool {
 // ensuring stale connections are detected and cleaned up.
 func (c *Connection) readPump() {
 	defer func() {
+		// Recover from panics that can occur if the connection or hub
+		// is already in a bad state (e.g. nil conn, closed channels).
+		defer func() { recover() }()
 		c.hub.unregister <- c
-		c.conn.Close()
+		if c.conn != nil {
+			c.conn.Close()
+		}
 	}()
 
 	c.conn.SetReadLimit(maxMessageSize)
@@ -541,7 +546,9 @@ func (c *Connection) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close()
+		if c.conn != nil {
+			c.conn.Close()
+		}
 	}()
 
 	for {

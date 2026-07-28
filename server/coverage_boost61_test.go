@@ -916,6 +916,7 @@ func TestCB61_ReadPump_NormalClosure(t *testing.T) {
 		conn := &Connection{
 			id:                "test-readpump-normal",
 			connType:          "agent",
+			conn:              ws,
 			send:              make(chan []byte, 10),
 			hub:               hub,
 			negotiatedVersion: "v1",
