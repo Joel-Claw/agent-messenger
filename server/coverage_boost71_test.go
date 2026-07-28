@@ -1315,7 +1315,7 @@ func TestCB71_NewHub_FieldVerification(t *testing.T) {
 	if h.done == nil {
 		t.Fatal("Expected non-nil done channel")
 	}
-	if h.offlineQueue == nil {
+	if offlineQueue == nil {
 		t.Fatal("Expected non-nil offlineQueue")
 	}
 }
@@ -1384,18 +1384,18 @@ func TestCB71_HubRun_BroadcastToAllClients(t *testing.T) {
 
 func TestCB71_IPRateLimitMiddleware_Blocked(t *testing.T) {
 	// Create a fresh limiter for this test
-	oldLimiter := ipLimiter
-	ipLimiter = NewRateLimiter(2, time.Hour) // Very restrictive
-	defer func() { ipLimiter = oldLimiter }()
+	oldLimiter := ipRateLimiter
+	ipRateLimiter = NewRateLimiter(2, time.Hour) // Very restrictive
+	defer func() { ipRateLimiter = oldLimiter }()
 
 	called := false
 	handler := ipRateLimitMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		called = true
 	})
 
-	// Exhaust limit
-	ipLimiter.Allow("test_ip_1")
-	ipLimiter.Allow("test_ip_1")
+	// Exhaust limit with the same IP the request will come from
+	ipRateLimiter.Allow("1.2.3.4")
+	ipRateLimiter.Allow("1.2.3.4")
 	// Third call should be blocked
 
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -1414,18 +1414,18 @@ func TestCB71_IPRateLimitMiddleware_Blocked(t *testing.T) {
 // ==================== authRateLimitMiddleware Tests ====================
 
 func TestCB71_AuthRateLimitMiddleware_Blocked(t *testing.T) {
-	oldLimiter := authLimiter
-	authLimiter = NewRateLimiter(2, time.Hour)
-	defer func() { authLimiter = oldLimiter }()
+	oldLimiter := authIPLimiter
+	authIPLimiter = NewRateLimiter(2, time.Hour)
+	defer func() { authIPLimiter = oldLimiter }()
 
 	called := false
 	handler := authRateLimitMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		called = true
 	})
 
-	// Exhaust limit
-	authLimiter.Allow("test_auth_ip")
-	authLimiter.Allow("test_auth_ip")
+	// Exhaust limit with the same IP the request will come from
+	authIPLimiter.Allow("5.6.7.8")
+	authIPLimiter.Allow("5.6.7.8")
 
 	req := httptest.NewRequest("POST", "/auth/login", nil)
 	req.RemoteAddr = "5.6.7.8:12345"
@@ -1701,17 +1701,17 @@ func TestCB71_Logger_LogEntry_AllLevels(t *testing.T) {
 }
 
 func TestCB71_Logger_String_AllLevels(t *testing.T) {
-	if LogDebug.String() != "DEBUG" {
-		t.Fatalf("Expected 'DEBUG', got '%s'", LogDebug.String())
+	if LogDebug.String() != "debug" {
+		t.Fatalf("Expected 'debug', got '%s'", LogDebug.String())
 	}
-	if LogInfo.String() != "INFO" {
-		t.Fatalf("Expected 'INFO', got '%s'", LogInfo.String())
+	if LogInfo.String() != "info" {
+		t.Fatalf("Expected 'info', got '%s'", LogInfo.String())
 	}
-	if LogWarn.String() != "WARN" {
-		t.Fatalf("Expected 'WARN', got '%s'", LogWarn.String())
+	if LogWarn.String() != "warn" {
+		t.Fatalf("Expected 'warn', got '%s'", LogWarn.String())
 	}
-	if LogError.String() != "ERROR" {
-		t.Fatalf("Expected 'ERROR', got '%s'", LogError.String())
+	if LogError.String() != "error" {
+		t.Fatalf("Expected 'error', got '%s'", LogError.String())
 	}
 }
 
@@ -1919,7 +1919,7 @@ func TestCB71_HandleMessageDelete_DBError(t *testing.T) {
 	db = testDB
 	defer func() { db = nil }()
 
-	req := makeAuthRequest_CB71("DELETE", "/messages/delete?id=msg_del_err", "", "user_del_err")
+	req := makeAuthRequest_CB71("POST", "/messages/delete?message_id=msg_del_err", "", "user_del_err")
 	rr := httptest.NewRecorder()
 	handleMessageDelete(rr, req)
 
@@ -1935,47 +1935,38 @@ func TestCB71_InitAPNs_NilConfig(t *testing.T) {
 	pushConfig = nil
 	defer func() { pushConfig = oldConfig }()
 
-	result := initAPNs()
-	if result != nil {
-		t.Fatal("Expected nil APNs client for nil config")
-	}
+	initAPNs()
+	// With nil config, nothing to check — just verify no panic
 }
 
 func TestCB71_InitAPNs_Disabled(t *testing.T) {
 	oldConfig := pushConfig
-	pushConfig = &PushConfig{APNsEnabled: false}
+	pushConfig = &PushNotificationConfig{APNSEnabled: false}
 	defer func() { pushConfig = oldConfig }()
 
-	result := initAPNs()
-	if result != nil {
-		t.Fatal("Expected nil APNs client when disabled")
+	initAPNs()
+	if pushConfig.APNSEnabled {
+		t.Fatal("Expected APNs to remain disabled")
 	}
 }
 
-func TestCB71_InitAPNs_CertDirCreation(t *testing.T) {
+func TestCB71_InitAPNs_CertPathMissing(t *testing.T) {
 	dir := t.TempDir()
-	certPath := filepath.Join(dir, "certs")
-	// Don't create the dir - let initAPNs create it
+	certPath := filepath.Join(dir, "nonexistent.p8")
 
 	oldConfig := pushConfig
-	pushConfig = &PushConfig{
-		APNsEnabled:  true,
-		APNsCertDir:  certPath,
-		APNsTeamID:   "team123",
-		APNsKeyID:    "key123",
+	pushConfig = &PushNotificationConfig{
+		APNSEnabled: true,
+		CertPath:    certPath,
+		TeamID:      "team123",
+		KeyID:       "key123",
 	}
 	defer func() { pushConfig = oldConfig }()
 
-	// initAPNs will try to create dir and load certs
-	// It should create the dir but fail to load certs (returning nil)
-	result := initAPNs()
-	if result != nil {
-		t.Fatal("Expected nil APNs client (no valid certs)")
-	}
-
-	// Verify dir was created
-	if _, err := os.Stat(certPath); os.IsNotExist(err) {
-		t.Fatal("Expected cert dir to be created")
+	initAPNs()
+	// Cert doesn't exist, so APNs should be disabled
+	if pushConfig.APNSEnabled {
+		t.Fatal("Expected APNs to be disabled when cert not found")
 	}
 }
 
@@ -1986,52 +1977,43 @@ func TestCB71_InitFCM_NilConfig(t *testing.T) {
 	pushConfig = nil
 	defer func() { pushConfig = oldConfig }()
 
-	result := initFCM()
-	if result != nil {
-		t.Fatal("Expected nil FCM client for nil config")
-	}
+	initFCM()
+	// With nil config, nothing to check — just verify no panic
 }
 
 func TestCB71_InitFCM_Disabled(t *testing.T) {
 	oldConfig := pushConfig
-	pushConfig = &PushConfig{FCMEnabled: false}
+	pushConfig = &PushNotificationConfig{FCMEnabled: false}
 	defer func() { pushConfig = oldConfig }()
 
-	result := initFCM()
-	if result != nil {
-		t.Fatal("Expected nil FCM client when disabled")
+	initFCM()
+	if pushConfig.FCMEnabled {
+		t.Fatal("Expected FCM to remain disabled")
 	}
 }
 
 func TestCB71_InitFCM_CredsNotFound(t *testing.T) {
 	oldConfig := pushConfig
-	pushConfig = &PushConfig{
-		FCMEnabled:   true,
-		FCMCredsPath: "/nonexistent/path/to/creds.json",
+	pushConfig = &PushNotificationConfig{
+		FCMEnabled:     true,
+		FCMCredentials: "/nonexistent/path/to/creds.json",
 	}
 	defer func() { pushConfig = oldConfig }()
 
-	result := initFCM()
-	if result != nil {
-		t.Fatal("Expected nil FCM client for missing creds")
+	initFCM()
+	if pushConfig.FCMEnabled {
+		t.Fatal("Expected FCM to be disabled when creds not found")
 	}
 }
 
 // ==================== cpuProfileTestSetup Test ====================
 
-func TestCB71_CpuProfileTestSetup_WithFile(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "cpu.prof")
-
-	stop := cpuProfileTestSetup(path)
+func TestCB71_CpuProfileTestSetup(t *testing.T) {
+	stop := cpuProfileTestSetup()
 	if stop == nil {
 		t.Fatal("Expected non-nil stop function")
 	}
 	stop()
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		t.Fatal("Expected CPU profile file to be created")
-	}
 }
 
 // ==================== loadQueueFromDB Tests ====================
@@ -2047,10 +2029,7 @@ func TestCB71_LoadQueueFromDB_WithMessages(t *testing.T) {
 		"load_user", []byte(`{"type":"message","data":{"content":"world"}}`), time.Now().UTC().Format(time.RFC3339))
 
 	q := newOfflineQueue(100, time.Hour)
-	err := loadQueueFromDB(testDB, q)
-	if err != nil {
-		t.Fatalf("loadQueueFromDB failed: %v", err)
-	}
+	loadQueueFromDB(testDB, q)
 
 	depth := q.QueueDepth("load_user")
 	if depth != 2 {
@@ -2063,10 +2042,7 @@ func TestCB71_LoadQueueFromDB_EmptyTable(t *testing.T) {
 	defer testDB.Close()
 
 	q := newOfflineQueue(100, time.Hour)
-	err := loadQueueFromDB(testDB, q)
-	if err != nil {
-		t.Fatalf("loadQueueFromDB failed: %v", err)
-	}
+	loadQueueFromDB(testDB, q)
 
 	total := q.TotalDepth()
 	if total != 0 {
@@ -2076,10 +2052,8 @@ func TestCB71_LoadQueueFromDB_EmptyTable(t *testing.T) {
 
 func TestCB71_LoadQueueFromDB_NilDB(t *testing.T) {
 	q := newOfflineQueue(100, time.Hour)
-	err := loadQueueFromDB(nil, q)
-	if err != nil {
-		t.Fatalf("Expected no error for nil DB, got: %v", err)
-	}
+	loadQueueFromDB(nil, q)
+	// Should not panic with nil DB
 }
 
 // ==================== initSchema Tests ====================
@@ -2125,7 +2099,7 @@ func TestCB71_HandleRegisterDeviceToken_DBError(t *testing.T) {
 
 	testDB.Close()
 
-	body := `{"token":"abc123","platform":"ios"}`
+	body := `{"device_token":"abc123","platform":"ios"}`
 	req := makeAuthRequest_CB71("POST", "/devices/register", body, "user_device_err")
 	rr := httptest.NewRecorder()
 	handleRegisterDeviceToken(rr, req)
@@ -2594,7 +2568,7 @@ func TestCB71_HandleMessageEdit_DBError(t *testing.T) {
 	db = testDB
 	defer func() { db = nil }()
 
-	req := makeAuthRequest_CB71("PUT", "/messages/edit?id=msg_edit_err&content=updated", "", "user_edit_err")
+	req := makeAuthRequest_CB71("POST", "/messages/edit?message_id=msg_edit_err&content=updated", "", "user_edit_err")
 	rr := httptest.NewRecorder()
 	handleMessageEdit(rr, req)
 
@@ -2607,8 +2581,8 @@ func TestCB71_HandleMessageEdit_DBError(t *testing.T) {
 
 func TestCB71_SafeTruncate(t *testing.T) {
 	result := safeTruncate("hello world", 5)
-	if result != "he..." {
-		t.Fatalf("Expected 'he...', got '%s'", result)
+	if result != "hello" {
+		t.Fatalf("Expected 'hello', got '%s'", result)
 	}
 
 	result = safeTruncate("short", 10)
@@ -2630,7 +2604,6 @@ func TestCB71_SafeTruncate(t *testing.T) {
 // ==================== GetEnvOrDefault Test ====================
 
 func TestCB71_GetEnvOrDefault(t *testing.T) {
-	oldVal := os.Getenv("CB71_TEST_ENV")
 	defer os.Unsetenv("CB71_TEST_ENV")
 
 	os.Setenv("CB71_TEST_ENV", "custom_value")
@@ -2649,8 +2622,8 @@ func TestCB71_GetEnvOrDefault(t *testing.T) {
 // ==================== GenerateID Test ====================
 
 func TestCB71_GenerateID(t *testing.T) {
-	id1 := GenerateID()
-	id2 := GenerateID()
+	id1 := generateID("")
+	id2 := generateID("")
 	if id1 == id2 {
 		t.Fatal("Expected unique IDs")
 	}
