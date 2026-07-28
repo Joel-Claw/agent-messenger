@@ -115,6 +115,12 @@ func handleDeleteNotificationPrefs(w http.ResponseWriter, r *http.Request) {
 
 // isConversationMuted checks if a user has muted notifications for a conversation.
 func isConversationMuted(userID, conversationID string) bool {
+	if db == nil {
+		return false // Default: not muted
+	}
+	if err := db.Ping(); err != nil {
+		return false // DB closed or unavailable
+	}
 	var muted bool
 	err := db.QueryRow(`
 		SELECT muted FROM notification_preferences
