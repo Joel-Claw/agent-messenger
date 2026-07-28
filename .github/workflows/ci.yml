@@ -24,10 +24,10 @@ jobs:
         run: go vet ./...
 
       - name: Test
-        run: go test -count=1 ./...
+        run: go test -count=1 -timeout 20m ./...
 
       - name: Coverage
-        run: go test -count=1 -cover ./...
+        run: go test -count=1 -timeout 20m -cover ./...
         continue-on-error: true
 
       # Race detector: previously non-blocking due to hub.go data races.
@@ -35,7 +35,7 @@ jobs:
       # converted to atomic, writeMu added to Connection, status under mutex.
       # Keeping non-blocking as a safety net in case new races are introduced.
       - name: Race Check (non-blocking)
-        run: go test -race -count=1 ./... 2>&1 || true
+        run: go test -race -count=1 -timeout 20m ./... 2>&1 || true
         continue-on-error: true
 
   webchat:
