@@ -16,12 +16,13 @@ func TestHealthEndpoint(t *testing.T) {
 
 	ServerMetrics = NewMetrics(hub)
 
+	// db is nil in this test, health endpoint should return 503
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
 	handleHealth(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("health status = %d, want %d", w.Code, http.StatusOK)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("health status = %d, want %d", w.Code, http.StatusServiceUnavailable)
 	}
 
 	var result map[string]interface{}
@@ -29,8 +30,8 @@ func TestHealthEndpoint(t *testing.T) {
 		t.Fatalf("failed to parse health response: %v", err)
 	}
 
-	if result["status"] != "ok" {
-		t.Errorf("health status = %v, want ok", result["status"])
+	if result["status"] != "degraded" {
+		t.Errorf("health status = %v, want degraded", result["status"])
 	}
 	if _, ok := result["uptime_seconds"]; !ok {
 		t.Error("health response missing uptime_seconds")

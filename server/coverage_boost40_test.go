@@ -1048,14 +1048,17 @@ func TestCB40_Health_DBError(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/health", nil)
 	rec := httptest.NewRecorder()
 	handleHealth(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Errorf("expected 200 even with DB error, got %d", rec.Code)
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Errorf("expected 503 with DB error, got %d", rec.Code)
 	}
 	var resp map[string]interface{}
 	json.Unmarshal(rec.Body.Bytes(), &resp)
 	dbStatus, _ := resp["db"].(string)
 	if dbStatus == "ok" {
 		t.Error("expected db status to show error, got 'ok'")
+	}
+	if resp["status"] != "degraded" {
+		t.Errorf("expected status=degraded, got %v", resp["status"])
 	}
 }
 
@@ -1071,13 +1074,16 @@ func TestCB40_Health_NilDB(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/health", nil)
 	rec := httptest.NewRecorder()
 	handleHealth(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Errorf("expected 200, got %d", rec.Code)
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Errorf("expected 503, got %d", rec.Code)
 	}
 	var resp map[string]interface{}
 	json.Unmarshal(rec.Body.Bytes(), &resp)
 	if resp["db"] != "not initialized" {
 		t.Errorf("expected 'not initialized', got %v", resp["db"])
+	}
+	if resp["status"] != "degraded" {
+		t.Errorf("expected status=degraded, got %v", resp["status"])
 	}
 }
 
