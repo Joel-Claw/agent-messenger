@@ -35,11 +35,12 @@ import (
 func cb40SetupDB(t *testing.T) {
 	t.Helper()
 	var err error
-	db, err = sql.Open("sqlite3", ":memory:")
+	testDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	if err := initSchema(db); err != nil {
 		t.Fatal(err)
 	}
@@ -1042,8 +1043,11 @@ func TestCB40_Health_DBError(t *testing.T) {
 	cb40SetupDB(t)
 	cb40SetupAuth(t)
 
-	// Close DB to cause Ping error
-	db.Close()
+	// Close DB to cause Ping error, then nil it so cb40SetupDB's
+	// cleanup of db.Close() doesn't panic on already-closed DB
+	closedDB := db
+	db = nil
+	closedDB.Close()
 
 	req, _ := http.NewRequest("GET", "/health", nil)
 	rec := httptest.NewRecorder()
@@ -1687,17 +1691,16 @@ func TestCB40_CleanStaleQueueMessages_DBError(t *testing.T) {
 
 func TestCB40_InitQueueDB_Error(t *testing.T) {
 	var err error
-	db, err = sql.Open("sqlite3", ":memory:")
+	testDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
 
 	// Close the DB to cause error
-	db.Close()
+	testDB.Close()
 
-	// Should not panic
-	initQueueDB(db)
+	// Should not panic on a closed DB
+	initQueueDB(testDB)
 	// If we get here without panic, the test passes
 }
 
