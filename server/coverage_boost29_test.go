@@ -1351,8 +1351,8 @@ func TestCB29_HandleHealth_NilDB(t *testing.T) {
 	w := httptest.NewRecorder()
 	handleHealth(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("expected 200, got %d", w.Code)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("expected 503, got %d", w.Code)
 	}
 
 	var resp map[string]interface{}
@@ -1361,6 +1361,9 @@ func TestCB29_HandleHealth_NilDB(t *testing.T) {
 	}
 	if resp["db"] != "not initialized" {
 		t.Errorf("expected db='not initialized', got %v", resp["db"])
+	}
+	if resp["status"] != "degraded" {
+		t.Errorf("expected status=degraded, got %v", resp["status"])
 	}
 }
 

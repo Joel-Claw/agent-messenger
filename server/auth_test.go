@@ -290,8 +290,8 @@ func TestHandleHealth(t *testing.T) {
 	w := httptest.NewRecorder()
 	handleHealth(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Code)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d", w.Code)
 	}
 }
 

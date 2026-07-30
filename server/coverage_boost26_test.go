@@ -3544,6 +3544,7 @@ func TestCB26_OpenDatabase_WALMode(t *testing.T) {
 // ==============================
 
 func TestCB26_HandleHealth_Success(t *testing.T) {
+	cb25SetupDB(t)
 	h := newHub()
 	go h.run()
 	defer h.Stop()
