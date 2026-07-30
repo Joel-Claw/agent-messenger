@@ -328,6 +328,9 @@ type deviceTokenWithPlatform struct {
 
 // getDeviceTokensForUser returns all device tokens with platforms for a user
 func getDeviceTokensForUser(userID string) ([]deviceTokenWithPlatform, error) {
+	if db == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
 	rows, err := db.Query("SELECT device_token, platform FROM device_tokens WHERE user_id = ?", userID)
 	if err != nil {
 		return nil, err
@@ -347,6 +350,11 @@ func getDeviceTokensForUser(userID string) ([]deviceTokenWithPlatform, error) {
 
 // notifyUser sends a push notification to all devices for a user
 func notifyUser(userID, title, body, conversationID string) {
+	defer func() {
+		if r := recover(); r != nil {
+			DefaultLogger.Warn("notify_user_panic_recovered", map[string]interface{}{"user_id": userID, "panic": fmt.Sprintf("%v", r)})
+		}
+	}()
 	if pushConfig == nil {
 		return
 	}
