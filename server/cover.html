@@ -55,57 +55,57 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/Joel-Claw/agent-messenger/server/attachments.go (91.8%)</option>
+				<option value="file0">github.com/Joel-Claw/agent-messenger/server/attachments.go (89.2%)</option>
 				
-				<option value="file1">github.com/Joel-Claw/agent-messenger/server/auth.go (98.9%)</option>
+				<option value="file1">github.com/Joel-Claw/agent-messenger/server/auth.go (93.5%)</option>
 				
-				<option value="file2">github.com/Joel-Claw/agent-messenger/server/conversations.go (95.4%)</option>
+				<option value="file2">github.com/Joel-Claw/agent-messenger/server/conversations.go (92.4%)</option>
 				
-				<option value="file3">github.com/Joel-Claw/agent-messenger/server/dbdriver.go (100.0%)</option>
+				<option value="file3">github.com/Joel-Claw/agent-messenger/server/dbdriver.go (46.5%)</option>
 				
-				<option value="file4">github.com/Joel-Claw/agent-messenger/server/e2e.go (99.5%)</option>
+				<option value="file4">github.com/Joel-Claw/agent-messenger/server/e2e.go (94.0%)</option>
 				
-				<option value="file5">github.com/Joel-Claw/agent-messenger/server/handlers.go (96.7%)</option>
+				<option value="file5">github.com/Joel-Claw/agent-messenger/server/handlers.go (86.1%)</option>
 				
-				<option value="file6">github.com/Joel-Claw/agent-messenger/server/hub.go (98.2%)</option>
+				<option value="file6">github.com/Joel-Claw/agent-messenger/server/hub.go (88.5%)</option>
 				
-				<option value="file7">github.com/Joel-Claw/agent-messenger/server/logger.go (100.0%)</option>
+				<option value="file7">github.com/Joel-Claw/agent-messenger/server/logger.go (96.2%)</option>
 				
 				<option value="file8">github.com/Joel-Claw/agent-messenger/server/main.go (19.5%)</option>
 				
-				<option value="file9">github.com/Joel-Claw/agent-messenger/server/messages_edit_delete.go (93.8%)</option>
+				<option value="file9">github.com/Joel-Claw/agent-messenger/server/messages_edit_delete.go (89.7%)</option>
 				
 				<option value="file10">github.com/Joel-Claw/agent-messenger/server/metrics.go (100.0%)</option>
 				
 				<option value="file11">github.com/Joel-Claw/agent-messenger/server/metrics_handler.go (100.0%)</option>
 				
-				<option value="file12">github.com/Joel-Claw/agent-messenger/server/middleware.go (100.0%)</option>
+				<option value="file12">github.com/Joel-Claw/agent-messenger/server/middleware.go (98.0%)</option>
 				
-				<option value="file13">github.com/Joel-Claw/agent-messenger/server/notif_prefs.go (98.3%)</option>
+				<option value="file13">github.com/Joel-Claw/agent-messenger/server/notif_prefs.go (92.1%)</option>
 				
-				<option value="file14">github.com/Joel-Claw/agent-messenger/server/presence.go (96.4%)</option>
+				<option value="file14">github.com/Joel-Claw/agent-messenger/server/presence.go (94.6%)</option>
 				
 				<option value="file15">github.com/Joel-Claw/agent-messenger/server/profile.go (100.0%)</option>
 				
-				<option value="file16">github.com/Joel-Claw/agent-messenger/server/profile_handler.go (100.0%)</option>
+				<option value="file16">github.com/Joel-Claw/agent-messenger/server/profile_handler.go (92.0%)</option>
 				
-				<option value="file17">github.com/Joel-Claw/agent-messenger/server/profile_test_helper.go (93.8%)</option>
+				<option value="file17">github.com/Joel-Claw/agent-messenger/server/profile_test_helper.go (87.5%)</option>
 				
 				<option value="file18">github.com/Joel-Claw/agent-messenger/server/protocol.go (92.0%)</option>
 				
-				<option value="file19">github.com/Joel-Claw/agent-messenger/server/push.go (95.4%)</option>
+				<option value="file19">github.com/Joel-Claw/agent-messenger/server/push.go (93.6%)</option>
 				
-				<option value="file20">github.com/Joel-Claw/agent-messenger/server/queue.go (98.4%)</option>
+				<option value="file20">github.com/Joel-Claw/agent-messenger/server/queue.go (96.8%)</option>
 				
 				<option value="file21">github.com/Joel-Claw/agent-messenger/server/queue_persist.go (95.9%)</option>
 				
-				<option value="file22">github.com/Joel-Claw/agent-messenger/server/rate_limit_tiers.go (98.3%)</option>
+				<option value="file22">github.com/Joel-Claw/agent-messenger/server/rate_limit_tiers.go (97.1%)</option>
 				
-				<option value="file23">github.com/Joel-Claw/agent-messenger/server/reactions.go (95.8%)</option>
+				<option value="file23">github.com/Joel-Claw/agent-messenger/server/reactions.go (91.7%)</option>
 				
-				<option value="file24">github.com/Joel-Claw/agent-messenger/server/routing.go (96.3%)</option>
+				<option value="file24">github.com/Joel-Claw/agent-messenger/server/routing.go (92.6%)</option>
 				
-				<option value="file25">github.com/Joel-Claw/agent-messenger/server/tags.go (96.7%)</option>
+				<option value="file25">github.com/Joel-Claw/agent-messenger/server/tags.go (92.7%)</option>
 				
 				<option value="file26">github.com/Joel-Claw/agent-messenger/server/tracing.go (88.8%)</option>
 				
@@ -342,7 +342,7 @@ func handleGetAttachment(w http.ResponseWriter, r *http.Request) <span class="co
         // Extract attachment ID from path: /attachments/{id}
         <span class="cov8" title="1">pathParts := strings.Split(strings.TrimPrefix(r.URL.Path, "/attachments/"), "/")
         attachID := pathParts[0]
-        if attachID == "" </span><span class="cov8" title="1">{
+        if attachID == "" </span><span class="cov0" title="0">{
                 writeJSONError(w, http.StatusBadRequest, "missing attachment id")
                 return
         }</span>
@@ -353,7 +353,7 @@ func handleGetAttachment(w http.ResponseWriter, r *http.Request) <span class="co
         if strings.HasPrefix(authHeader, "Bearer ") </span><span class="cov8" title="1">{
                 token := strings.TrimPrefix(authHeader, "Bearer ")
                 claims, err := ValidateJWT(token)
-                if err != nil </span><span class="cov8" title="1">{
+                if err != nil </span><span class="cov0" title="0">{
                         writeJSONError(w, http.StatusUnauthorized, "invalid token")
                         return
                 }</span>
@@ -628,7 +628,7 @@ type Claims struct {
 // ValidateAgentSecret checks the provided secret against the shared AGENT_SECRET.
 // All agents authenticate with the same secret - they self-register with their agent_id on connect.
 func ValidateAgentSecret(agentID string, secret string) error <span class="cov8" title="1">{
-        if secret == "" </span><span class="cov8" title="1">{
+        if secret == "" </span><span class="cov0" title="0">{
                 return errors.New("missing agent secret")
         }</span>
         <span class="cov8" title="1">if !agentRateLimiter.Allow(agentID) </span><span class="cov8" title="1">{
@@ -669,23 +669,23 @@ func RegisterAgentOnConnect(agentID string, name string, model string, personali
 
         // Existing agent - only update non-empty fields
         <span class="cov8" title="1">if model != "" </span><span class="cov8" title="1">{
-                if _, err := db.Exec("UPDATE agents SET model = ? WHERE id = ?", model, agentID); err != nil </span><span class="cov8" title="1">{
+                if _, err := db.Exec("UPDATE agents SET model = ? WHERE id = ?", model, agentID); err != nil </span><span class="cov0" title="0">{
                         return err
                 }</span>
         }
         <span class="cov8" title="1">if personality != "" </span><span class="cov8" title="1">{
-                if _, err := db.Exec("UPDATE agents SET personality = ? WHERE id = ?", personality, agentID); err != nil </span><span class="cov8" title="1">{
+                if _, err := db.Exec("UPDATE agents SET personality = ? WHERE id = ?", personality, agentID); err != nil </span><span class="cov0" title="0">{
                         return err
                 }</span>
         }
         <span class="cov8" title="1">if specialty != "" </span><span class="cov8" title="1">{
-                if _, err := db.Exec("UPDATE agents SET specialty = ? WHERE id = ?", specialty, agentID); err != nil </span><span class="cov8" title="1">{
+                if _, err := db.Exec("UPDATE agents SET specialty = ? WHERE id = ?", specialty, agentID); err != nil </span><span class="cov0" title="0">{
                         return err
                 }</span>
         }
         // Always update name if provided (but not if it defaulted to agentID)
         <span class="cov8" title="1">if name != agentID </span><span class="cov8" title="1">{
-                if _, err := db.Exec("UPDATE agents SET name = ? WHERE id = ?", name, agentID); err != nil </span><span class="cov8" title="1">{
+                if _, err := db.Exec("UPDATE agents SET name = ? WHERE id = ?", name, agentID); err != nil </span><span class="cov0" title="0">{
                         return err
                 }</span>
         }
@@ -844,7 +844,7 @@ func storeMessagesBatch(msgs []RoutedMessage) ([]string, error) <span class="cov
         stmt, err := tx.Prepare(
                 "INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, metadata, created_at) VALUES (" +
                         Placeholder(1) + ", " + Placeholder(2) + ", " + Placeholder(3) + ", " + Placeholder(4) + ", " + Placeholder(5) + ", " + Placeholder(6) + ", " + Placeholder(7) + ")")
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("prepare insert: %w", err)
         }</span>
         <span class="cov8" title="1">defer stmt.Close()
@@ -947,7 +947,7 @@ func deleteConversation(convID, userID string) error <span class="cov8" title="1
         }</span>
 
         // Delete messages first (foreign key)
-        <span class="cov8" title="1">if _, err := db.Exec("DELETE FROM messages WHERE conversation_id = ?", convID); err != nil </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">if _, err := db.Exec("DELETE FROM messages WHERE conversation_id = ?", convID); err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
         // Delete conversation
@@ -977,7 +977,7 @@ func changeUserPassword(userID, oldPassword, newPassword string) error <span cla
 
         // Hash new password
         <span class="cov8" title="1">newHash, err := HashAPIKey(newPassword)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
 
@@ -1039,7 +1039,7 @@ func markMessagesRead(convID, userID string) (int64, error) <span class="cov8" t
                 "UPDATE messages SET read_at = ? WHERE conversation_id = ? AND sender_type = 'agent' AND read_at IS NULL",
                 time.Now().UTC(), convID,
         )
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 return 0, err
         }</span>
         <span class="cov8" title="1">return result.RowsAffected()</span>
@@ -1115,16 +1115,16 @@ func Placeholders(start, count int) string <span class="cov8" title="1">{
 }
 
 // openDatabase opens a database connection using the appropriate driver
-func openDatabase(driver, dsn string) (*sql.DB, error) <span class="cov8" title="1">{
+func openDatabase(driver, dsn string) (*sql.DB, error) <span class="cov0" title="0">{
         currentDriver = driver
 
         db, err := sql.Open(driver, dsn)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("failed to open database: %w", err)
         }</span>
 
         // Configure connection pool based on driver
-        <span class="cov8" title="1">if driver == DriverPostgreSQL </span><span class="cov8" title="1">{
+        <span class="cov0" title="0">if driver == DriverPostgreSQL </span><span class="cov0" title="0">{
                 maxOpen := envIntOrDefault("DB_MAX_OPEN_CONNS", 25)
                 maxIdle := envIntOrDefault("DB_MAX_IDLE_CONNS", 5)
                 maxLifetime := envDurationOrDefault("DB_CONN_MAX_LIFETIME", 30*time.Minute)
@@ -1139,10 +1139,10 @@ func openDatabase(driver, dsn string) (*sql.DB, error) <span class="cov8" title=
                         maxOpen, maxIdle, maxLifetime, maxIdleTime)
 
                 // Verify connection
-                if err := db.Ping(); err != nil </span><span class="cov8" title="1">{
+                if err := db.Ping(); err != nil </span><span class="cov0" title="0">{
                         return nil, fmt.Errorf("failed to connect to PostgreSQL: %w", err)
                 }</span>
-        } else<span class="cov8" title="1"> {
+        } else<span class="cov0" title="0"> {
                 // SQLite: single connection for write safety, enable WAL mode
                 db.SetMaxOpenConns(1)
                 db.SetMaxIdleConns(1)
@@ -1152,7 +1152,7 @@ func openDatabase(driver, dsn string) (*sql.DB, error) <span class="cov8" title=
                 log.Printf("Connected to SQLite database (WAL mode, busy_timeout=5s)")
         }</span>
 
-        <span class="cov8" title="1">return db, nil</span>
+        <span class="cov0" title="0">return db, nil</span>
 }
 
 // envIntOrDefault returns the integer value of the environment variable,
@@ -1558,7 +1558,7 @@ func handleUploadPublicKey(w http.ResponseWriter, r *http.Request) <span class="
                 INSERT INTO key_bundles (id, owner_id, owner_type, key_type, public_key, signature, key_id, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `, keyID, ownerID, ownerType, req.KeyType, req.PublicKey, req.Signature, req.KeyID, time.Now().UTC())
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 DefaultLogger.Error("key_bundle_store_error", map[string]interface{}{"error": err.Error()})
                 writeJSONError(w, http.StatusInternalServerError, "failed to store key")
                 return
@@ -1734,7 +1734,7 @@ func handleStoreEncryptedMessage(w http.ResponseWriter, r *http.Request) <span c
                 INSERT INTO encrypted_messages (id, conversation_id, sender_id, sender_type, ciphertext, iv, recipient_key_id, sender_key_id, algorithm, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, msgID, req.ConversationID, senderID, senderType, req.Ciphertext, req.Iv, req.RecipientKeyID, req.SenderKeyID, req.Algorithm, time.Now().UTC())
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 DefaultLogger.Error("encrypted_message_store_error", map[string]interface{}{"error": err.Error()})
                 writeJSONError(w, http.StatusInternalServerError, "failed to store encrypted message")
                 return
@@ -1755,7 +1755,7 @@ func handleStoreEncryptedMessage(w http.ResponseWriter, r *http.Request) <span c
                 if senderType == "user" </span><span class="cov8" title="1">{
                         // Deliver to agent
                         if agent := hub.GetAgent(conv.AgentID); agent != nil </span><span class="cov8" title="1">{
-                                if !agent.SafeSend(outgoing) </span><span class="cov8" title="1">{
+                                if !agent.SafeSend(outgoing) </span><span class="cov0" title="0">{
                                         DefaultLogger.Warn("agent_buffer_full_encrypted", map[string]interface{}{"agent_id": conv.AgentID})
                                 }</span>
                         }
@@ -1765,7 +1765,7 @@ func handleStoreEncryptedMessage(w http.ResponseWriter, r *http.Request) <span c
                         if len(conns) &gt; 0 </span><span class="cov8" title="1">{
                                 delivered := 0
                                 for _, client := range conns </span><span class="cov8" title="1">{
-                                        if client.SafeSend(outgoing) </span><span class="cov8" title="1">{
+                                        if client.SafeSend(outgoing) </span><span class="cov0" title="0">{
                                                 delivered++
                                         }</span> else<span class="cov8" title="1"> {
                                                 DefaultLogger.Warn("client_buffer_full_encrypted", map[string]interface{}{"user_id": conv.UserID, "device_id": client.deviceID})
@@ -1838,7 +1838,7 @@ func handleGetEncryptedMessages(w http.ResponseWriter, r *http.Request) <span cl
                 ORDER BY created_at ASC
                 LIMIT ?
         `, conversationID, limit)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 writeJSONError(w, http.StatusInternalServerError, "failed to fetch encrypted messages")
                 return
         }</span>
@@ -1937,7 +1937,7 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) <span class="cov
         // Validate against shared AGENT_SECRET
         <span class="cov8" title="1">if err := ValidateAgentSecret(agentID, secret); err != nil </span><span class="cov8" title="1">{
                 agentSpan.SetAttributes(attribute.Bool("messenger.auth_success", false))
-                if ServerMetrics != nil </span><span class="cov8" title="1">{
+                if ServerMetrics != nil </span><span class="cov0" title="0">{
                         ServerMetrics.ErrorsTotal.Add(1)
                 }</span>
                 <span class="cov8" title="1">status := http.StatusUnauthorized
@@ -1968,7 +1968,7 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) <span class="cov
 
         // Upgrade to WebSocket
         <span class="cov8" title="1">conn, err := upgrader.Upgrade(w, r, responseHeader)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 DefaultLogger.Error("ws_upgrade_failed_agent", map[string]interface{}{"agent_id": agentID, "error": err.Error()})
                 return
         }</span>
@@ -1998,7 +1998,7 @@ func handleAgentConnect(w http.ResponseWriter, r *http.Request) <span class="cov
         sendWelcomeMessage(c)</span>
 }
 
-func handleClientConnect(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+func handleClientConnect(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
         // Start tracing span for client WebSocket connection
         _, clientSpan := StartSpanFromRequest(r, spanClientConnect,
                 attribute.String(attrConnType, "client"),
@@ -2006,43 +2006,43 @@ func handleClientConnect(w http.ResponseWriter, r *http.Request) <span class="co
         defer clientSpan.End()
 
         token := r.URL.Query().Get("token")
-        if token == "" </span><span class="cov8" title="1">{
+        if token == "" </span><span class="cov0" title="0">{
                 clientSpan.SetAttributes(attribute.Bool("messenger.auth_success", false))
                 writeJSONError(w, http.StatusUnauthorized, "missing token parameter")
                 return
         }</span>
 
         // Validate JWT token
-        <span class="cov8" title="1">claims, err := ValidateJWT(token)
-        if err != nil </span><span class="cov8" title="1">{
+        <span class="cov0" title="0">claims, err := ValidateJWT(token)
+        if err != nil </span><span class="cov0" title="0">{
                 clientSpan.SetAttributes(attribute.Bool("messenger.auth_success", false))
-                if ServerMetrics != nil </span><span class="cov8" title="1">{
+                if ServerMetrics != nil </span><span class="cov0" title="0">{
                         ServerMetrics.ErrorsTotal.Add(1)
                 }</span>
-                <span class="cov8" title="1">writeJSONError(w, http.StatusUnauthorized, "authentication failed: "+err.Error())
+                <span class="cov0" title="0">writeJSONError(w, http.StatusUnauthorized, "authentication failed: "+err.Error())
                 return</span>
         }
 
         // Use the user ID from the JWT claims (don't trust query param)
-        <span class="cov8" title="1">userID := claims.UserID
+        <span class="cov0" title="0">userID := claims.UserID
         clientSpan.SetAttributes(attribute.String(attrConnID, userID))
 
         // Negotiate sub-protocol version
         protocolVersion := negotiateProtocol(r)
         responseHeader := http.Header{}
-        if protocolVersion != "" &amp;&amp; isSupportedVersion(protocolVersion) </span><span class="cov8" title="1">{
+        if protocolVersion != "" &amp;&amp; isSupportedVersion(protocolVersion) </span><span class="cov0" title="0">{
                 responseHeader.Set("Sec-WebSocket-Protocol", protocolVersion)
         }</span>
 
         // Upgrade to WebSocket
-        <span class="cov8" title="1">conn, err := upgrader.Upgrade(w, r, responseHeader)
-        if err != nil </span><span class="cov8" title="1">{
+        <span class="cov0" title="0">conn, err := upgrader.Upgrade(w, r, responseHeader)
+        if err != nil </span><span class="cov0" title="0">{
                 DefaultLogger.Error("ws_upgrade_failed_client", map[string]interface{}{"user_id": userID, "error": err.Error()})
                 return
         }</span>
 
         // Create connection
-        <span class="cov8" title="1">deviceID := r.URL.Query().Get("device_id")
+        <span class="cov0" title="0">deviceID := r.URL.Query().Get("device_id")
         c := &amp;Connection{
                 hub:              hub,
                 connType:         "client",
@@ -2076,12 +2076,15 @@ func handleHealth(w http.ResponseWriter, r *http.Request) <span class="cov8" tit
 
         // Check database connectivity
         <span class="cov8" title="1">dbStatus := "ok"
+        dbHealthy := true
         if db != nil </span><span class="cov8" title="1">{
                 if err := db.Ping(); err != nil </span><span class="cov8" title="1">{
                         dbStatus = "error: " + err.Error()
+                        dbHealthy = false
                 }</span>
-        } else<span class="cov8" title="1"> {
+        } else<span class="cov0" title="0"> {
                 dbStatus = "not initialized"
+                dbHealthy = false
         }</span>
 
         <span class="cov8" title="1">var snapshot map[string]interface{}
@@ -2090,11 +2093,19 @@ func handleHealth(w http.ResponseWriter, r *http.Request) <span class="cov8" tit
         }</span> else<span class="cov8" title="1"> {
                 snapshot = make(map[string]interface{})
         }</span>
-        <span class="cov8" title="1">snapshot["status"] = "ok"
-        snapshot["version"] = ServerVersion
+        <span class="cov8" title="1">snapshot["version"] = ServerVersion
         snapshot["db"] = dbStatus
         snapshot["tracing_enabled"] = IsTracingEnabled()
 
+        if !dbHealthy </span><span class="cov8" title="1">{
+                snapshot["status"] = "degraded"
+                w.Header().Set("Content-Type", "application/json")
+                w.WriteHeader(http.StatusServiceUnavailable)
+                json.NewEncoder(w).Encode(snapshot)
+                return
+        }</span>
+
+        <span class="cov8" title="1">snapshot["status"] = "ok"
         w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(snapshot)</span>
 }
@@ -2174,7 +2185,7 @@ func handleRegisterAgent(w http.ResponseWriter, r *http.Request) <span class="co
                 writeJSONError(w, http.StatusBadRequest, "missing agent_id")
                 return
         }</span>
-        <span class="cov8" title="1">if name == "" </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">if name == "" </span><span class="cov0" title="0">{
                 name = agentID
         }</span>
 
@@ -2370,7 +2381,7 @@ func handleChangePassword(w http.ResponseWriter, r *http.Request) <span class="c
                         writeJSONError(w, http.StatusNotFound, "user not found")
                         return
                 }</span>
-                <span class="cov8" title="1">writeJSONError(w, http.StatusBadRequest, err.Error())
+                <span class="cov0" title="0">writeJSONError(w, http.StatusBadRequest, err.Error())
                 return</span>
         }
 
@@ -2415,7 +2426,7 @@ func handleDeleteConversation(w http.ResponseWriter, r *http.Request) <span clas
                         writeJSONError(w, http.StatusUnauthorized, "not your conversation")
                         return
                 }</span>
-                <span class="cov8" title="1">writeJSONError(w, http.StatusInternalServerError, "internal error")
+                <span class="cov0" title="0">writeJSONError(w, http.StatusInternalServerError, "internal error")
                 return</span>
         }
 
@@ -2452,7 +2463,7 @@ func handleSearchMessages(w http.ResponseWriter, r *http.Request) <span class="c
         <span class="cov8" title="1">limitStr := r.URL.Query().Get("limit")
         limit := 50
         if limitStr != "" </span><span class="cov8" title="1">{
-                if l, err := fmt.Sscanf(limitStr, "%d", &amp;limit); l != 1 || err != nil </span><span class="cov8" title="1">{
+                if l, err := fmt.Sscanf(limitStr, "%d", &amp;limit); l != 1 || err != nil </span><span class="cov0" title="0">{
                         limit = 50
                 }</span>
                 <span class="cov8" title="1">if limit &gt; 200 </span><span class="cov8" title="1">{
@@ -2510,7 +2521,7 @@ func handleMarkRead(w http.ResponseWriter, r *http.Request) <span class="cov8" t
                         writeJSONError(w, http.StatusUnauthorized, "not your conversation")
                         return
                 }</span>
-                <span class="cov8" title="1">writeJSONError(w, http.StatusInternalServerError, "internal error")
+                <span class="cov0" title="0">writeJSONError(w, http.StatusInternalServerError, "internal error")
                 return</span>
         }
 
@@ -2577,7 +2588,7 @@ func handleCreateConversation(w http.ResponseWriter, r *http.Request) <span clas
         }</span>
 
         <span class="cov8" title="1">conv, err := GetOrCreateConversation(claims.UserID, agentID)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 writeJSONError(w, http.StatusInternalServerError, "failed to create conversation")
                 return
         }</span>
@@ -2776,16 +2787,16 @@ var upgrader = websocket.Upgrader{
                 if origin == "" </span><span class="cov8" title="1">{
                         return true // Non-browser clients (no Origin header) are allowed
                 }</span>
-                <span class="cov8" title="1">if corsAllowedOrigins == "*" </span><span class="cov8" title="1">{
+                <span class="cov0" title="0">if corsAllowedOrigins == "*" </span><span class="cov0" title="0">{
                         return true
                 }</span>
-                <span class="cov8" title="1">for _, allowed := range strings.Split(corsAllowedOrigins, ",") </span><span class="cov8" title="1">{
+                <span class="cov0" title="0">for _, allowed := range strings.Split(corsAllowedOrigins, ",") </span><span class="cov0" title="0">{
                         allowed = strings.TrimSpace(allowed)
-                        if allowed == origin || allowed == "*" </span><span class="cov8" title="1">{
+                        if allowed == origin || allowed == "*" </span><span class="cov0" title="0">{
                                 return true
                         }</span>
                 }
-                <span class="cov8" title="1">return false</span>
+                <span class="cov0" title="0">return false</span>
         },
 }
 
@@ -2906,7 +2917,7 @@ func (h *Hub) run() <span class="cov8" title="1">{
                                 }</span>
                                 <span class="cov8" title="1">h.agents[conn.id] = conn
                                 DefaultLogger.Info("agent_connected", map[string]interface{}{"agent_id": conn.id})
-                                if ServerMetrics != nil </span><span class="cov8" title="1">{
+                                if ServerMetrics != nil </span><span class="cov0" title="0">{
                                         ServerMetrics.ConnectionsTotal.Add(1)
                                 }</span>
                                 // Broadcast presence: agent online
@@ -2929,7 +2940,7 @@ func (h *Hub) run() <span class="cov8" title="1">{
                                         h.clientConns[conn.id] = append(h.clientConns[conn.id], conn)
                                 }</span>
                                 <span class="cov8" title="1">DefaultLogger.Info("client_connected", map[string]interface{}{"user_id": conn.id, "device_id": conn.deviceID, "total_devices": len(h.clientConns[conn.id])})
-                                if ServerMetrics != nil </span><span class="cov8" title="1">{
+                                if ServerMetrics != nil </span><span class="cov0" title="0">{
                                         ServerMetrics.ConnectionsTotal.Add(1)
                                 }</span>
                         }
@@ -2966,7 +2977,7 @@ func (h *Hub) run() <span class="cov8" title="1">{
                                 <span class="cov8" title="1">if found </span><span class="cov8" title="1">{
                                         if len(conns) == 0 </span><span class="cov8" title="1">{
                                                 delete(h.clientConns, conn.id)
-                                        }</span> else<span class="cov8" title="1"> {
+                                        }</span> else<span class="cov0" title="0"> {
                                                 h.clientConns[conn.id] = conns
                                         }</span>
                                 }
@@ -2985,8 +2996,8 @@ func (h *Hub) run() <span class="cov8" title="1">{
                         for _, conn := range h.agents </span><span class="cov8" title="1">{
                                 conn.SafeSend(message)
                         }</span>
-                        <span class="cov8" title="1">for _, conns := range h.clientConns </span><span class="cov8" title="1">{
-                                for _, conn := range conns </span><span class="cov8" title="1">{
+                        <span class="cov8" title="1">for _, conns := range h.clientConns </span><span class="cov0" title="0">{
+                                for _, conn := range conns </span><span class="cov0" title="0">{
                                         conn.SafeSend(message)
                                 }</span>
                         }
@@ -3016,7 +3027,7 @@ func (h *Hub) Stop() <span class="cov8" title="1">{
 func (h *Hub) monitorAgentHeartbeats() <span class="cov8" title="1">{
         defer close(h.monitorDone)
 
-        if agentPresenceInterval == 0 </span><span class="cov8" title="1">{
+        if agentPresenceInterval == 0 </span><span class="cov0" title="0">{
                 return
         }</span>
 
@@ -3230,9 +3241,14 @@ func (c *Connection) SafeSend(data []byte) bool <span class="cov8" title="1">{
 // ensuring stale connections are detected and cleaned up.
 func (c *Connection) readPump() <span class="cov8" title="1">{
         defer func() </span><span class="cov8" title="1">{
-                c.hub.unregister &lt;- c
-                c.conn.Close()
-        }</span>()
+                // Recover from panics that can occur if the connection or hub
+                // is already in a bad state (e.g. nil conn, closed channels).
+                defer func() </span><span class="cov8" title="1">{ recover() }</span>()
+                <span class="cov8" title="1">c.hub.unregister &lt;- c
+                if c.conn != nil </span><span class="cov8" title="1">{
+                        c.conn.Close()
+                }</span>
+        }()
 
         <span class="cov8" title="1">c.conn.SetReadLimit(maxMessageSize)
         c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -3253,7 +3269,7 @@ func (c *Connection) readPump() <span class="cov8" title="1">{
                 }
 
                 <span class="cov8" title="1">c.hub.messagesRouted.Add(1)
-                if ServerMetrics != nil </span><span class="cov8" title="1">{
+                if ServerMetrics != nil </span><span class="cov0" title="0">{
                         ServerMetrics.MessagesIn.Add(1)
                 }</span>
 
@@ -3273,8 +3289,10 @@ func (c *Connection) writePump() <span class="cov8" title="1">{
         ticker := time.NewTicker(pingPeriod)
         defer func() </span><span class="cov8" title="1">{
                 ticker.Stop()
-                c.conn.Close()
-        }</span>()
+                if c.conn != nil </span><span class="cov8" title="1">{
+                        c.conn.Close()
+                }</span>
+        }()
 
         <span class="cov8" title="1">for </span><span class="cov8" title="1">{
                 select </span>{
@@ -3288,7 +3306,7 @@ func (c *Connection) writePump() <span class="cov8" title="1">{
                                 return
                         }</span>
 
-                        <span class="cov8" title="1">if ServerMetrics != nil </span><span class="cov8" title="1">{
+                        <span class="cov8" title="1">if ServerMetrics != nil </span><span class="cov0" title="0">{
                                 ServerMetrics.MessagesOut.Add(1)
                         }</span>
                         <span class="cov8" title="1">if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil </span><span class="cov8" title="1">{
@@ -3298,16 +3316,16 @@ func (c *Connection) writePump() <span class="cov8" title="1">{
                         }</span>
                         <span class="cov8" title="1">c.writeMu.Unlock()</span>
 
-                case &lt;-ticker.C:<span class="cov8" title="1">
+                case &lt;-ticker.C:<span class="cov0" title="0">
                         // Send ping to keep connection alive
                         c.writeMu.Lock()
                         c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-                        if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil </span><span class="cov8" title="1">{
+                        if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil </span><span class="cov0" title="0">{
                                 c.writeMu.Unlock()
                                 DefaultLogger.Error("ws_ping_error", map[string]interface{}{"conn_type": c.connType, "id": c.id, "error": err.Error()})
                                 return
                         }</span>
-                        <span class="cov8" title="1">c.writeMu.Unlock()</span>
+                        <span class="cov0" title="0">c.writeMu.Unlock()</span>
                 }
         }
 }
@@ -3425,7 +3443,7 @@ func (l *Logger) logEntry(level LogLevel, msg string, fields map[string]interfac
         }</span>
 
         <span class="cov8" title="1">data, err := json.Marshal(entry)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 // Fallback: just write the message
                 log.Printf("logger marshal error: %v, original msg: %s", err, msg)
                 return
@@ -3531,7 +3549,7 @@ func parseSize(s string) (int64, error) <span class="cov8" title="1">{
                 if strings.HasSuffix(upper, m.suffix) </span><span class="cov8" title="1">{
                         numStr := strings.TrimSpace(strings.TrimSuffix(upper, m.suffix))
                         v, err := strconv.ParseFloat(numStr, 64)
-                        if err != nil </span><span class="cov8" title="1">{
+                        if err != nil </span><span class="cov0" title="0">{
                                 return 0, fmt.Errorf("invalid size: %s", s)
                         }</span>
                         <span class="cov8" title="1">return int64(v * float64(m.mult)), nil</span>
@@ -3894,7 +3912,7 @@ func initSchema(db *sql.DB) error <span class="cov8" title="1">{
                         {8, "rate_limit_tiers_table"},
                 }
                 for _, m := range inlineMigrations </span><span class="cov8" title="1">{
-                        if currentDriver == DriverPostgreSQL </span><span class="cov0" title="0">{
+                        if currentDriver == DriverPostgreSQL </span><span class="cov8" title="1">{
                                 db.Exec("INSERT INTO schema_migrations (version, name) VALUES ($1, $2) ON CONFLICT (version) DO NOTHING", m.version, m.name)
                         }</span> else<span class="cov8" title="1"> {
                                 db.Exec("INSERT OR IGNORE INTO schema_migrations (version, name) VALUES (?, ?)", m.version, m.name)
@@ -4093,11 +4111,11 @@ func handleMessageEdit(w http.ResponseWriter, r *http.Request) <span class="cov8
                 editData, _ := json.Marshal(editEvent)
 
                 // Send to all user devices
-                for _, clientConn := range hub.GetClientConns(conv.UserID) </span><span class="cov8" title="1">{
+                for _, clientConn := range hub.GetClientConns(conv.UserID) </span><span class="cov0" title="0">{
                         clientConn.SafeSend(editData)
                 }</span>
                 // Send to agent
-                <span class="cov8" title="1">if agent := hub.GetAgent(conv.AgentID); agent != nil </span><span class="cov8" title="1">{
+                <span class="cov8" title="1">if agent := hub.GetAgent(conv.AgentID); agent != nil </span><span class="cov0" title="0">{
                         agent.SafeSend(editData)
                 }</span>
         }
@@ -4190,11 +4208,11 @@ func handleMessageDelete(w http.ResponseWriter, r *http.Request) <span class="co
         deleteData, _ := json.Marshal(deleteEvent)
 
         // Send to all user devices
-        for _, clientConn := range hub.GetClientConns(conv.UserID) </span><span class="cov8" title="1">{
+        for _, clientConn := range hub.GetClientConns(conv.UserID) </span><span class="cov0" title="0">{
                 clientConn.SafeSend(deleteData)
         }</span>
         // Send to agent
-        <span class="cov8" title="1">if agent := hub.GetAgent(conv.AgentID); agent != nil </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">if agent := hub.GetAgent(conv.AgentID); agent != nil </span><span class="cov0" title="0">{
                 agent.SafeSend(deleteData)
         }</span>
 
@@ -4408,7 +4426,7 @@ func NewRateLimiter(limit int, window time.Duration) *RateLimiter <span class="c
 // Stop terminates the background cleanup goroutine.
 func (rl *RateLimiter) Stop() <span class="cov8" title="1">{
         select </span>{
-        case &lt;-rl.stopCh:<span class="cov8" title="1"></span>
+        case &lt;-rl.stopCh:<span class="cov0" title="0"></span>
                 // already closed
         default:<span class="cov8" title="1">
                 close(rl.stopCh)</span>
@@ -4531,10 +4549,10 @@ func checkRateLimit(conn *Connection) bool <span class="cov8" title="1">{
         <span class="cov8" title="1">userAllowed := userRateLimiter.Allow(conn.id)
         if !userAllowed </span><span class="cov8" title="1">{
                 DefaultLogger.Warn("per_user_rate_exceeded", map[string]interface{}{"conn_type": conn.connType, "id": conn.id, "count": userRateLimiter.Count(conn.id), "limit": 120})
-                if ServerMetrics != nil </span><span class="cov8" title="1">{
+                if ServerMetrics != nil </span><span class="cov0" title="0">{
                         ServerMetrics.RateLimited.Add(1)
                 }</span>
-                <span class="cov8" title="1">if ServerMetrics != nil </span><span class="cov8" title="1">{
+                <span class="cov8" title="1">if ServerMetrics != nil </span><span class="cov0" title="0">{
                         ServerMetrics.ErrorsTotal.Add(1)
                 }</span>
                 <span class="cov8" title="1">sendError(conn, "rate limit exceeded: user message quota reached")
@@ -4781,7 +4799,7 @@ func ipRateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc <span class="
         return func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
                 ip := extractIP(r)
                 if !ipRateLimiter.Allow(ip) </span><span class="cov8" title="1">{
-                        if ServerMetrics != nil </span><span class="cov8" title="1">{
+                        if ServerMetrics != nil </span><span class="cov0" title="0">{
                                 ServerMetrics.RateLimited.Add(1)
                         }</span>
                         <span class="cov8" title="1">w.Header().Set("Retry-After", "60")
@@ -4797,7 +4815,7 @@ func authRateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc <span class
         return func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
                 ip := extractIP(r)
                 if !authIPLimiter.Allow(ip) </span><span class="cov8" title="1">{
-                        if ServerMetrics != nil </span><span class="cov8" title="1">{
+                        if ServerMetrics != nil </span><span class="cov0" title="0">{
                                 ServerMetrics.RateLimited.Add(1)
                         }</span>
                         <span class="cov8" title="1">w.Header().Set("Retry-After", "60")
@@ -4964,7 +4982,7 @@ func handleSetNotificationPrefs(w http.ResponseWriter, r *http.Request) <span cl
                 ON CONFLICT(user_id, conversation_id) DO UPDATE SET muted = %s`,
                 Placeholder(1), Placeholder(2), Placeholder(3), Placeholder(4)),
                 userID, conversationID, muted, muted)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 DefaultLogger.Error("notif_prefs_upsert_error", map[string]interface{}{"error": err.Error()})
                 writeJSONError(w, http.StatusInternalServerError, "internal error")
                 return
@@ -4998,7 +5016,13 @@ func handleDeleteNotificationPrefs(w http.ResponseWriter, r *http.Request) <span
 
 // isConversationMuted checks if a user has muted notifications for a conversation.
 func isConversationMuted(userID, conversationID string) bool <span class="cov8" title="1">{
-        var muted bool
+        if db == nil </span><span class="cov0" title="0">{
+                return false // Default: not muted
+        }</span>
+        <span class="cov8" title="1">if err := db.Ping(); err != nil </span><span class="cov8" title="1">{
+                return false // DB closed or unavailable
+        }</span>
+        <span class="cov8" title="1">var muted bool
         err := db.QueryRow(`
                 SELECT muted FROM notification_preferences
                 WHERE user_id = ? AND conversation_id = ?`,
@@ -5108,7 +5132,7 @@ func handleGetUserPresence(w http.ResponseWriter, r *http.Request) <span class="
                 // Check DB for last activity
                 var lastActivity *time.Time
                 err := db.QueryRow("SELECT created_at FROM messages WHERE sender_id = ? ORDER BY created_at DESC LIMIT 1", userID).Scan(&amp;lastActivity)
-                if err == nil &amp;&amp; lastActivity != nil </span><span class="cov8" title="1">{
+                if err == nil &amp;&amp; lastActivity != nil </span><span class="cov0" title="0">{
                         lastSeen = lastActivity.Format(time.RFC3339)
                 }</span>
         }
@@ -5309,7 +5333,7 @@ func handleHeapProfile(w http.ResponseWriter, r *http.Request) <span class="cov8
                 return
         }</span>
 
-        <span class="cov8" title="1">if err := WriteHeapProfile(path); err != nil </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">if err := WriteHeapProfile(path); err != nil </span><span class="cov0" title="0">{
                 writeProfileError(w, "write heap profile", err)
                 return
         }</span>
@@ -5338,7 +5362,7 @@ func handleGoroutineProfile(w http.ResponseWriter, r *http.Request) <span class=
                 return
         }</span>
 
-        <span class="cov8" title="1">if err := WriteGoroutineProfile(path); err != nil </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">if err := WriteGoroutineProfile(path); err != nil </span><span class="cov0" title="0">{
                 writeProfileError(w, "write goroutine profile", err)
                 return
         }</span>
@@ -5370,7 +5394,7 @@ func handleCPUProfileStart(w http.ResponseWriter, r *http.Request) <span class="
         }</span>
 
         <span class="cov8" title="1">dir := os.Getenv("PROFILING_DIR")
-        if dir == "" </span><span class="cov8" title="1">{
+        if dir == "" </span><span class="cov0" title="0">{
                 dir = filepath.Join(os.TempDir(), "agent-messenger-profiles")
         }</span>
 
@@ -5383,7 +5407,7 @@ func handleCPUProfileStart(w http.ResponseWriter, r *http.Request) <span class="
         }</span>
 
         <span class="cov8" title="1">stop, err := StartCPUProfile(path)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 writeProfileError(w, "start cpu profile", err)
                 return
         }</span>
@@ -5513,7 +5537,7 @@ func cpuProfileTestSetup() func() <span class="cov8" title="1">{
         return func() </span><span class="cov8" title="1">{
                 // Clean up any active profile before releasing the lock
                 cpuProfileState.Lock()
-                if cpuProfileState.active &amp;&amp; cpuProfileState.stopFunc != nil </span><span class="cov8" title="1">{
+                if cpuProfileState.active &amp;&amp; cpuProfileState.stopFunc != nil </span><span class="cov0" title="0">{
                         cpuProfileState.stopFunc()
                 }</span>
                 <span class="cov8" title="1">cpuProfileState.active = false
@@ -5751,7 +5775,7 @@ func initFCM() <span class="cov8" title="1">{
                 return
         }</span>
 
-        <span class="cov8" title="1">pushConfig.fcmClient = client
+        <span class="cov0" title="0">pushConfig.fcmClient = client
         DefaultLogger.Info("fcm_enabled", nil)</span>
 }
 
@@ -5925,7 +5949,7 @@ func handleUnregisterDeviceToken(w http.ResponseWriter, r *http.Request) <span c
         }</span>
 
         <span class="cov8" title="1">_, err = db.Exec("DELETE FROM device_tokens WHERE user_id = ? AND device_token = ?", claims.UserID, req.DeviceToken)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 writeJSONError(w, http.StatusInternalServerError, "failed to remove device token")
                 return
         }</span>
@@ -5962,6 +5986,9 @@ func getDeviceTokensForUser(userID string) ([]deviceTokenWithPlatform, error) <s
 // notifyUser sends a push notification to all devices for a user
 func notifyUser(userID, title, body, conversationID string) <span class="cov8" title="1">{
         if pushConfig == nil </span><span class="cov8" title="1">{
+                return
+        }</span>
+        <span class="cov8" title="1">if db == nil </span><span class="cov8" title="1">{
                 return
         }</span>
 
@@ -6295,7 +6322,7 @@ func replayOfflineMessages(conn *Connection) <span class="cov8" title="1">{
                         // Only replay actual messages, not transient events
                         if outMsg.Type == MsgTypeMessage || outMsg.Type == "read_receipt" </span><span class="cov8" title="1">{
                                 if !safeSendToConn(conn, data) </span><span class="cov8" title="1">{
-                                        if conn.IsClosed() </span><span class="cov8" title="1">{
+                                        if conn.IsClosed() </span><span class="cov0" title="0">{
                                                 DefaultLogger.Warn("offline_replay_conn_closed", map[string]interface{}{"conn_type": conn.connType, "id": conn.id, "delivered": replayed, "total": len(messages)})
                                         }</span> else<span class="cov8" title="1"> {
                                                 DefaultLogger.Warn("offline_replay_buffer_full", map[string]interface{}{"conn_type": conn.connType, "id": conn.id})
@@ -6548,7 +6575,7 @@ func (trl *TieredRateLimiter) Allow(userID string) (bool, int, int) <span class=
                 if retryAfter &lt; 1 </span><span class="cov0" title="0">{
                         retryAfter = 1
                 }</span>
-                <span class="cov8" title="1">if ServerMetrics != nil </span><span class="cov8" title="1">{
+                <span class="cov8" title="1">if ServerMetrics != nil </span><span class="cov0" title="0">{
                         ServerMetrics.RateLimited.Add(1)
                 }</span>
                 <span class="cov8" title="1">return false, 0, retryAfter</span>
@@ -6753,7 +6780,7 @@ func handleSetRateLimitTier(w http.ResponseWriter, r *http.Request) <span class=
 
         <span class="cov8" title="1">var tier RateLimitTier
         switch tierName </span>{
-        case "free":<span class="cov8" title="1">
+        case "free":<span class="cov0" title="0">
                 tier = TierFree</span>
         case "pro":<span class="cov8" title="1">
                 tier = TierPro</span>
@@ -6889,7 +6916,7 @@ func addReaction(messageID, userID, emoji string) (*MessageReaction, bool, error
         }</span>
 
         <span class="cov8" title="1">conv, err := getConversation(convID)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, false, err
         }</span>
         <span class="cov8" title="1">if conv == nil </span><span class="cov8" title="1">{
@@ -6910,7 +6937,7 @@ func addReaction(messageID, userID, emoji string) (*MessageReaction, bool, error
                 _, err := db.Exec("DELETE FROM reactions WHERE id = ?", existingID)
                 return nil, false, err
         }</span>
-        <span class="cov8" title="1">if err != sql.ErrNoRows </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">if err != sql.ErrNoRows </span><span class="cov0" title="0">{
                 return nil, false, err
         }</span>
 
@@ -6996,7 +7023,7 @@ func handleReact(w http.ResponseWriter, r *http.Request) <span class="cov8" titl
                         writeJSONError(w, http.StatusUnauthorized, err.Error())
                         return
                 }</span>
-                <span class="cov8" title="1">writeJSONError(w, http.StatusInternalServerError, "internal error")
+                <span class="cov0" title="0">writeJSONError(w, http.StatusInternalServerError, "internal error")
                 return</span>
         }
 
@@ -7096,13 +7123,13 @@ func handleGetReactions(w http.ResponseWriter, r *http.Request) <span class="cov
         }</span>
 
         <span class="cov8" title="1">reactions, err := getMessageReactions(messageID)
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 writeJSONError(w, http.StatusInternalServerError, "internal error")
                 return
         }</span>
 
         <span class="cov8" title="1">w.Header().Set("Content-Type", "application/json")
-        if reactions == nil </span><span class="cov8" title="1">{
+        if reactions == nil </span><span class="cov0" title="0">{
                 reactions = []MessageReaction{}
         }</span>
         <span class="cov8" title="1">json.NewEncoder(w).Encode(reactions)</span>
@@ -7170,9 +7197,9 @@ func routeMessage(sender *Connection, raw []byte) <span class="cov8" title="1">{
         <span class="cov8" title="1">span.SetAttributes(attribute.String(attrMessageType, msg.Type))
 
         switch msg.Type </span>{
-        case MsgTypeMessage:<span class="cov8" title="1">
+        case MsgTypeMessage:<span class="cov0" title="0">
                 routeChatMessage(sender, msg.Data)</span>
-        case MsgTypeTyping:<span class="cov8" title="1">
+        case MsgTypeTyping:<span class="cov0" title="0">
                 routeTypingIndicator(sender, msg.Data)</span>
         case MsgTypeStatus:<span class="cov8" title="1">
                 routeStatusUpdate(sender, msg.Data)</span>
@@ -7254,7 +7281,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) <span class="cov
 
         // Persist message (child span)
         _, storeSpan := TraceStoreMessage(context.Background(), msg.ConversationID, sender.id)
-        if err := storeMessage(msg); err != nil </span><span class="cov0" title="0">{
+        if err := storeMessage(msg); err != nil </span><span class="cov8" title="1">{
                 DefaultLogger.Error("message_store_error", map[string]interface{}{"error": err.Error()})
                 SpanError(storeSpan, err)
                 storeSpan.End()
@@ -7280,7 +7307,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) <span class="cov
                         for _, client := range conns </span><span class="cov8" title="1">{
                                 if client.SafeSend(outgoing) </span><span class="cov8" title="1">{
                                         delivered++
-                                }</span> else<span class="cov8" title="1"> {
+                                }</span> else<span class="cov0" title="0"> {
                                         DefaultLogger.Warn("client_buffer_full", map[string]interface{}{"user_id": recipientID, "device_id": client.deviceID})
                                 }</span>
                         }
@@ -7288,7 +7315,7 @@ func routeChatMessage(sender *Connection, data json.RawMessage) <span class="cov
                                 attribute.Int("messenger.devices_delivered", delivered),
                                 attribute.Int("messenger.devices_total", len(conns)),
                         )
-                        if delivered == 0 </span><span class="cov8" title="1">{
+                        if delivered == 0 </span><span class="cov0" title="0">{
                                 // All buffers full, queue for later
                                 offlineSpan := TraceOfflineEnqueue(recipientID)
                                 offlineQueue.Enqueue(recipientID, outgoing)
@@ -7380,7 +7407,7 @@ func routeTypingIndicator(sender *Connection, data json.RawMessage) <span class=
         <span class="cov8" title="1">if sender.connType == "agent" &amp;&amp; conv.AgentID != sender.id </span><span class="cov8" title="1">{
                 return
         }</span>
-        <span class="cov8" title="1">if sender.connType == "client" &amp;&amp; conv.UserID != sender.id </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">if sender.connType == "client" &amp;&amp; conv.UserID != sender.id </span><span class="cov0" title="0">{
                 return
         }</span>
 
@@ -7446,7 +7473,7 @@ func routeStatusUpdate(sender *Connection, data json.RawMessage) <span class="co
         }</span>
 
         <span class="cov8" title="1">conv, err := getConversation(payload.ConversationID)
-        if err != nil || conv == nil </span><span class="cov8" title="1">{
+        if err != nil || conv == nil </span><span class="cov0" title="0">{
                 return
         }</span>
 
@@ -7568,7 +7595,7 @@ func addConversationTag(convID, userID, tag string) (*ConversationTag, error) <s
         if err == nil </span><span class="cov8" title="1">{
                 return nil, fmt.Errorf("tag already exists")
         }</span>
-        <span class="cov8" title="1">if err != sql.ErrNoRows </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">if err != sql.ErrNoRows </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
@@ -7606,7 +7633,7 @@ func removeConversationTag(convID, userID, tag string) error <span class="cov8" 
                 "DELETE FROM conversation_tags WHERE conversation_id = ? AND tag = ?",
                 convID, tag,
         )
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
         <span class="cov8" title="1">n, _ := result.RowsAffected()
@@ -7674,7 +7701,7 @@ func handleAddTag(w http.ResponseWriter, r *http.Request) <span class="cov8" tit
                 default:<span class="cov8" title="1">
                         if err.Error() == "tag must be 1-50 characters" </span><span class="cov8" title="1">{
                                 writeJSONError(w, http.StatusBadRequest, err.Error())
-                        }</span> else<span class="cov8" title="1"> {
+                        }</span> else<span class="cov0" title="0"> {
                                 writeJSONError(w, http.StatusInternalServerError, "internal error")
                         }</span>
                 }
@@ -7720,7 +7747,7 @@ func handleRemoveTag(w http.ResponseWriter, r *http.Request) <span class="cov8" 
                         writeJSONError(w, http.StatusUnauthorized, err.Error())</span>
                 case "tag not found":<span class="cov8" title="1">
                         writeJSONError(w, http.StatusNotFound, err.Error())</span>
-                default:<span class="cov8" title="1">
+                default:<span class="cov0" title="0">
                         writeJSONError(w, http.StatusInternalServerError, "internal error")</span>
                 }
                 <span class="cov8" title="1">return</span>
@@ -7770,7 +7797,7 @@ func handleGetTags(w http.ResponseWriter, r *http.Request) <span class="cov8" ti
         }</span>
 
         <span class="cov8" title="1">w.Header().Set("Content-Type", "application/json")
-        if tags == nil </span><span class="cov8" title="1">{
+        if tags == nil </span><span class="cov0" title="0">{
                 tags = []ConversationTag{}
         }</span>
         <span class="cov8" title="1">json.NewEncoder(w).Encode(tags)</span>
