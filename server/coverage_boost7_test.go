@@ -61,7 +61,7 @@ func cb7CreateConversation(t *testing.T, token, agentID string) string {
 // helper to register an agent
 func cb7RegisterAgent(t *testing.T, agentID, name string) {
 	t.Helper()
-	secret := getAgentSecret()
+	secret := agentSecret
 	form := "agent_id=" + agentID + "&name=" + name + "&agent_secret=" + secret
 	req := httptest.NewRequest("POST", "/auth/agent", bytes.NewBufferString(form))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -1974,7 +1974,7 @@ func TestCb7AuthenticateRequest_AgentSecret(t *testing.T) {
 	defer db.Close()
 
 	req := httptest.NewRequest("GET", "/", nil)
-	req.Header.Set("X-Agent-Secret", getAgentSecret())
+	req.Header.Set("X-Agent-Secret", agentSecret)
 	req.Header.Set("X-Agent-ID", "test-agent")
 
 	userID, userType, err := authenticateRequest(req)

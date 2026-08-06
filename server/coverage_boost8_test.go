@@ -182,10 +182,10 @@ func TestCb8RegisterAgent_MissingID(t *testing.T) {
 	setupTestDB(t)
 	defer db.Close()
 
-	form := "name=Agent&agent_secret=" + getAgentSecret()
+	form := "name=Agent&agent_secret=" + agentSecret
 	req := httptest.NewRequest("POST", "/auth/agent", bytes.NewBufferString(form))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("X-Agent-Secret", getAgentSecret())
+	req.Header.Set("X-Agent-Secret", agentSecret)
 	w := httptest.NewRecorder()
 	handleRegisterAgent(w, req)
 
