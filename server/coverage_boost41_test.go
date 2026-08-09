@@ -629,7 +629,9 @@ func TestMonitorAgentHeartbeats_TickerFires(t *testing.T) {
 		agentPresenceTimeout = oldTimeout
 	}()
 
+	origEnabled := agentPresenceEnabled
 	agentPresenceEnabled = true
+	defer func() { agentPresenceEnabled = origEnabled }()
 	agentPresenceInterval = 30 * time.Millisecond
 	agentPresenceTimeout = 50 * time.Millisecond
 

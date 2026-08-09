@@ -1752,7 +1752,9 @@ func TestCB74_MonitorAgentHeartbeats_StaleAgentRemoved(t *testing.T) {
 	oldPresence := agentPresenceEnabled
 	defer func() { agentPresenceEnabled = oldPresence }()
 
+	origEnabled := agentPresenceEnabled
 	agentPresenceEnabled = true
+	defer func() { agentPresenceEnabled = origEnabled }()
 	h := newHub()
 	go h.run()
 	defer h.Stop()

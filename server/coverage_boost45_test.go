@@ -290,7 +290,9 @@ func TestCB45_MonitorAgentHeartbeats_StopChannel(t *testing.T) {
 	go hub.run()
 	t.Cleanup(func() { hub.Stop() })
 
+	origEnabled := agentPresenceEnabled
 	agentPresenceEnabled = true
+	defer func() { agentPresenceEnabled = origEnabled }()
 	defer func() { agentPresenceEnabled = false }()
 
 	time.Sleep(50 * time.Millisecond)

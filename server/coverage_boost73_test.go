@@ -512,7 +512,9 @@ func TestCB73_MonitorAgentHeartbeats_StaleAgentDetected(t *testing.T) {
 	}()
 	agentPresenceInterval = 50 * time.Millisecond
 	agentPresenceTimeout = 10 * time.Millisecond
+	origEnabled := agentPresenceEnabled
 	agentPresenceEnabled = true
+	defer func() { agentPresenceEnabled = origEnabled }()
 
 	h := newHub()
 	go h.run()
@@ -549,7 +551,9 @@ func TestCB73_MonitorAgentHeartbeats_FreshAgentKept(t *testing.T) {
 	}()
 	agentPresenceInterval = 50 * time.Millisecond
 	agentPresenceTimeout = 10 * time.Second
+	origEnabled := agentPresenceEnabled
 	agentPresenceEnabled = true
+	defer func() { agentPresenceEnabled = origEnabled }()
 
 	h := newHub()
 	go h.run()

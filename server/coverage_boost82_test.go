@@ -647,7 +647,9 @@ func TestCB82_MonitorAgentHeartbeats_TickerFires(t *testing.T) {
 
 	agentPresenceInterval = 50 * time.Millisecond
 	agentPresenceTimeout = 100 * time.Millisecond
+	origEnabled := agentPresenceEnabled
 	agentPresenceEnabled = true
+	defer func() { agentPresenceEnabled = origEnabled }()
 	defer func() { agentPresenceEnabled = false }()
 
 	hub := newHub()

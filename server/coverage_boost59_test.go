@@ -1476,7 +1476,9 @@ func TestCB59_Snapshot_WithQueueAndPresence(t *testing.T) {
 	offlineQueue = q
 	defer func() { offlineQueue = nil }()
 
+	origEnabled := agentPresenceEnabled
 	agentPresenceEnabled = true
+	defer func() { agentPresenceEnabled = origEnabled }()
 	agentPresenceInterval = 30 * time.Second
 	agentPresenceTimeout = 60 * time.Second
 	defer func() {

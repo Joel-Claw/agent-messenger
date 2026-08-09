@@ -992,7 +992,9 @@ func TestCB72_ShutdownTracing_WithProvider(t *testing.T) {
 
 func TestCB72_NewHub_AgentPresenceEnabled(t *testing.T) {
 	oldVal := agentPresenceEnabled
+	origEnabled := agentPresenceEnabled
 	agentPresenceEnabled = true
+	defer func() { agentPresenceEnabled = origEnabled }()
 	defer func() { agentPresenceEnabled = oldVal }()
 
 	h := newHub()

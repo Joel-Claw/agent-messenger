@@ -1697,7 +1697,9 @@ func TestCB84_MonitorAgentHeartbeats_DoneChannel(t *testing.T) {
 		monitorDone: make(chan struct{}),
 		runDone:     make(chan struct{}),
 	}
+	origEnabled := agentPresenceEnabled
 	agentPresenceEnabled = true
+	defer func() { agentPresenceEnabled = origEnabled }()
 	go hub.run()
 	go hub.monitorAgentHeartbeats()
 
