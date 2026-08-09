@@ -21,8 +21,8 @@ func setupTestDB_CB52(t *testing.T) *sql.DB {
 	if err := initSchema(testDB); err != nil {
 		t.Fatalf("Failed to init schema: %v", err)
 	}
-	return testDB
-}
+	t.Cleanup(func() { testDB.Close() })
+
 
 func generateTestJWT_CB52(t *testing.T, userID string) string {
 	return generateTestToken(t, userID)

@@ -1156,8 +1156,8 @@ func setupTestDB_CB48(t *testing.T) *sql.DB {
 	// Set currentDriver to SQLite for placeholder compatibility
 	currentDriver = DriverSQLite
 
-	return testDB
-}
+	t.Cleanup(func() { testDB.Close() })
+
 
 func generateTestJWT_CB48(t *testing.T, userID string) string {
 	return generateTestToken(t, userID)
