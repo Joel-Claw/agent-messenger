@@ -1836,10 +1836,10 @@ func TestCB84_CpuProfileTestSetup_Basic(t *testing.T) {
 	defer os.Setenv("PROFILING_DIR", origDir)
 
 	cleanup := cpuProfileTestSetup()
+	defer cleanup()
 	if cleanup == nil {
 		t.Fatal("Expected cleanup function")
 	}
-	cleanup()
 }
 
 func TestCB84_CpuProfileTestSetup_WithDir(t *testing.T) {

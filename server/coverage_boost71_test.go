@@ -2019,10 +2019,10 @@ func TestCB71_InitFCM_CredsNotFound(t *testing.T) {
 
 func TestCB71_CpuProfileTestSetup(t *testing.T) {
 	stop := cpuProfileTestSetup()
+	defer stop()
 	if stop == nil {
 		t.Fatal("Expected non-nil stop function")
 	}
-	stop()
 }
 
 // ==================== loadQueueFromDB Tests ====================

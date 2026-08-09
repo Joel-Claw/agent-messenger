@@ -1226,9 +1226,7 @@ func TestCB80_CpuProfileTestSetup_Basic(t *testing.T) {
 	defer os.Setenv("PROFILING_DIR", origDir)
 
 	cleanup := cpuProfileTestSetup()
-	if cleanup != nil {
-		cleanup()
-	}
+	defer cleanup()
 }
 
 // ==================== monitorAgentHeartbeats: disabled ====================

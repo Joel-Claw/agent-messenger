@@ -2130,7 +2130,7 @@ func TestCB85_ExtractIP_RemoteAddrNoPort(t *testing.T) {
 
 func TestCB85_CpuProfileTestSetup_Basic(t *testing.T) {
 	origDir := os.Getenv("PROFILING_DIR")
-	cpuProfileTestSetup()
+	defer cpuProfileTestSetup()()
 	if os.Getenv("PROFILING_DIR") != "" {
 		t.Error("expected PROFILING_DIR to be unset after cpuProfileTestSetup")
 	}

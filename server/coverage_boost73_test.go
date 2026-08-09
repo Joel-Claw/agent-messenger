@@ -2518,10 +2518,10 @@ func TestCB73_Logger_WithFields_NilThenLog(t *testing.T) {
 
 func TestCB73_CPUProfileTestSetup_Basic(t *testing.T) {
 	cleanup := cpuProfileTestSetup()
+	defer cleanup()
 	if cleanup == nil {
 		t.Fatal("expected non-nil cleanup function")
 	}
-	cleanup()
 }
 
 // ==================== loadQueueFromDB tests (89.5% -> ~95%) ====================

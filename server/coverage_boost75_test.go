@@ -1158,9 +1158,7 @@ func TestCB75_CpuProfileTestSetup_BasicWithDir(t *testing.T) {
 	defer os.Unsetenv("PROFILING_DIR")
 
 	cleanup := cpuProfileTestSetup()
-	if cleanup != nil {
-		cleanup()
-	}
+	defer cleanup()
 }
 
 // ==================== initSchema Tests (85.3% -> higher) ====================

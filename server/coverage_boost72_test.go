@@ -3089,9 +3089,7 @@ func TestCB72_CPUProfileTestSetup_NoFile(t *testing.T) {
 	defer os.Setenv("PROFILING_DIR", oldDir)
 
 	cleanup := cpuProfileTestSetup()
-	if cleanup != nil {
-		cleanup()
-	}
+	defer cleanup()
 }
 
 // ==================== loadQueueFromDB (89.5%) ====================

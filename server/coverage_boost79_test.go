@@ -1326,10 +1326,10 @@ func TestCB79_HandleCPUProfileStart_AlreadyActive(t *testing.T) {
 // TestCB79_CpuProfileTestSetup_Basic tests basic setup
 func TestCB79_CpuProfileTestSetup_Basic(t *testing.T) {
 	cleanup := cpuProfileTestSetup()
+	defer cleanup()
 	if cleanup == nil {
 		t.Error("Expected cleanup function, got nil")
 	}
-	cleanup()
 }
 
 // TestCB79_CpuProfileTestSetup_WithDir tests setup with dir
@@ -1339,10 +1339,10 @@ func TestCB79_CpuProfileTestSetup_WithDir(t *testing.T) {
 	defer os.Unsetenv("PROFILING_DIR")
 
 	cleanup := cpuProfileTestSetup()
+	defer cleanup()
 	if cleanup == nil {
 		t.Error("Expected cleanup function, got nil")
 	}
-	cleanup()
 }
 
 // ==================== loadQueueFromDB: scan error ====================

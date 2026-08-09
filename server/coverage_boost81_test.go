@@ -1786,6 +1786,7 @@ func TestCB81_InitSchema_Idempotent(t *testing.T) {
 
 func TestCB81_CpuProfileTestSetup_Basic(t *testing.T) {
 	cleanup := cpuProfileTestSetup()
+	defer cleanup()
 	// Should not have active profile
 	cpuProfileState.Lock()
 	active := cpuProfileState.active
@@ -1793,7 +1794,6 @@ func TestCB81_CpuProfileTestSetup_Basic(t *testing.T) {
 	if active {
 		t.Error("expected no active profile after setup")
 	}
-	cleanup()
 }
 
 // ==================== handleCPUProfileStart ====================
