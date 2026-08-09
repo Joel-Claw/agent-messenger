@@ -659,6 +659,7 @@ func TestCB61_HandleUpload_DBInsertError(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	tmpDir := t.TempDir()
@@ -1335,6 +1336,7 @@ func TestCB61_PersistTierToDB_ClosedDB(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	err = persistTierToDB("user1", TierPro)
@@ -1358,6 +1360,7 @@ func TestCB61_LoadTiersFromDB_ClosedDB(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	trl := NewTieredRateLimiter()
@@ -1888,6 +1891,7 @@ func TestCB61_HandleLogin_DBError(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	// Close DB to cause query error
@@ -1919,6 +1923,7 @@ func TestCB61_HandleRegisterUser_DBError(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	// Close DB to cause insert error
@@ -1950,6 +1955,7 @@ func TestCB61_HandleAgentConnect_DBError(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	// Close DB
@@ -2042,6 +2048,7 @@ func TestCB61_GetDeviceTokensForUser_ClosedDB(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	// Close DB
@@ -2089,6 +2096,7 @@ func TestCB61_HandleListAgents_DBQueryError(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	// Close DB
@@ -2117,6 +2125,7 @@ func TestCB61_HandleAdminAgents_DBError(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	oldSecret := adminSecret
@@ -2254,6 +2263,7 @@ func TestCB61_HandleGetTags_DBError(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	// Create conversation
@@ -2382,6 +2392,7 @@ func TestCB61_StoreMessagesBatch_NilDB(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	msgs := []RoutedMessage{
@@ -2815,6 +2826,7 @@ func TestCB61_GetConversation_DBError(t *testing.T) {
 
 	oldDB := db
 	db = testDB
+	t.Cleanup(func() { testDB.Close() })
 	defer func() { db = oldDB }()
 
 	testDB.Close()

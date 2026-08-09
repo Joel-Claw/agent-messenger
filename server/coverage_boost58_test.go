@@ -234,7 +234,7 @@ func TestCB58_RegisterAgentOnConnect_UpdateModelError(t *testing.T) {
 	}
 
 	// Reopen for cleanup
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 func TestCB58_RegisterAgentOnConnect_UpdatePersonalityError(t *testing.T) {
@@ -258,7 +258,7 @@ func TestCB58_RegisterAgentOnConnect_UpdatePersonalityError(t *testing.T) {
 		t.Error("Expected error updating personality with closed DB")
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 func TestCB58_RegisterAgentOnConnect_UpdateSpecialtyError(t *testing.T) {
@@ -280,7 +280,7 @@ func TestCB58_RegisterAgentOnConnect_UpdateSpecialtyError(t *testing.T) {
 		t.Error("Expected error updating specialty with closed DB")
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 func TestCB58_RegisterAgentOnConnect_UpdateNameError(t *testing.T) {
@@ -303,7 +303,7 @@ func TestCB58_RegisterAgentOnConnect_UpdateNameError(t *testing.T) {
 		t.Error("Expected error updating name with closed DB")
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- initFCM tests ---
@@ -535,7 +535,7 @@ func TestCB58_GetDeviceTokensForUser_DBError(t *testing.T) {
 		t.Errorf("Expected nil tokens, got %v", tokens)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- notifyUser tests ---
@@ -648,7 +648,7 @@ func TestCB58_HandleListAgents_ScanError(t *testing.T) {
 		t.Errorf("Expected error status, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- getMessageReactions tests ---
@@ -669,7 +669,7 @@ func TestCB58_GetMessageReactions_DBError(t *testing.T) {
 		t.Errorf("Expected nil reactions, got %v", reactions)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- getConversationTags tests ---
@@ -690,7 +690,7 @@ func TestCB58_GetConversationTags_DBError(t *testing.T) {
 		t.Errorf("Expected nil tags, got %v", tags)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 func TestCB58_GetConversationTags_ScanError(t *testing.T) {
@@ -753,7 +753,7 @@ func TestCB58_HandleGetTags_DBError(t *testing.T) {
 		t.Errorf("Expected 500/400/401, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- handleDeleteConversation tests ---
@@ -795,7 +795,7 @@ func TestCB58_HandleDeleteConversation_DBError(t *testing.T) {
 		t.Errorf("Expected error status, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- changeUserPassword tests ---
@@ -821,7 +821,7 @@ func TestCB58_ChangeUserPassword_DBError(t *testing.T) {
 		t.Error("Expected error from closed DB")
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- searchMessages tests ---
@@ -850,7 +850,7 @@ func TestCB58_SearchMessages_DBError(t *testing.T) {
 		t.Errorf("Expected nil results, got %v", results)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- storeMessagesBatch tests ---
@@ -918,7 +918,7 @@ func TestCB58_HandleLogin_DBQueryError(t *testing.T) {
 		t.Errorf("Expected error status, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- handleRegisterUser tests ---
@@ -940,7 +940,7 @@ func TestCB58_HandleRegisterUser_DBError(t *testing.T) {
 		t.Errorf("Expected 500, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- handleAgentConnect tests ---
@@ -967,7 +967,7 @@ func TestCB58_HandleAgentConnect_RegisterError(t *testing.T) {
 		t.Logf("Got code %d (DB error may cause different status)", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- ValidateJWT tests ---
@@ -1021,7 +1021,7 @@ func TestCB58_HandleAdminAgents_DBError(t *testing.T) {
 		t.Errorf("Expected 500, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- handleMessageDelete tests ---
@@ -1056,7 +1056,7 @@ func CB58_HandleMessageDelete_DBError(t *testing.T) {
 		t.Logf("Got code %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- handleGetPresence tests ---
@@ -1091,7 +1091,7 @@ func TestCB58_HandleGetPresence_DBError(t *testing.T) {
 		t.Errorf("Expected 500, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- handleGetNotificationPrefs tests ---
@@ -1126,7 +1126,7 @@ func TestCB58_HandleGetNotificationPrefs_DBError(t *testing.T) {
 		t.Errorf("Expected 500/401, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- handleListConversations tests ---
@@ -1161,7 +1161,7 @@ func TestCB58_HandleListConversations_DBError(t *testing.T) {
 		t.Errorf("Expected 500, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- handleGetMessages tests ---
@@ -1232,7 +1232,7 @@ func TestCB58_HandleSearchMessages_DBError(t *testing.T) {
 		t.Errorf("Expected 500, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- handleListAttachments tests ---
@@ -1304,7 +1304,7 @@ func TestCB58_HandleUnregisterDeviceToken_DBError(t *testing.T) {
 		t.Errorf("Expected error status, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- Drain tests ---
@@ -1402,7 +1402,7 @@ func TestCB58_AddReaction_ToggleRemoveDBError(t *testing.T) {
 		t.Error("Expected error toggling reaction with closed DB")
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- addConversationTag tests ---
@@ -1439,7 +1439,7 @@ func TestCB58_AddConversationTag_DBError(t *testing.T) {
 		t.Error("Expected error adding tag with closed DB")
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- handleReact tests ---
@@ -1715,7 +1715,7 @@ func TestCB58_HandleMessageEdit_DBError(t *testing.T) {
 		t.Errorf("Expected 500, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- handleGetEncryptedMessages tests ---
@@ -1750,7 +1750,7 @@ func TestCB58_HandleGetEncryptedMessages_DBError(t *testing.T) {
 		t.Errorf("Expected error status, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- rate_limit_tiers cleanup tests ---
@@ -1798,7 +1798,7 @@ func TestCB58_HandleWebPushSubscribe_DBError(t *testing.T) {
 		t.Errorf("Expected 500, got %d", w.Code)
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
 
 // --- getConversationMessages tests ---
@@ -1887,5 +1887,5 @@ func TestCB58_DeleteConversation_MessagesDBError(t *testing.T) {
 		t.Error("Expected error deleting conversation with closed DB")
 	}
 
-	db, _ = sql.Open("sqlite3", ":memory:")
+	leakedDB, _ := sql.Open("sqlite3", ":memory:"); t.Cleanup(func() { leakedDB.Close() }); db = leakedDB
 }
