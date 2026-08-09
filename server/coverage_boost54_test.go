@@ -19,7 +19,9 @@ func setupTestDB_CB54(t *testing.T) *sql.DB {
 		t.Fatalf("Failed to init schema: %v", err)
 	}
 	t.Cleanup(func() { testDB.Close() })
-
+
+	return testDB
+}
 
 func setupTestServer_CB54(t *testing.T) (*sql.DB, func()) {
 	testDB := setupTestDB_CB54(t)

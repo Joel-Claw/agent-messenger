@@ -25,7 +25,9 @@ func setupTestDB_CB59(t *testing.T) *sql.DB {
 		t.Fatalf("Failed to init schema: %v", err)
 	}
 	t.Cleanup(func() { testDB.Close() })
-
+
+	return testDB
+}
 
 // authReqCB59 wraps an httptest.NewRequest with an authenticated context.
 func authReqCB59(method, target, body, userID string) *http.Request {

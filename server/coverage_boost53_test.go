@@ -21,7 +21,9 @@ func setupTestDB_CB53(t *testing.T) *sql.DB {
 		t.Fatalf("Failed to init schema: %v", err)
 	}
 	t.Cleanup(func() { testDB.Close() })
-
+
+	return testDB
+}
 
 // =========================================================================
 // handleWebPushSubscribe (push.go:410)

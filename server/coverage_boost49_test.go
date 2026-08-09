@@ -40,7 +40,9 @@ func setupTestDB_CB49(t *testing.T) *sql.DB {
 		t.Fatalf("Failed to init schema: %v", err)
 	}
 	t.Cleanup(func() { testDB.Close() })
-
+
+	return testDB
+}
 
 func generateTestJWT_CB49(t *testing.T, userID string) string {
 	return generateTestToken(t, userID)

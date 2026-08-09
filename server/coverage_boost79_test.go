@@ -33,7 +33,9 @@ func setupTestDB_CB79(t *testing.T) *sql.DB {
 	}
 	initQueueDB(testDB)
 	t.Cleanup(func() { testDB.Close() })
-
+
+	return testDB
+}
 
 func generateTestToken_CB79(userID string) string {
 	claims := &Claims{

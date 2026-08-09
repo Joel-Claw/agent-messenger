@@ -28,7 +28,9 @@ func setupTestDB_CB69(t *testing.T) *sql.DB {
 		t.Fatalf("Failed to init schema: %v", err)
 	}
 	t.Cleanup(func() { testDB.Close() })
-
+
+	return testDB
+}
 
 func generateTestToken_CB69(userID string) string {
 	claims := &Claims{

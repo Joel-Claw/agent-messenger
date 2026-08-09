@@ -32,7 +32,9 @@ func setupTestDB_CB62(t *testing.T) *sql.DB {
 		t.Fatalf("Failed to init schema: %v", err)
 	}
 	t.Cleanup(func() { testDB.Close() })
-
+
+	return testDB
+}
 
 func authReqCB62(method, target, body, userID string) *http.Request {
 	var r *http.Request
