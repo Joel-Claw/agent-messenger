@@ -780,6 +780,7 @@ func TestCB85_DeleteConversation_NilDB(t *testing.T) {
 
 func TestCB85_TieredRateLimiter_Cleanup_TickerFires(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	// Override the cleanup interval by calling cleanupOnce directly then testing cleanup loop
 	// Start cleanup with a very short ticker — but cleanup uses 5 * time.Minute
 	// Instead, let's test that the cleanup goroutine responds to the stop channel
@@ -824,6 +825,7 @@ func TestCB85_TieredRateLimiter_Cleanup_StopChannel(t *testing.T) {
 
 func TestCB85_TieredRateLimiter_Cleanup_RemovesStaleEntries(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.Allow("user1")
 	// Manually expire the entry
 	trl.mu.Lock()
@@ -2354,6 +2356,7 @@ func TestCB85_SpanOK_Disabled(t *testing.T) {
 
 func TestCB85_TieredRateLimiter_Allow(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	allowed, remaining, retryAfter := trl.Allow("user1")
 	if !allowed {
 		t.Error("expected first request to be allowed")
@@ -2368,6 +2371,7 @@ func TestCB85_TieredRateLimiter_Allow(t *testing.T) {
 
 func TestCB85_TieredRateLimiter_ExceedLimit(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	// Free tier: 60/min — exhaust it
 	for i := 0; i < 60; i++ {
 		trl.Allow("user-exceed")
@@ -2386,6 +2390,7 @@ func TestCB85_TieredRateLimiter_ExceedLimit(t *testing.T) {
 
 func TestCB85_TieredRateLimiter_GetRemaining(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.Allow("user1")
 	remaining := trl.GetRemaining("user1")
 	// Free tier: 60/min, used 1, so 59 remaining
@@ -2396,6 +2401,7 @@ func TestCB85_TieredRateLimiter_GetRemaining(t *testing.T) {
 
 func TestCB85_TieredRateLimiter_SetTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.SetTier("user1", TierPro)
 	tier := trl.GetTier("user1")
 	if tier.Name != "pro" {
@@ -2408,6 +2414,7 @@ func TestCB85_TieredRateLimiter_SetTier(t *testing.T) {
 
 func TestCB85_TieredRateLimiter_SetTierEnterprise(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.SetTier("user1", TierEnterprise)
 	tier := trl.GetTier("user1")
 	if tier.Name != "enterprise" {
@@ -2420,6 +2427,7 @@ func TestCB85_TieredRateLimiter_SetTierEnterprise(t *testing.T) {
 
 func TestCB85_TieredRateLimiter_GetTierDefault(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	tier := trl.GetTier("unknown-user")
 	if tier.Name != "free" {
 		t.Errorf("expected default tier 'free', got '%s'", tier.Name)
@@ -2428,6 +2436,7 @@ func TestCB85_TieredRateLimiter_GetTierDefault(t *testing.T) {
 
 func TestCB85_TieredRateLimiter_Reset(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.Allow("user1")
 	trl.Reset()
 	remaining := trl.GetRemaining("user1")
