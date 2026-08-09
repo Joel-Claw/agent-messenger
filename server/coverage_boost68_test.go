@@ -1903,6 +1903,7 @@ func TestCB68_LoadTiersFromDB_NilDB(t *testing.T) {
 	defer func() { db = oldDB }()
 
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	err := loadTiersFromDB(trl)
 	if err != nil {
 		t.Errorf("expected nil error for nil DB, got %v", err)
@@ -1923,6 +1924,7 @@ func TestCB68_LoadTiersFromDB_Success(t *testing.T) {
 		"user_ent", "enterprise")
 
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	err := loadTiersFromDB(trl)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

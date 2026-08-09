@@ -422,6 +422,7 @@ func TestCB83_DeleteConversation_GetConversationDBError(t *testing.T) {
 
 func TestCB83_TieredRateLimiter_CleanupStopChannel(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	// Start cleanup in background
 	go trl.cleanup()
 	// Stop it
@@ -431,6 +432,7 @@ func TestCB83_TieredRateLimiter_CleanupStopChannel(t *testing.T) {
 
 func TestCB83_TieredRateLimiter_CleanupOnce(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	// Add an entry that's past window end + 10 min
 	trl.mu.Lock()
 	trl.limits["user83-stale"] = &userRateLimitState{
@@ -455,6 +457,7 @@ func TestCB83_TieredRateLimiter_CleanupOnce(t *testing.T) {
 
 func TestCB83_TieredRateLimiter_CleanupOnceJustExpired(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	// Entry that's past windowEnd but within 10 min grace
 	trl.mu.Lock()
 	trl.limits["user83-grace"] = &userRateLimitState{

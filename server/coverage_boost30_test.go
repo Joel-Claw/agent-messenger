@@ -2083,6 +2083,7 @@ func TestCB30_ResponseWriterWrapper(t *testing.T) {
 
 func TestCB30_TieredRateLimiter_SetAndGetTier(t *testing.T) {
 	tl := NewTieredRateLimiter()
+	defer tl.Stop()
 
 	tl.SetTier("user1", TierPro)
 	tier := tl.GetTier("user1")
@@ -2099,6 +2100,7 @@ func TestCB30_TieredRateLimiter_SetAndGetTier(t *testing.T) {
 
 func TestCB30_TieredRateLimiter_GetRemaining(t *testing.T) {
 	tl := NewTieredRateLimiter()
+	defer tl.Stop()
 
 	remaining := tl.GetRemaining("user1")
 	if remaining <= 0 {

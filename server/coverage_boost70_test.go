@@ -1100,6 +1100,7 @@ func TestCB70_AuthMiddleware_MalformedBearer(t *testing.T) {
 func TestCB70_TieredRateLimitMiddleware_Allowed(t *testing.T) {
 	// Reset the tiered limiter
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	defer func() { globalTieredLimiter = NewTieredRateLimiter() }()
 
 	handler := tieredRateLimitMiddleware(func(w http.ResponseWriter, r *http.Request) {
@@ -1119,6 +1120,7 @@ func TestCB70_TieredRateLimitMiddleware_Allowed(t *testing.T) {
 
 func TestCB70_TieredRateLimitMiddleware_Unauthenticated(t *testing.T) {
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	defer func() { globalTieredLimiter = NewTieredRateLimiter() }()
 
 	handler := tieredRateLimitMiddleware(func(w http.ResponseWriter, r *http.Request) {
@@ -2199,8 +2201,8 @@ func TestCB70_AuthRateLimitMiddleware_Blocked(t *testing.T) {
 
 func TestCB70_CPUProfileTestSetup_Basic(t *testing.T) {
 	stop := cpuProfileTestSetup()
+	defer stop()
 	if stop == nil {
 		t.Fatal("expected non-nil stop function")
 	}
-	stop()
 }

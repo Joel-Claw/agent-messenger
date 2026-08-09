@@ -31,6 +31,7 @@ import (
 // logic: entries older than 10 minutes past windowEnd should be deleted.
 func TestCB44_TieredRateLimiter_CleanupTickerOldEntry(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	t.Cleanup(trl.Stop)
 
 	// Add an entry that expired 11 minutes ago (should be cleaned up)
@@ -64,6 +65,7 @@ func TestCB44_TieredRateLimiter_CleanupTickerOldEntry(t *testing.T) {
 // expired entries (within 10 minutes) are NOT cleaned up by the ticker.
 func TestCB44_TieredRateLimiter_CleanupTickerRecentExpiry(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	t.Cleanup(trl.Stop)
 
 	trl.mu.Lock()
@@ -587,6 +589,7 @@ func TestCB44_TieredRateLimitMiddleware_RateLimited(t *testing.T) {
 	defer func() { globalTieredLimiter = origLimiter }()
 
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	t.Cleanup(globalTieredLimiter.Stop)
 
 	// Set a very low limit for the test user (exhaust the burst)

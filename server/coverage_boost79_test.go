@@ -1406,6 +1406,7 @@ func TestCB79_LoadQueueFromDB_Empty(t *testing.T) {
 // TestCB79_RateLimitTiersCleanup_StopChannel tests cleanup goroutine stop
 func TestCB79_RateLimitTiersCleanup_StopChannel(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Start cleanup goroutine
 	go trl.cleanup()
@@ -1420,6 +1421,7 @@ func TestCB79_RateLimitTiersCleanup_StopChannel(t *testing.T) {
 // TestCB79_RateLimitTiersCleanupOnce_AllStale tests cleanup of stale entries
 func TestCB79_RateLimitTiersCleanupOnce_AllStale(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Add some entries with old timestamps
 	trl.limits["stale-user-1"] = &userRateLimitState{
@@ -1442,6 +1444,7 @@ func TestCB79_RateLimitTiersCleanupOnce_AllStale(t *testing.T) {
 // TestCB79_RateLimitTiersCleanupOnce_GracePeriod tests grace period
 func TestCB79_RateLimitTiersCleanupOnce_GracePeriod(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Add an entry just past windowEnd but within grace period (5 min)
 	trl.limits["grace-user"] = &userRateLimitState{
@@ -2530,6 +2533,7 @@ func TestCB79_ParseSize_Invalid(t *testing.T) {
 // TestCB79_TieredRateLimiter_Allow tests Allow method
 func TestCB79_TieredRateLimiter_Allow(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Free tier: 60/min
 	for i := 0; i < 60; i++ {
@@ -2548,6 +2552,7 @@ func TestCB79_TieredRateLimiter_Allow(t *testing.T) {
 // TestCB79_TieredRateLimiter_GetTier tests GetTier method
 func TestCB79_TieredRateLimiter_GetTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	tier := trl.GetTier("unknown-user")
 	if tier.Name != "free" {
 		t.Errorf("Expected 'free' tier, got '%s'", tier.Name)
@@ -2557,6 +2562,7 @@ func TestCB79_TieredRateLimiter_GetTier(t *testing.T) {
 // TestCB79_TieredRateLimiter_SetTier tests SetTier method
 func TestCB79_TieredRateLimiter_SetTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.SetTier("user-pro", TierPro)
 
 	tier := trl.GetTier("user-pro")
@@ -2568,6 +2574,7 @@ func TestCB79_TieredRateLimiter_SetTier(t *testing.T) {
 // TestCB79_TieredRateLimiter_GetRemaining tests GetRemaining method
 func TestCB79_TieredRateLimiter_GetRemaining(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Free tier: 60/min, use 10
 	for i := 0; i < 10; i++ {

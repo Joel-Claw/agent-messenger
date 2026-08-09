@@ -1773,6 +1773,7 @@ func TestCB29_AgentRateLimiter_Stop(t *testing.T) {
 
 func TestCB29_TieredRateLimiter_FreeDefault(t *testing.T) {
 	limiter := NewTieredRateLimiter()
+	defer limiter.Stop()
 
 	// Free tier: 60/min
 	for i := 0; i < 60; i++ {
@@ -1791,6 +1792,7 @@ func TestCB29_TieredRateLimiter_FreeDefault(t *testing.T) {
 
 func TestCB29_TieredRateLimiter_TierPro(t *testing.T) {
 	limiter := NewTieredRateLimiter()
+	defer limiter.Stop()
 
 	// Pro tier: 300/min — set tier first
 	limiter.SetTier("pro-user-29", TierPro)
@@ -1806,6 +1808,7 @@ func TestCB29_TieredRateLimiter_TierPro(t *testing.T) {
 
 func TestCB29_TieredRateLimiter_TierEnterprise(t *testing.T) {
 	limiter := NewTieredRateLimiter()
+	defer limiter.Stop()
 
 	// Enterprise tier: 1500/min
 	limiter.SetTier("ent-user-29", TierEnterprise)

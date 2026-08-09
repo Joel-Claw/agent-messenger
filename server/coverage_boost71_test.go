@@ -724,6 +724,7 @@ func TestCB71_CheckRateLimit_Allowed(t *testing.T) {
 
 func TestCB71_TieredRateLimitMiddleware_Allowed(t *testing.T) {
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	defer func() { globalTieredLimiter = NewTieredRateLimiter() }()
 
 	called := false
@@ -746,6 +747,7 @@ func TestCB71_TieredRateLimitMiddleware_Allowed(t *testing.T) {
 
 func TestCB71_TieredRateLimitMiddleware_IPBasedNoAuth(t *testing.T) {
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	defer func() { globalTieredLimiter = NewTieredRateLimiter() }()
 
 	called := false
@@ -765,6 +767,7 @@ func TestCB71_TieredRateLimitMiddleware_IPBasedNoAuth(t *testing.T) {
 
 func TestCB71_TieredRateLimitMiddleware_Blocked(t *testing.T) {
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	defer func() { globalTieredLimiter = NewTieredRateLimiter() }()
 
 	// Exhaust the rate limit for this user
@@ -803,6 +806,7 @@ func TestCB71_HandleSetRateLimitTier_PersistError(t *testing.T) {
 	defer func() { db = nil }()
 
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	defer func() { globalTieredLimiter = NewTieredRateLimiter() }()
 
 	// Close DB to cause persist error
@@ -828,6 +832,7 @@ func TestCB71_HandleSetRateLimitTier_FormSecret(t *testing.T) {
 	defer func() { db = nil }()
 
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	defer func() { globalTieredLimiter = NewTieredRateLimiter() }()
 
 	form := "user_id=user_form_secret&tier=enterprise&admin_secret=" + adminSecret
@@ -845,6 +850,7 @@ func TestCB71_HandleSetRateLimitTier_FormSecret(t *testing.T) {
 
 func TestCB71_HandleGetRateLimitTier_QueryParamSecret(t *testing.T) {
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	defer func() { globalTieredLimiter = NewTieredRateLimiter() }()
 
 	globalTieredLimiter.SetTier("user_query_param", TierPro)
@@ -866,6 +872,7 @@ func TestCB71_HandleGetRateLimitTier_QueryParamSecret(t *testing.T) {
 
 func TestCB71_HandleGetRateLimitTier_DefaultTier(t *testing.T) {
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	defer func() { globalTieredLimiter = NewTieredRateLimiter() }()
 
 	req := httptest.NewRequest("GET", "/admin/rate-limit/tier?user_id=user_default_tier&admin_secret="+adminSecret, nil)
@@ -2136,6 +2143,7 @@ func TestCB71_HandleWebPushSubscribe_DBError(t *testing.T) {
 
 func TestCB71_HandleAdminRateLimitTier_Router(t *testing.T) {
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	defer func() { globalTieredLimiter = NewTieredRateLimiter() }()
 
 	// POST -> handleSetRateLimitTier
@@ -2401,6 +2409,7 @@ func TestCB71_LoadTiersFromDB_WithTiers(t *testing.T) {
 		"user_ent", "enterprise")
 
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	err := loadTiersFromDB(trl)
 	if err != nil {
 		t.Fatalf("loadTiersFromDB failed: %v", err)
@@ -2429,6 +2438,7 @@ func TestCB71_LoadTiersFromDB_UnknownTierDefaultsFree(t *testing.T) {
 		"user_unknown", "platinum") // Unknown tier name
 
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	err := loadTiersFromDB(trl)
 	if err != nil {
 		t.Fatalf("loadTiersFromDB failed: %v", err)
@@ -2442,6 +2452,7 @@ func TestCB71_LoadTiersFromDB_UnknownTierDefaultsFree(t *testing.T) {
 
 func TestCB71_LoadTiersFromDB_NilDB(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	err := loadTiersFromDB(trl)
 	if err != nil {
 		t.Fatalf("Expected no error for nil DB, got: %v", err)

@@ -1580,6 +1580,7 @@ func TestCB60_LoadQueueFromDB_WithData(t *testing.T) {
 
 func TestCB60_TieredRateLimiter_CleanupStop(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	stopCh := make(chan struct{})
 	trl.stopCh = stopCh
 
@@ -1603,6 +1604,7 @@ func TestCB60_TieredRateLimiter_CleanupStop(t *testing.T) {
 
 func TestCB60_TieredRateLimiter_CleanupOnce(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	// Add some entries
 	trl.mu.Lock()
 	trl.limits["stale-user-1"] = &userRateLimitState{count: 10, windowEnd: time.Now().Add(-10 * time.Minute), tier: TierFree}

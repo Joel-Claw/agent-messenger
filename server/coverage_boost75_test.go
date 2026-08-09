@@ -3072,6 +3072,7 @@ func TestCB75_ParseSize_AllCases(t *testing.T) {
 
 func TestCB75_TieredRateLimiter_CleanupGracePeriod(t *testing.T) {
 	limiter := NewTieredRateLimiter()
+	defer limiter.Stop()
 
 	// Add a user that's recently active (should be kept)
 	limiter.limits["recent-user"] = &userRateLimitState{

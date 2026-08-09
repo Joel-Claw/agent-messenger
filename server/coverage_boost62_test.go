@@ -2508,9 +2508,7 @@ func TestCB62_HandleGetRateLimitTier_MissingUser(t *testing.T) {
 // TestCB62_CpuProfileTestSetup_NilDB tests cpuProfileTestSetup with nil DB.
 func TestCB62_CpuProfileTestSetup_NilDB(t *testing.T) {
 	cleanup := cpuProfileTestSetup()
-	if cleanup != nil {
-		cleanup()
-	}
+	defer cleanup()
 }
 
 // --- RegisterAgentOnConnect ---

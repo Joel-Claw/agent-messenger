@@ -859,6 +859,7 @@ func TestCB84_RateLimiter_CleanupExpiredEntries(t *testing.T) {
 
 func TestCB84_TieredRateLimiter_CleanupOnce(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Add some entries with expired windows
 	trl.mu.Lock()

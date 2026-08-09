@@ -1287,6 +1287,7 @@ func TestCB80_Cleanup_Stop(t *testing.T) {
 // TestCB80_Cleanup_GracePeriod tests grace period before first cleanup
 func TestCB80_Cleanup_GracePeriod(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Add an entry
 	trl.SetTier("user-grace-80", TierFree)
@@ -1629,6 +1630,7 @@ func TestCB80_SafeSend_ClosedChannel(t *testing.T) {
 // TestCB80_TieredRateLimiter_GetRemaining tests GetRemaining
 func TestCB80_TieredRateLimiter_GetRemaining(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.SetTier("user-rem-80", TierPro)
 
 	// Use some allowance
@@ -1643,6 +1645,7 @@ func TestCB80_TieredRateLimiter_GetRemaining(t *testing.T) {
 // TestCB80_TieredRateLimiter_GetRemaining_NoTier tests GetRemaining with no tier set
 func TestCB80_TieredRateLimiter_GetRemaining_NoTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	remaining := trl.GetRemaining("user-no-tier-80")
 	if remaining < 0 {
@@ -1653,6 +1656,7 @@ func TestCB80_TieredRateLimiter_GetRemaining_NoTier(t *testing.T) {
 // TestCB80_TieredRateLimiter_GetTier tests GetTier
 func TestCB80_TieredRateLimiter_GetTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.SetTier("user-tier-80", TierEnterprise)
 
 	tier := trl.GetTier("user-tier-80")
@@ -1664,6 +1668,7 @@ func TestCB80_TieredRateLimiter_GetTier(t *testing.T) {
 // TestCB80_TieredRateLimiter_GetTier_Default tests default tier
 func TestCB80_TieredRateLimiter_GetTier_Default(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	tier := trl.GetTier("user-default-tier-80")
 	if tier.Name != "free" {
@@ -1674,6 +1679,7 @@ func TestCB80_TieredRateLimiter_GetTier_Default(t *testing.T) {
 // TestCB80_TieredRateLimiter_SetTier_Free tests free tier
 func TestCB80_TieredRateLimiter_SetTier_Free(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.SetTier("user-free-80", TierFree)
 
 	// Free tier: 60/min
@@ -1691,6 +1697,7 @@ func TestCB80_TieredRateLimiter_SetTier_Free(t *testing.T) {
 // TestCB80_TieredRateLimiter_Enterprise tests enterprise tier
 func TestCB80_TieredRateLimiter_Enterprise(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.SetTier("user-ent-80", TierEnterprise)
 
 	// Enterprise: 1500/min - just verify a few work

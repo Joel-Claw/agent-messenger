@@ -1538,9 +1538,7 @@ func TestCB65_cpuProfileTestSetup_NoFile(t *testing.T) {
 	// cpuProfileTestSetup takes no args and returns a cleanup func.
 	// Just call it and verify it doesn't panic.
 	cleanup := cpuProfileTestSetup()
-	if cleanup != nil {
-		cleanup()
-	}
+	defer cleanup()
 }
 
 // --- handleUpload: successful upload ---

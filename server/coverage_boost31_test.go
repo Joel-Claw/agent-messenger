@@ -2148,6 +2148,7 @@ func TestCB31_HandleAdminRateLimitTier_GetMethod(t *testing.T) {
 
 	origTierLimiter := globalTieredLimiter
 	globalTieredLimiter = NewTieredRateLimiter()
+	defer globalTieredLimiter.Stop()
 	defer func() { globalTieredLimiter = origTierLimiter }()
 
 	_ = cb31MakeJWT(t, "user_rl_admin") // ensure user exists in DB

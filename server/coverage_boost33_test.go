@@ -486,6 +486,7 @@ func TestCB33_InitPushNotifications_ProductionEnvironment(t *testing.T) {
 
 func TestCB33_TieredRateLimiter_Cleanup(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Add some entries
 	trl.mu.Lock()

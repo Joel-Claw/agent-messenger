@@ -386,6 +386,7 @@ func TestCB78_InitTracing_HTTPEndpointFallback(t *testing.T) {
 
 func TestCB78_CleanupOnce_RemovesStaleEntries(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	// Add an entry with an expired window
 	trl.mu.Lock()
 	trl.limits["user1"] = &userRateLimitState{
@@ -419,6 +420,7 @@ func TestCB78_CleanupOnce_RemovesStaleEntries(t *testing.T) {
 
 func TestCB78_CleanupOnce_EmptyLimiter(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.cleanupOnce()
 	if len(trl.limits) != 0 {
 		t.Error("expected empty limiter to remain empty")
@@ -427,6 +429,7 @@ func TestCB78_CleanupOnce_EmptyLimiter(t *testing.T) {
 
 func TestCB78_CleanupOnce_AllStale(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.mu.Lock()
 	trl.limits["a"] = &userRateLimitState{tier: TierFree, windowEnd: time.Now().Add(-20 * time.Minute)}
 	trl.limits["b"] = &userRateLimitState{tier: TierPro, windowEnd: time.Now().Add(-30 * time.Minute)}
@@ -443,6 +446,7 @@ func TestCB78_CleanupOnce_AllStale(t *testing.T) {
 
 func TestCB78_CleanupOnce_AllActive(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.mu.Lock()
 	trl.limits["a"] = &userRateLimitState{tier: TierFree, windowEnd: time.Now().Add(30 * time.Minute)}
 	trl.limits["b"] = &userRateLimitState{tier: TierPro, windowEnd: time.Now().Add(10 * time.Minute)}
@@ -459,6 +463,7 @@ func TestCB78_CleanupOnce_AllActive(t *testing.T) {
 
 func TestCB78_CleanupOnce_BoundaryGracePeriod(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	// Entry exactly 10 minutes past window end - should be removed (> 10 min is strictly greater)
 	trl.mu.Lock()
 	trl.limits["boundary"] = &userRateLimitState{
@@ -478,6 +483,7 @@ func TestCB78_CleanupOnce_BoundaryGracePeriod(t *testing.T) {
 
 func TestCB78_CleanupOnce_JustBeforeGracePeriod(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	// Entry just under 10 minutes past window end - should remain
 	trl.mu.Lock()
 	trl.limits["just_before"] = &userRateLimitState{
@@ -499,6 +505,7 @@ func TestCB78_CleanupOnce_JustBeforeGracePeriod(t *testing.T) {
 
 func TestCB78_Cleanup_StopChannel(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	// Stop the cleanup goroutine
 	trl.stopCh <- struct{}{}
 	// If we get here without hanging, it worked
@@ -506,6 +513,7 @@ func TestCB78_Cleanup_StopChannel(t *testing.T) {
 
 func TestCB78_Cleanup_StaleRemoval(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.mu.Lock()
 	trl.limits["stale_user"] = &userRateLimitState{
 		tier:      TierFree,
@@ -525,6 +533,7 @@ func TestCB78_Cleanup_StaleRemoval(t *testing.T) {
 
 func TestCB78_Cleanup_GracePeriodKept(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	trl.mu.Lock()
 	trl.limits["recent_user"] = &userRateLimitState{
 		tier:      TierFree,

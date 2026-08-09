@@ -1106,6 +1106,7 @@ func TestCB69_LoadTiersFromDB_NilDB(t *testing.T) {
 	defer restoreDB_CB69(oldDB)
 	db = nil
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	err := loadTiersFromDB(trl)
 	if err != nil {
 		t.Errorf("expected nil error with nil db, got %v", err)
@@ -1124,6 +1125,7 @@ func TestCB69_LoadTiersFromDB_WithData(t *testing.T) {
 	testDB.Exec("INSERT INTO user_rate_limit_tiers (user_id, tier_name, updated_at) VALUES (?, ?, datetime('now'))", "user_free", "free")
 
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	err := loadTiersFromDB(trl)
 	if err != nil {
 		t.Errorf("expected nil error, got %v", err)

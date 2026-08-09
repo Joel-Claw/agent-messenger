@@ -1925,6 +1925,7 @@ func TestCB73_HandleCPUProfileStart_Success(t *testing.T) {
 
 func TestCB73_TieredRateLimiter_Cleanup_StopChannel(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Start cleanup goroutine
 	done := make(chan struct{})
@@ -1946,6 +1947,7 @@ func TestCB73_TieredRateLimiter_Cleanup_StopChannel(t *testing.T) {
 
 func TestCB73_TieredRateLimiter_Cleanup_RemovesStaleEntries(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Add some entries with past windowEnd
 	trl.mu.Lock()
@@ -1978,6 +1980,7 @@ func TestCB73_TieredRateLimiter_Cleanup_RemovesStaleEntries(t *testing.T) {
 
 func TestCB73_TieredRateLimiter_Cleanup_KeepsRecentExpired(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Entry that's expired but within 10-minute grace period
 	trl.mu.Lock()

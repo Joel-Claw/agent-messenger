@@ -21,6 +21,7 @@ import (
 
 func TestCB45_TieredRateLimiter_CleanupTickerOldEntry(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	t.Cleanup(trl.Stop)
 
 	trl.mu.Lock()

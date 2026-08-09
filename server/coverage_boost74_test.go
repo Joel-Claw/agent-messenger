@@ -472,6 +472,7 @@ func TestCB74_DeleteConversation_Unauthorized(t *testing.T) {
 
 func TestCB74_TieredRateLimiter_Cleanup_GracefulStop(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	stopCh := make(chan struct{})
 
 	go func() {
@@ -487,6 +488,7 @@ func TestCB74_TieredRateLimiter_Cleanup_GracefulStop(t *testing.T) {
 func TestCB74_TieredRateLimiter_Cleanup_TickerFires(t *testing.T) {
 	// Test that cleanup actually runs cleanupOnce on ticker
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 
 	// Add a stale entry
 	trl.mu.Lock()

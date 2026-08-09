@@ -3464,6 +3464,7 @@ func TestCB76_QueuePurge_NonExistentUser(t *testing.T) {
 
 func TestCB76_SetTier_NewUser(t *testing.T) {
 	rl := NewTieredRateLimiter()
+	defer rl.Stop()
 	rl.SetTier("user1", TierPro)
 	if tier := rl.GetTier("user1"); tier != TierPro {
 		t.Errorf("expected Pro tier, got %v", tier)
@@ -3472,6 +3473,7 @@ func TestCB76_SetTier_NewUser(t *testing.T) {
 
 func TestCB76_SetTier_UpgradeFromFree(t *testing.T) {
 	rl := NewTieredRateLimiter()
+	defer rl.Stop()
 	// Default is Free
 	rl.SetTier("user1", TierEnterprise)
 	if tier := rl.GetTier("user1"); tier != TierEnterprise {
@@ -3481,6 +3483,7 @@ func TestCB76_SetTier_UpgradeFromFree(t *testing.T) {
 
 func TestCB76_SetTier_ReplaceExisting(t *testing.T) {
 	rl := NewTieredRateLimiter()
+	defer rl.Stop()
 	rl.SetTier("user1", TierPro)
 	rl.SetTier("user1", TierFree)
 	if tier := rl.GetTier("user1"); tier != TierFree {
@@ -3555,6 +3558,7 @@ func TestCB76_TieredRateLimiter_AllowEnterpriseTier(t *testing.T) {
 
 func TestCB76_TieredRateLimiter_GetRemaining_Free(t *testing.T) {
 	rl := NewTieredRateLimiter()
+	defer rl.Stop()
 	remaining := rl.GetRemaining("user1")
 	if remaining != 60 {
 		t.Errorf("expected 60 remaining for free tier, got %d", remaining)
@@ -3563,6 +3567,7 @@ func TestCB76_TieredRateLimiter_GetRemaining_Free(t *testing.T) {
 
 func TestCB76_TieredRateLimiter_GetRemaining_AfterUse(t *testing.T) {
 	rl := NewTieredRateLimiter()
+	defer rl.Stop()
 	rl.Allow("user1")
 	rl.Allow("user1")
 	remaining := rl.GetRemaining("user1")
@@ -3573,6 +3578,7 @@ func TestCB76_TieredRateLimiter_GetRemaining_AfterUse(t *testing.T) {
 
 func TestCB76_TieredRateLimiter_GetRemaining_ProTier(t *testing.T) {
 	rl := NewTieredRateLimiter()
+	defer rl.Stop()
 	rl.SetTier("user1", TierPro)
 	remaining := rl.GetRemaining("user1")
 	if remaining != 300 {

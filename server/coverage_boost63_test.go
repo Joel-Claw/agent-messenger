@@ -376,6 +376,7 @@ func TestCB63_InitSchema_RateLimitTiersTable(t *testing.T) {
 
 func TestCB63_TieredRateLimiter_CleanupStopChannel(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	go trl.cleanup()
 	close(trl.stopCh)
 	time.Sleep(50 * time.Millisecond)
@@ -383,6 +384,7 @@ func TestCB63_TieredRateLimiter_CleanupStopChannel(t *testing.T) {
 
 func TestCB63_TieredRateLimiter_CleanupWithStaleEntries(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	defer close(trl.stopCh)
 
 	trl.mu.Lock()
@@ -1467,6 +1469,7 @@ func TestCB63_Drain_MixedData(t *testing.T) {
 
 func TestCB63_TieredAllow_EnterpriseTier(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	defer close(trl.stopCh)
 	trl.SetTier("user-ent", TierEnterprise)
 
@@ -1484,6 +1487,7 @@ func TestCB63_TieredAllow_EnterpriseTier(t *testing.T) {
 
 func TestCB63_TieredAllow_FreeTierLimit(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	defer close(trl.stopCh)
 	trl.SetTier("user-free", TierFree)
 
@@ -1501,6 +1505,7 @@ func TestCB63_TieredAllow_FreeTierLimit(t *testing.T) {
 
 func TestCB63_TieredRateLimiter_GetTier_Default(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	defer close(trl.stopCh)
 
 	tier := trl.GetTier("user-no-tier")
@@ -1511,6 +1516,7 @@ func TestCB63_TieredRateLimiter_GetTier_Default(t *testing.T) {
 
 func TestCB63_TieredRateLimiter_GetTier_Pro(t *testing.T) {
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	defer close(trl.stopCh)
 
 	trl.SetTier("user-pro-tier", TierPro)
@@ -1531,6 +1537,7 @@ func TestCB63_LoadTiersFromDB_WithTiers(t *testing.T) {
 	_, _ = testDB.Exec("INSERT INTO user_rate_limit_tiers (user_id, tier_name) VALUES (?, ?)", "user-load-tier", "enterprise")
 
 	trl := NewTieredRateLimiter()
+	defer trl.Stop()
 	defer close(trl.stopCh)
 	loadTiersFromDB(trl)
 
