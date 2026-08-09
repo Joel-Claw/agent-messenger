@@ -1099,7 +1099,6 @@ func setupTestDB_CB48(t *testing.T) *sql.DB {
 		t.Fatalf("Failed to open test DB: %v", err)
 	}
 	t.Cleanup(func() { testDB.Close() })
-	}
 	// Initialize schema
 	schema := initSchemaForDriver()
 	if _, err := testDB.Exec(schema); err != nil {
