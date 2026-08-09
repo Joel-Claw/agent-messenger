@@ -27,6 +27,7 @@ func setupTestDB_CB84(t *testing.T) *sql.DB {
 	testDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatalf("Failed to open test DB: %v", err)
+	t.Cleanup(func() { testDB.Close() })
 	}
 	if err := initSchema(testDB); err != nil {
 		t.Fatalf("Failed to init schema: %v", err)

@@ -27,6 +27,7 @@ func setupTestDB_CB85(t *testing.T) *sql.DB {
 	if err != nil {
 		t.Fatalf("Failed to open test DB: %v", err)
 	}
+	t.Cleanup(func() { testDB.Close() })
 	if err := initSchema(testDB); err != nil {
 		t.Fatalf("Failed to init schema: %v", err)
 	}
