@@ -28,6 +28,8 @@ func setupTestDB(t *testing.T) {
 	if err := initSchema(db); err != nil {
 		t.Fatal(err)
 	}
+	// Ensure driver matches the actual database type (other tests may set postgres)
+	currentDriver = DriverSQLite
 }
 
 // setupTestServer initializes an in-memory DB, hub, and test HTTP server
