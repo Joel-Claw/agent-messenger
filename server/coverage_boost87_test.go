@@ -3155,14 +3155,14 @@ func TestCB87_CleanStaleQueueMessages_RemovesOld(t *testing.T) {
 
 	// Insert a stale message (old queued_at)
 	_, err = testDB.Exec("INSERT INTO offline_queue (recipient, data, queued_at) VALUES ('user1', ?, ?)",
-		[]byte("old_msg"), time.Now().Add(-2*time.Hour).UTC())
+		[]byte("old_msg"), time.Now().Add(-2*time.Hour).UTC().Format(time.RFC3339))
 	if err != nil {
 		t.Fatalf("failed to insert: %v", err)
 	}
 
 	// Insert a fresh message
 	_, err = testDB.Exec("INSERT INTO offline_queue (recipient, data, queued_at) VALUES ('user1', ?, ?)",
-		[]byte("new_msg"), time.Now().UTC())
+		[]byte("new_msg"), time.Now().UTC().Format(time.RFC3339))
 	if err != nil {
 		t.Fatalf("failed to insert: %v", err)
 	}
