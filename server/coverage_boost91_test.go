@@ -2390,16 +2390,18 @@ func TestCB91_GetConversationMessages_WithBefore(t *testing.T) {
 	withTestDB_CB91(t, func(testDB *sql.DB) {
 		_, _, convID := setupUserAndConv_CB91(t, testDB)
 
-		// Insert messages with different timestamps
-		oldTime := time.Now().Add(-1 * time.Hour).UTC()
-		newTime := time.Now().UTC()
+		// Insert messages with different timestamps (format as RFC3339 for SQLite string comparison)
+		oldTime := time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339)
+		newTime := time.Now().UTC().Format(time.RFC3339)
 
 		testDB.Exec("INSERT INTO messages (id, conversation_id, sender_id, sender_type, content, created_at) VALUES (?, ?, ?, ?, ?, ?)",
 			"cb91-old-msg", convID, "cb91-user1", "user", "old", oldTime)
 		testDB.Exec("INSERT INTO messages (id, conversation_id, sender_id, sender_type, content, created_at) VALUES (?, ?, ?, ?, ?, ?)",
 			"cb91-new-msg", convID, "cb91-user1", "user", "new", newTime)
 
-		msgs, err := getConversationMessages(convID, 10, oldTime.Add(1*time.Second).Format(time.RFC3339))
+		// Query messages before the cursor (use a time 1 second after old message)
+		cursorTime := time.Now().Add(-59 * time.Minute).UTC().Format(time.RFC3339)
+		msgs, err := getConversationMessages(convID, 10, cursorTime)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
