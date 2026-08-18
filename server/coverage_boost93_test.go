@@ -540,12 +540,11 @@ func TestCB93_InitTracing_GRPCNoEndpoint(t *testing.T) {
 	origTP := tp
 	origTracer := tracer
 	origEnabled := tracingEnabled
-	origOnce := tracingMu
 	defer func() {
 		tp = origTP
 		tracer = origTracer
 		tracingEnabled = origEnabled
-		tracingMu = origOnce
+		tracingMu = sync.Once{}
 	}()
 
 	// Reset tracing state
