@@ -29,6 +29,16 @@ func setupTestServer_CB95(t *testing.T) *httptest.Server {
 	t.Helper()
 
 	// Reset global state
+	agentSecretMu.Lock()
+	origSecret := agentSecret
+	agentSecret = getAgentSecret()
+	agentSecretMu.Unlock()
+	t.Cleanup(func() {
+		agentSecretMu.Lock()
+		agentSecret = origSecret
+		agentSecretMu.Unlock()
+	})
+
 	origPresence := agentPresenceEnabled
 	agentPresenceEnabled = false
 	t.Cleanup(func() { agentPresenceEnabled = origPresence })
