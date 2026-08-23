@@ -229,6 +229,16 @@ func TestCb10CheckRateLimit_Allowed(t *testing.T) {
 	setupTestDB(t)
 	defer db.Close()
 
+	// Reset global rate limiters to avoid pollution from prior tests
+	savedMsgLimiter := messageRateLimiter
+	savedUserLimiter := userRateLimiter
+	messageRateLimiter = NewRateLimiter(60, time.Minute)
+	userRateLimiter = NewRateLimiter(120, time.Minute)
+	defer func() {
+		messageRateLimiter = savedMsgLimiter
+		userRateLimiter = savedUserLimiter
+	}()
+
 	conn := &Connection{
 		id:       "ratelimit-test-conn",
 		connType: "client",
