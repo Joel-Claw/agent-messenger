@@ -3160,8 +3160,9 @@ func TestCB102_CleanStaleQueueMessages_DeletesOld(t *testing.T) {
 	initQueueDB(db)
 	// Insert an old message
 	db.Exec("INSERT INTO offline_queue (recipient, data, queued_at) VALUES ('user1', 'msg1', '2020-01-01T00:00:00Z')")
-	// Insert a recent message
-	db.Exec("INSERT INTO offline_queue (recipient, data, queued_at) VALUES ('user1', 'msg2', '2026-08-24T00:00:00Z')")
+	// Insert a recent message (use time.Now to avoid staleness)
+	recent := time.Now().UTC().Format(time.RFC3339)
+	db.Exec("INSERT INTO offline_queue (recipient, data, queued_at) VALUES ('user1', 'msg2', ?)", recent)
 	cleanStaleQueueMessages(db, 24*time.Hour)
 	var count int
 	db.QueryRow("SELECT COUNT(*) FROM offline_queue WHERE recipient='user1'").Scan(&count)
