@@ -472,6 +472,8 @@ func TestCB106_TieredRateLimitMiddleware_WithJWT(t *testing.T) {
 	globalTieredLimiter = NewTieredRateLimiter()
 	defer globalTieredLimiter.Stop()
 
+ origJwtSecret := jwtSecret
+ defer func() { jwtSecret = origJwtSecret }()
 	jwtSecret = []byte("test-secret-cb106")
 	token, _ := GenerateJWT("user_middleware", "testuser")
 
@@ -1014,6 +1016,8 @@ func TestCB106_RouteChatMessage_DatabaseError(t *testing.T) {
 // ---- ValidateJWT tests (83.3%) ----
 
 func TestCB106_ValidateJWT_MissingSubject(t *testing.T) {
+ origJwtSecret := jwtSecret
+ defer func() { jwtSecret = origJwtSecret }()
 	jwtSecret = []byte("test-secret-cb106")
 
 	token, _ := GenerateJWT("", "")
@@ -1027,6 +1031,8 @@ func TestCB106_ValidateJWT_MissingSubject(t *testing.T) {
 }
 
 func TestCB106_ValidateJWT_DifferentSecret(t *testing.T) {
+	origJwtSecret := jwtSecret
+	defer func() { jwtSecret = origJwtSecret }()
 	jwtSecret = []byte("secret-a")
 	token, _ := GenerateJWT("user1", "testuser")
 
@@ -1038,6 +1044,8 @@ func TestCB106_ValidateJWT_DifferentSecret(t *testing.T) {
 }
 
 func TestCB106_ValidateJWT_MalformedToken(t *testing.T) {
+ origJwtSecret := jwtSecret
+ defer func() { jwtSecret = origJwtSecret }()
 	jwtSecret = []byte("test-secret-cb106")
 
 	tests := []string{
@@ -1398,6 +1406,8 @@ func TestCB106_HandleChangePassword_MissingAuth(t *testing.T) {
 }
 
 func TestCB106_HandleChangePassword_MissingFields(t *testing.T) {
+ origJwtSecret := jwtSecret
+ defer func() { jwtSecret = origJwtSecret }()
 	jwtSecret = []byte("test-secret-cb106")
 	token, _ := GenerateJWT("user_cp", "testuser")
 
@@ -1484,6 +1494,8 @@ func TestCB106_HandleGetTags_Unauthorized(t *testing.T) {
 // ---- handleRemoveTag tests (87.5%) ----
 
 func TestCB106_HandleRemoveTag_MissingFields(t *testing.T) {
+ origJwtSecret := jwtSecret
+ defer func() { jwtSecret = origJwtSecret }()
 	jwtSecret = []byte("test-secret-cb106")
 	token, _ := GenerateJWT("user_rt", "testuser")
 
@@ -1630,6 +1642,8 @@ func TestCB106_LoadTiersFromDB_WithTiers(t *testing.T) {
 // ---- handleListAttachments tests (86.1%) ----
 
 func TestCB106_HandleListAttachments_MissingConvID(t *testing.T) {
+ origJwtSecret := jwtSecret
+ defer func() { jwtSecret = origJwtSecret }()
 	jwtSecret = []byte("test-secret-cb106")
 	token, _ := GenerateJWT("user_la", "testuser")
 
@@ -1652,6 +1666,8 @@ func TestCB106_HandleGetAttachment_NotFound(t *testing.T) {
 	defer db.Close()
 	initSchema(db)
 
+ origJwtSecret := jwtSecret
+ defer func() { jwtSecret = origJwtSecret }()
 	jwtSecret = []byte("test-secret-cb106")
 	token, _ := GenerateJWT("user_ga", "testuser")
 
@@ -1726,6 +1742,8 @@ func TestCB106_RemoveConversationTag_NotFound(t *testing.T) {
 // ---- handleStoreEncryptedMessage tests (73.6%) ----
 
 func TestCB106_HandleStoreEncryptedMessage_InvalidAlgorithm(t *testing.T) {
+ origJwtSecret := jwtSecret
+ defer func() { jwtSecret = origJwtSecret }()
 	jwtSecret = []byte("test-secret-cb106")
 	token, _ := GenerateJWT("user_ie", "testuser")
 
@@ -1745,6 +1763,8 @@ func TestCB106_HandleStoreEncryptedMessage_InvalidAlgorithm(t *testing.T) {
 }
 
 func TestCB106_HandleStoreEncryptedMessage_MissingFields(t *testing.T) {
+ origJwtSecret := jwtSecret
+ defer func() { jwtSecret = origJwtSecret }()
 	jwtSecret = []byte("test-secret-cb106")
 	token, _ := GenerateJWT("user_mf", "testuser")
 
@@ -1777,6 +1797,8 @@ func TestCB106_HandleGetEncryptedMessages_AccessDenied(t *testing.T) {
 		t.Fatal(err)
 	}
 
+ origJwtSecret := jwtSecret
+ defer func() { jwtSecret = origJwtSecret }()
 	jwtSecret = []byte("test-secret-cb106")
 	token, _ := GenerateJWT("user_other", "testuser")
 
