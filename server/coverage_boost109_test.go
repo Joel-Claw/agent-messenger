@@ -1849,9 +1849,7 @@ func TestCB109_SendPushNotification_FCMError(t *testing.T) {
 
 func TestCB109_InitTracing_HTTPProtocol(t *testing.T) {
 	// Reset tracing state
-	origTracingMu := tracingMu
 	tracingMu = sync.Once{}
-	defer func() { tracingMu = origTracingMu }()
 
 	origTp := tp
 	tp = nil
@@ -1884,9 +1882,7 @@ func TestCB109_InitTracing_HTTPProtocol(t *testing.T) {
 }
 
 func TestCB109_InitTracing_GRPCProtocol(t *testing.T) {
-	origTracingMu := tracingMu
 	tracingMu = sync.Once{}
-	defer func() { tracingMu = origTracingMu }()
 
 	origTp := tp
 	tp = nil
@@ -1915,9 +1911,7 @@ func TestCB109_InitTracing_GRPCProtocol(t *testing.T) {
 }
 
 func TestCB109_InitTracing_CustomServiceName(t *testing.T) {
-	origTracingMu := tracingMu
 	tracingMu = sync.Once{}
-	defer func() { tracingMu = origTracingMu }()
 
 	origTp := tp
 	tp = nil
@@ -1952,9 +1946,7 @@ func TestCB109_ShutdownTracing_WithProviderError(t *testing.T) {
 	// We can use a mock SpanExporter that fails on shutdown
 	// Actually, we already test this in CB108 — let's test with a real tp
 	// that we set up via InitTracing
-	origTracingMu := tracingMu
 	tracingMu = sync.Once{}
-	defer func() { tracingMu = origTracingMu }()
 
 	origTp := tp
 	tp = nil
