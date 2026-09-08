@@ -2966,6 +2966,7 @@ func TestCB77_InitTracing_Disabled(t *testing.T) {
 	if tracingEnabled {
 		t.Error("expected tracing to remain disabled")
 	}
+	ShutdownTracing()
 }
 
 func TestCB77_InitTracing_NoEndpoint(t *testing.T) {
@@ -2992,6 +2993,7 @@ func TestCB77_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Error("expected tracing to remain disabled without endpoint")
 	}
+	ShutdownTracing()
 }
 
 func TestCB77_InitTracing_AlreadyInitialized(t *testing.T) {
@@ -3019,6 +3021,7 @@ func TestCB77_InitTracing_AlreadyInitialized(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected nil error on second init, got %v", err)
 	}
+	ShutdownTracing()
 }
 
 func TestCB77_InitTracing_CustomSamplingRate(t *testing.T) {
@@ -3043,6 +3046,7 @@ func TestCB77_InitTracing_CustomSamplingRate(t *testing.T) {
 	err := InitTracing()
 	// May fail due to connection attempt to non-existent collector
 	_ = err
+	ShutdownTracing()
 }
 
 func TestCB77_InitTracing_InvalidSamplingRate(t *testing.T) {
@@ -3067,6 +3071,7 @@ func TestCB77_InitTracing_InvalidSamplingRate(t *testing.T) {
 	err := InitTracing()
 	// Should fall back to default 0.1
 	_ = err
+	ShutdownTracing()
 }
 
 func TestCB77_InitTracing_HTTPProtocol(t *testing.T) {
@@ -3091,6 +3096,7 @@ func TestCB77_InitTracing_HTTPProtocol(t *testing.T) {
 	err := InitTracing()
 	// May fail to connect, but should attempt HTTP path
 	_ = err
+	ShutdownTracing()
 }
 
 func TestCB77_InitTracing_CustomServiceName(t *testing.T) {
@@ -3114,6 +3120,7 @@ func TestCB77_InitTracing_CustomServiceName(t *testing.T) {
 
 	err := InitTracing()
 	_ = err
+	ShutdownTracing()
 }
 
 // ==================== initSchema (82.4%) ====================

@@ -265,6 +265,7 @@ func TestCB44_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Error("expected tracingEnabled to be false when no endpoint")
 	}
+	ShutdownTracing()
 }
 
 // TestCB44_InitTracing_Disabled tests InitTracing with OTEL_ENABLED not set.
@@ -287,6 +288,7 @@ func TestCB44_InitTracing_Disabled(t *testing.T) {
 	if tracingEnabled {
 		t.Error("expected tracingEnabled to be false when disabled")
 	}
+	ShutdownTracing()
 }
 
 // --- handleGoroutineProfile ---

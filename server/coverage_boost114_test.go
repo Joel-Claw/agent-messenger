@@ -1107,6 +1107,7 @@ func TestCB114_InitTracing_ResourceMergeError(t *testing.T) {
 	}
 
 	os.Unsetenv("OTEL_ENABLED")
+	ShutdownTracing()
 }
 
 // ==================== addReaction toggle off ====================

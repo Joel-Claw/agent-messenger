@@ -1761,6 +1761,7 @@ func TestCB84_InitTracing_Disabled(t *testing.T) {
 	if tracingEnabled {
 		t.Error("Expected tracing to be disabled")
 	}
+	ShutdownTracing()
 }
 
 func TestCB84_InitTracing_NoEndpoint(t *testing.T) {
@@ -1780,6 +1781,7 @@ func TestCB84_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Error("Expected tracing to be disabled when no endpoint")
 	}
+	ShutdownTracing()
 }
 
 func TestCB84_InitTracing_InvalidSamplingRate(t *testing.T) {

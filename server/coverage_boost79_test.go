@@ -1133,6 +1133,7 @@ func TestCB79_InitTracing_Disabled(t *testing.T) {
 	if IsTracingEnabled() {
 		t.Error("Expected tracing to be disabled")
 	}
+	ShutdownTracing()
 }
 
 // TestCB79_InitTracing_NoEndpoint tests no endpoint configured
@@ -1153,6 +1154,7 @@ func TestCB79_InitTracing_NoEndpoint(t *testing.T) {
 	if IsTracingEnabled() {
 		t.Error("Expected tracing to be disabled with no endpoint")
 	}
+	ShutdownTracing()
 }
 
 // TestCB79_InitTracing_AlreadyInitialized tests calling InitTracing when already initialized

@@ -29,6 +29,7 @@ func TestTracingDisabledByDefault(t *testing.T) {
 	if IsTracingEnabled() {
 		t.Error("IsTracingEnabled() should return false")
 	}
+	ShutdownTracing()
 }
 
 func TestTracingDisabledWithoutEndpoint(t *testing.T) {
@@ -50,6 +51,7 @@ func TestTracingDisabledWithoutEndpoint(t *testing.T) {
 	}
 
 	os.Unsetenv("OTEL_ENABLED")
+	ShutdownTracing()
 }
 
 func TestTracingStartSpanWhenDisabled(t *testing.T) {
@@ -227,4 +229,5 @@ func TestTracingEnvVars(t *testing.T) {
 	tracingEnabled = false
 	tp = nil
 	tracer = nil
+	ShutdownTracing()
 }

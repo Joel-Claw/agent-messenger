@@ -837,6 +837,7 @@ func TestCB72_InitTracing_Disabled(t *testing.T) {
 	if tracingEnabled {
 		t.Error("expected tracingEnabled to be false")
 	}
+	ShutdownTracing()
 }
 
 func TestCB72_InitTracing_NoEndpoint(t *testing.T) {
@@ -858,6 +859,7 @@ func TestCB72_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Error("expected tracingEnabled to be false when no endpoint")
 	}
+	ShutdownTracing()
 }
 
 func TestCB72_InitTracing_HTTPExporter(t *testing.T) {
@@ -949,6 +951,7 @@ func TestCB72_InitTracing_AlreadyInitialized(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected nil error on double init, got %v", err)
 	}
+	ShutdownTracing()
 }
 
 // ==================== ShutdownTracing (80%) ====================

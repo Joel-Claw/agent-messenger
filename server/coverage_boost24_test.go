@@ -3754,6 +3754,7 @@ func TestCB24_Tracing_Disabled(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error with no endpoint, got %v", err)
 	}
+	ShutdownTracing()
 }
 
 func TestCB24_ShutdownTracing(t *testing.T) {
