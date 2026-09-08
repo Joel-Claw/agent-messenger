@@ -234,6 +234,7 @@ func TestCB64_InitTracing_DisabledByDefault(t *testing.T) {
 	if tracer != nil {
 		t.Error("expected tracer to be nil when disabled")
 	}
+	ShutdownTracing()
 }
 
 func TestCB64_InitTracing_NoEndpoint(t *testing.T) {
@@ -252,6 +253,7 @@ func TestCB64_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Error("expected tracingEnabled to be false without endpoint")
 	}
+	ShutdownTracing()
 }
 
 func TestCB64_ShutdownTracing_NoProvider(t *testing.T) {

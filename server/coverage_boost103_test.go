@@ -3454,6 +3454,7 @@ func TestCB103_InitTracing_Disabled(t *testing.T) {
 	if tracingEnabled {
 		t.Error("tracing should remain disabled")
 	}
+	ShutdownTracing()
 }
 
 func TestCB103_InitTracing_NoEndpoint(t *testing.T) {
@@ -3466,6 +3467,7 @@ func TestCB103_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Error("tracing should not be enabled without endpoint")
 	}
+	ShutdownTracing()
 }
 
 func TestCB103_InitTracing_InvalidSamplingRate(t *testing.T) {
@@ -3478,6 +3480,7 @@ func TestCB103_InitTracing_InvalidSamplingRate(t *testing.T) {
 	defer os.Unsetenv("OTEL_SAMPLING_RATE")
 	InitTracing()
 	// Should default to 0.1 but not crash
+	ShutdownTracing()
 }
 
 func TestCB103_InitTracing_AlreadyInitialized(t *testing.T) {
@@ -3490,6 +3493,7 @@ func TestCB103_InitTracing_AlreadyInitialized(t *testing.T) {
 	defer os.Unsetenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	InitTracing()
 	// Second call with sync.Once should be no-op
+	ShutdownTracing()
 }
 
 // --- routeChatMessage edge cases (56.9% -> higher) ---

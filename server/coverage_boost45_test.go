@@ -408,6 +408,7 @@ func TestCB45_InitTracing_GRPCExporter(t *testing.T) {
 	tracingEnabled = false
 	tracer = nil
 	tracingMu = sync.Once{}
+	ShutdownTracing()
 }
 
 func TestCB45_InitTracing_HTTPExporter(t *testing.T) {
@@ -436,6 +437,7 @@ func TestCB45_InitTracing_HTTPExporter(t *testing.T) {
 	tracingEnabled = false
 	tracer = nil
 	tracingMu = sync.Once{}
+	ShutdownTracing()
 }
 
 func TestCB45_InitTracing_WithSampling(t *testing.T) {
@@ -465,6 +467,7 @@ func TestCB45_InitTracing_WithSampling(t *testing.T) {
 	tracingEnabled = false
 	tracer = nil
 	tracingMu = sync.Once{}
+	ShutdownTracing()
 }
 
 // --- ShutdownTracing (80%) ---

@@ -101,6 +101,7 @@ func TestCB61_InitTracing_HTTPExporterError(t *testing.T) {
 	tracer = nil
 	tracingEnabled = false
 	tracingMu = sync.Once{}
+	ShutdownTracing()
 }
 
 // TestCB61_InitTracing_GRPCExporterError tests gRPC exporter creation with invalid endpoint.
@@ -126,6 +127,7 @@ func TestCB61_InitTracing_GRPCExporterError(t *testing.T) {
 	tracer = nil
 	tracingEnabled = false
 	tracingMu = sync.Once{}
+	ShutdownTracing()
 }
 
 // TestCB61_InitTracing_HTTPWithInsecure tests HTTP exporter with http:// prefix (insecure mode).
@@ -155,6 +157,7 @@ func TestCB61_InitTracing_HTTPWithInsecure(t *testing.T) {
 	tracer = nil
 	tracingEnabled = false
 	tracingMu = sync.Once{}
+	ShutdownTracing()
 }
 
 // TestCB61_InitTracing_GRPCWithInsecure tests gRPC exporter with non-443 endpoint (insecure mode).
@@ -179,6 +182,7 @@ func TestCB61_InitTracing_GRPCWithInsecure(t *testing.T) {
 	tracer = nil
 	tracingEnabled = false
 	tracingMu = sync.Once{}
+	ShutdownTracing()
 }
 
 // TestCB61_InitTracing_ResourceMergeError tests resource merge error path.
@@ -211,6 +215,7 @@ func TestCB61_InitTracing_ValidInit(t *testing.T) {
 	tracer = nil
 	tracingEnabled = false
 	tracingMu = sync.Once{}
+	ShutdownTracing()
 }
 
 // TestCB61_InitTracing_AlreadyCalled tests that calling InitTracing twice is a no-op.
@@ -241,6 +246,7 @@ func TestCB61_InitTracing_AlreadyCalled(t *testing.T) {
 	tracer = nil
 	tracingEnabled = false
 	tracingMu = sync.Once{}
+	ShutdownTracing()
 }
 
 // --- ShutdownTracing (80% → higher) ---

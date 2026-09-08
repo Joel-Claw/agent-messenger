@@ -268,6 +268,7 @@ func TestCB87_InitTracing_DisabledByDefault(t *testing.T) {
 	if tracingEnabled {
 		t.Fatal("expected tracingEnabled=false")
 	}
+	ShutdownTracing()
 }
 
 func TestCB87_InitTracing_NoEndpoint(t *testing.T) {
@@ -291,6 +292,7 @@ func TestCB87_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Fatal("expected tracingEnabled=false when no endpoint")
 	}
+	ShutdownTracing()
 }
 
 func TestCB87_InitTracing_HTTPProtocolExplicit(t *testing.T) {

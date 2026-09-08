@@ -303,6 +303,7 @@ func TestCB113_InitTracing_NoEndpoint(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected nil error for no endpoint, got %v", err)
 	}
+	ShutdownTracing()
 }
 
 func TestCB113_InitTracing_AlreadyInitialized(t *testing.T) {

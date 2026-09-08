@@ -753,6 +753,7 @@ func TestCB51_InitTracing_AlreadyInitialized(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Second InitTracing failed: %v", err)
 	}
+	ShutdownTracing()
 }
 
 // =========================================================================
