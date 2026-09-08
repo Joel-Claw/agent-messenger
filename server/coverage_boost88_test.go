@@ -135,7 +135,6 @@ func TestCB88_InitTracing_HTTPSuccess(t *testing.T) {
 	// sync.Once may have already been consumed by prior tests;
 	// if not, we get an error from gRPC dial
 	_ = err
-	ShutdownTracing()
 }
 
 func TestCB88_InitTracing_HTTPProtocolWithEndpoint(t *testing.T) {
@@ -153,7 +152,6 @@ func TestCB88_InitTracing_HTTPProtocolWithEndpoint(t *testing.T) {
 
 	// Exercise HTTP exporter path — will likely fail (no collector)
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB88_InitTracing_HTTPInsecureEndpoint(t *testing.T) {
@@ -170,7 +168,6 @@ func TestCB88_InitTracing_HTTPInsecureEndpoint(t *testing.T) {
 	os.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http")
 
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB88_InitTracing_GRPCSecure443(t *testing.T) {
@@ -187,7 +184,6 @@ func TestCB88_InitTracing_GRPCSecure443(t *testing.T) {
 	os.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc")
 
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB88_InitTracing_HTTPSecureHTTPS(t *testing.T) {
@@ -204,7 +200,6 @@ func TestCB88_InitTracing_HTTPSecureHTTPS(t *testing.T) {
 	os.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http")
 
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB88_InitTracing_CustomSamplingRate(t *testing.T) {
@@ -222,7 +217,6 @@ func TestCB88_InitTracing_CustomSamplingRate(t *testing.T) {
 	os.Setenv("OTEL_SAMPLING_RATE", "0.5")
 
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB88_InitTracing_CustomServiceName(t *testing.T) {
@@ -241,7 +235,6 @@ func TestCB88_InitTracing_CustomServiceName(t *testing.T) {
 	os.Setenv("OTEL_SAMPLING_RATE", "0.25")
 
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 // --- ShutdownTracing tests ---

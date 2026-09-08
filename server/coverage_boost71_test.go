@@ -1206,7 +1206,6 @@ func TestCB71_InitTracing_Disabled(t *testing.T) {
 	if tracingEnabled {
 		t.Fatal("Expected tracingEnabled to be false")
 	}
-	ShutdownTracing()
 }
 
 func TestCB71_InitTracing_NoEndpoint(t *testing.T) {
@@ -1229,7 +1228,6 @@ func TestCB71_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Fatal("Expected tracingEnabled to be false when no endpoint")
 	}
-	ShutdownTracing()
 }
 
 // ==================== queue Drain Tests ====================

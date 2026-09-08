@@ -564,7 +564,6 @@ func TestCB93_InitTracing_GRPCNoEndpoint(t *testing.T) {
 	if err != nil {
 		t.Logf("InitTracing with no endpoint returned error: %v (acceptable)", err)
 	}
-	ShutdownTracing()
 }
 
 // Test ShutdownTracing with a real provider that returns error on shutdown

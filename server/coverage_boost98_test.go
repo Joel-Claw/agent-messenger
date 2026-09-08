@@ -650,7 +650,6 @@ func TestCB98_InitTracing_Disabled(t *testing.T) {
 	if tracingEnabled {
 		t.Error("expected tracingEnabled to be false")
 	}
-	ShutdownTracing()
 }
 
 func TestCB98_InitTracing_NoEndpoint(t *testing.T) {
@@ -670,7 +669,6 @@ func TestCB98_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Error("expected tracingEnabled to be false with no endpoint")
 	}
-	ShutdownTracing()
 }
 
 func TestCB98_InitTracing_HTTPExporter(t *testing.T) {

@@ -95,7 +95,6 @@ func TestCB50_InitTracing_HTTPProtocol(t *testing.T) {
 	if !tracingEnabled {
 		t.Log("Tracing not enabled (exporter may have failed), but no panic")
 	}
-	ShutdownTracing()
 }
 
 func TestCB50_InitTracing_GRPCProtocol(t *testing.T) {
@@ -122,7 +121,6 @@ func TestCB50_InitTracing_GRPCProtocol(t *testing.T) {
 	if err != nil && strings.Contains(err.Error(), "failed to create OTLP exporter") {
 		t.Fatalf("gRPC exporter creation failed: %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB50_InitTracing_HTTPSEndpoint(t *testing.T) {
@@ -148,7 +146,6 @@ func TestCB50_InitTracing_HTTPSEndpoint(t *testing.T) {
 	if err != nil && strings.Contains(err.Error(), "failed to create OTLP exporter") {
 		t.Fatalf("HTTPS HTTP exporter creation failed: %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB50_InitTracing_AlreadyInitialized(t *testing.T) {
@@ -174,7 +171,6 @@ func TestCB50_InitTracing_AlreadyInitialized(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Second InitTracing should not return error: %v", err)
 	}
-	ShutdownTracing()
 }
 
 // --- ShutdownTracing ---

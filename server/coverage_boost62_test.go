@@ -138,7 +138,6 @@ func TestCB62_InitTracing_GRPCExporterError(t *testing.T) {
 	tracer = nil
 	tracingEnabled = false
 	tracingMu = sync.Once{}
-	ShutdownTracing()
 }
 
 // TestCB62_InitTracing_SamplingRateParse tests that custom sampling rate is parsed.
@@ -196,7 +195,6 @@ func TestCB62_InitTracing_GRPCInsecureConnection(t *testing.T) {
 	tracer = nil
 	tracingEnabled = false
 	tracingMu = sync.Once{}
-	ShutdownTracing()
 }
 
 // --- ShutdownTracing (80.0% → higher) ---

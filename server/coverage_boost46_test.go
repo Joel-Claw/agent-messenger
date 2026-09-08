@@ -905,7 +905,6 @@ func TestCB46_InitTracing_AlreadyInitialized(t *testing.T) {
 	tp = nil
 	tracer = nil
 	tracingEnabled = false
-	ShutdownTracing()
 }
 
 // --- ShutdownTracing: with tp set but shutdown error ---

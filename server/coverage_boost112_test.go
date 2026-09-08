@@ -546,7 +546,6 @@ func TestCB112_InitTracing_DisabledByDefault(t *testing.T) {
 	if err != nil {
 		t.Errorf("InitTracing with OTEL_ENABLED unset should not error: %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB112_InitTracing_NoEndpoint(t *testing.T) {
@@ -579,7 +578,6 @@ func TestCB112_InitTracing_NoEndpoint(t *testing.T) {
 	if err != nil {
 		t.Errorf("InitTracing with no endpoint should not error: %v", err)
 	}
-	ShutdownTracing()
 }
 
 // ============ ShutdownTracing: error path ============

@@ -1141,7 +1141,6 @@ func TestCB83_InitTracing_Disabled(t *testing.T) {
 	if tracingEnabled {
 		t.Error("Expected tracing to be disabled")
 	}
-	ShutdownTracing()
 }
 
 func TestCB83_InitTracing_NoEndpoint(t *testing.T) {
@@ -1167,7 +1166,6 @@ func TestCB83_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Error("Expected tracing to be disabled when no endpoint")
 	}
-	ShutdownTracing()
 }
 
 func TestCB83_InitTracing_GRPCExporterError(t *testing.T) {
@@ -1193,7 +1191,6 @@ func TestCB83_InitTracing_GRPCExporterError(t *testing.T) {
 	if err != nil && err.Error() == "" {
 		t.Error("Expected non-empty error message")
 	}
-	ShutdownTracing()
 }
 
 func TestCB83_InitTracing_HTTPExporterError(t *testing.T) {

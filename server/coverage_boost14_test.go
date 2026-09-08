@@ -2350,7 +2350,6 @@ func TestCB14_InitTracing_DisabledByDefault(t *testing.T) {
 	if IsTracingEnabled() {
 		t.Error("expected tracing to be disabled by default")
 	}
-	ShutdownTracing()
 }
 
 func TestCB14_ShutdownTracing(t *testing.T) {

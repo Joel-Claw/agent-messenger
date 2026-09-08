@@ -89,7 +89,6 @@ func TestCB85_InitTracing_Disabled(t *testing.T) {
 	if tracingEnabled {
 		t.Error("tracingEnabled should be false when disabled")
 	}
-	ShutdownTracing()
 }
 
 func TestCB85_InitTracing_NoEndpoint(t *testing.T) {
@@ -105,7 +104,6 @@ func TestCB85_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Error("tracingEnabled should be false when no endpoint")
 	}
-	ShutdownTracing()
 }
 
 func TestCB85_InitTracing_HTTPExporterError(t *testing.T) {

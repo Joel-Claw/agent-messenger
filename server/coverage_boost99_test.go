@@ -649,7 +649,6 @@ func TestCB99_InitTracing_ResourceMergeError(t *testing.T) {
 
 	err := InitTracing()
 	_ = err
-	ShutdownTracing()
 }
 
 func TestCB99_InitTracing_gRPCInsecureEndpoint(t *testing.T) {
@@ -666,7 +665,6 @@ func TestCB99_InitTracing_gRPCInsecureEndpoint(t *testing.T) {
 
 	err := InitTracing()
 	_ = err
-	ShutdownTracing()
 }
 
 func TestCB99_InitTracing_HTTPSecureEndpoint(t *testing.T) {
@@ -682,7 +680,6 @@ func TestCB99_InitTracing_HTTPSecureEndpoint(t *testing.T) {
 
 	err := InitTracing()
 	_ = err
-	ShutdownTracing()
 }
 
 func TestCB99_InitTracing_gRPCSecureEndpoint(t *testing.T) {
@@ -698,7 +695,6 @@ func TestCB99_InitTracing_gRPCSecureEndpoint(t *testing.T) {
 
 	err := InitTracing()
 	_ = err
-	ShutdownTracing()
 }
 
 func TestCB99_InitTracing_CustomSamplingRate(t *testing.T) {
@@ -715,7 +711,6 @@ func TestCB99_InitTracing_CustomSamplingRate(t *testing.T) {
 
 	err := InitTracing()
 	_ = err
-	ShutdownTracing()
 }
 
 func TestCB99_InitTracing_AlreadyInitialized(t *testing.T) {
@@ -734,7 +729,6 @@ func TestCB99_InitTracing_AlreadyInitialized(t *testing.T) {
 	if err != nil {
 		t.Errorf("second InitTracing should return nil (sync.Once), got %v", err)
 	}
-	ShutdownTracing()
 }
 
 // --- ShutdownTracing (80%) ---

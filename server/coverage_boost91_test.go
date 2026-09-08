@@ -1534,7 +1534,6 @@ func TestCB91_InitTracing_OTELDisabled(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error when tracing disabled, got %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB91_InitTracing_NoEndpoint(t *testing.T) {
@@ -1549,7 +1548,6 @@ func TestCB91_InitTracing_NoEndpoint(t *testing.T) {
 	if err != nil {
 		t.Logf("InitTracing returned error (expected): %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB91_InitTracing_HTTPProtocol(t *testing.T) {

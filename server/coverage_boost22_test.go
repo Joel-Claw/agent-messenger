@@ -1414,7 +1414,6 @@ func TestCb22_InitTracing_Disabled(t *testing.T) {
 	if IsTracingEnabled() {
 		t.Error("tracing should be disabled when OTEL_ENABLED is not set")
 	}
-	ShutdownTracing()
 }
 
 func TestCb22_ShutdownTracing_NoProvider(t *testing.T) {

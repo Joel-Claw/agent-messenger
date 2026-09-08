@@ -145,7 +145,6 @@ func TestCB58_InitTracing_AlreadyInitialized(t *testing.T) {
 	}
 
 	tracingMu = sync.Once{}
-	ShutdownTracing()
 }
 
 func TestCB58_ShutdownTracing_WithError(t *testing.T) {

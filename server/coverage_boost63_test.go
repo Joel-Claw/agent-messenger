@@ -100,7 +100,6 @@ func TestCB63_InitTracing_HTTPProtocol(t *testing.T) {
 	os.Setenv("OTEL_SAMPLING_RATE", "0.5")
 	resetTracing_CB63()
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB63_InitTracing_HTTPInsecureEndpoint(t *testing.T) {
@@ -115,7 +114,6 @@ func TestCB63_InitTracing_HTTPInsecureEndpoint(t *testing.T) {
 	os.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http")
 	resetTracing_CB63()
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB63_InitTracing_GRPCInsecure(t *testing.T) {
@@ -130,7 +128,6 @@ func TestCB63_InitTracing_GRPCInsecure(t *testing.T) {
 	os.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc")
 	resetTracing_CB63()
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB63_InitTracing_GRPCSecure443(t *testing.T) {
@@ -145,7 +142,6 @@ func TestCB63_InitTracing_GRPCSecure443(t *testing.T) {
 	os.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc")
 	resetTracing_CB63()
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB63_InitTracing_HTTPFallbackEndpoint(t *testing.T) {
@@ -161,7 +157,6 @@ func TestCB63_InitTracing_HTTPFallbackEndpoint(t *testing.T) {
 	os.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http")
 	resetTracing_CB63()
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB63_InitTracing_CustomSamplingRate(t *testing.T) {
@@ -177,7 +172,6 @@ func TestCB63_InitTracing_CustomSamplingRate(t *testing.T) {
 	os.Setenv("OTEL_SAMPLING_RATE", "0.25")
 	resetTracing_CB63()
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB63_InitTracing_InvalidSamplingRate(t *testing.T) {
@@ -193,7 +187,6 @@ func TestCB63_InitTracing_InvalidSamplingRate(t *testing.T) {
 	os.Setenv("OTEL_SAMPLING_RATE", "not-a-number")
 	resetTracing_CB63()
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 func TestCB63_ShutdownTracing_WithTracingEnabled(t *testing.T) {

@@ -707,7 +707,6 @@ func TestCB81_InitTracing_Disabled(t *testing.T) {
 	// by ensuring the function doesn't panic
 	_ = InitTracing()
 	// tracingEnabled should remain false since OTEL_ENABLED is not set
-	ShutdownTracing()
 }
 
 func TestCB81_InitTracing_NoEndpoint(t *testing.T) {
@@ -717,7 +716,6 @@ func TestCB81_InitTracing_NoEndpoint(t *testing.T) {
 	os.Unsetenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	os.Unsetenv("OTEL_EXPORTER_OTLP_HTTP_ENDPOINT")
 	_ = InitTracing()
-	ShutdownTracing()
 }
 
 // ==================== ShutdownTracing ====================

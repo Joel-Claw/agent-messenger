@@ -636,7 +636,6 @@ func TestCB39_InitTracing_GRPCProtocol(t *testing.T) {
 	if err != nil {
 		// Expected if no collector is running - that's fine, we exercised the code path
 	}
-	ShutdownTracing()
 }
 
 // TestCB39_InitTracing_SamplingRateParsing verifies the sampling rate
@@ -665,7 +664,6 @@ func TestCB39_InitTracing_SamplingRateParsing(t *testing.T) {
 	err := InitTracing()
 	// Might fail because no collector is running, but code path is exercised
 	_ = err
-	ShutdownTracing()
 }
 
 // TestCB39_InitTracing_HTTPProtocolWithHTTPS verifies the HTTP protocol
@@ -691,7 +689,6 @@ func TestCB39_InitTracing_HTTPProtocolWithHTTPS(t *testing.T) {
 	err := InitTracing()
 	// Will fail because the exporter can't connect, but the code path is exercised
 	_ = err
-	ShutdownTracing()
 }
 
 // TestCB39_InitTracing_AlreadyInitialized verifies that calling InitTracing
@@ -711,7 +708,6 @@ func TestCB39_InitTracing_AlreadyInitialized(t *testing.T) {
 	if err2 != nil {
 		t.Fatalf("second InitTracing failed: %v", err2)
 	}
-	ShutdownTracing()
 }
 
 // TestCB39_InitTracing_DefaultServiceName verifies the default service name
@@ -740,7 +736,6 @@ func TestCB39_InitTracing_DefaultServiceName(t *testing.T) {
 	// The default service name "agent-messenger" should be used
 	err := InitTracing()
 	_ = err // might fail, but code path is exercised
-	ShutdownTracing()
 }
 
 // --- ShutdownTracing: with active provider ---

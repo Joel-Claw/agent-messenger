@@ -1381,7 +1381,6 @@ func TestCB13_InitTracing_DisabledByDefault(t *testing.T) {
 	if err != nil {
 		t.Logf("InitTracing error (ok in test): %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB13_InitTracing_EnabledNoEndpoint(t *testing.T) {
@@ -1393,7 +1392,6 @@ func TestCB13_InitTracing_EnabledNoEndpoint(t *testing.T) {
 	if err != nil {
 		t.Logf("InitTracing error (ok in test): %v", err)
 	}
-	ShutdownTracing()
 }
 
 // ==============================

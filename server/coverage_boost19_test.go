@@ -759,7 +759,6 @@ func TestCb19_InitTracing_Disabled(t *testing.T) {
 	if tp != nil {
 		t.Error("expected nil tracer provider when OTEL_ENABLED not set")
 	}
-	ShutdownTracing()
 }
 
 func TestCb19_InitTracing_NoEndpoint(t *testing.T) {
@@ -784,7 +783,6 @@ func TestCb19_InitTracing_NoEndpoint(t *testing.T) {
 	if tp != nil {
 		t.Error("expected nil tracer provider when no endpoint configured")
 	}
-	ShutdownTracing()
 }
 
 // --- searchMessages edge cases ---

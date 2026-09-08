@@ -1395,7 +1395,6 @@ func TestCB73_InitTracing_Disabled(t *testing.T) {
 	if tracingEnabled {
 		t.Error("expected tracing to be disabled")
 	}
-	ShutdownTracing()
 }
 
 func TestCB73_InitTracing_NoEndpoint(t *testing.T) {
@@ -1418,7 +1417,6 @@ func TestCB73_InitTracing_NoEndpoint(t *testing.T) {
 	if tracingEnabled {
 		t.Error("expected tracing to be disabled when no endpoint")
 	}
-	ShutdownTracing()
 }
 
 func TestCB73_InitTracing_HTTPExporter(t *testing.T) {
@@ -1443,7 +1441,6 @@ func TestCB73_InitTracing_HTTPExporter(t *testing.T) {
 		// If it fails, that's OK - we're testing the code path
 		t.Logf("InitTracing returned error (expected without collector): %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB73_InitTracing_GRPCExporter(t *testing.T) {
@@ -1465,7 +1462,6 @@ func TestCB73_InitTracing_GRPCExporter(t *testing.T) {
 	if err != nil {
 		t.Logf("InitTracing returned error (expected without collector): %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB73_InitTracing_DefaultProtocol(t *testing.T) {
@@ -1486,7 +1482,6 @@ func TestCB73_InitTracing_DefaultProtocol(t *testing.T) {
 	if err != nil {
 		t.Logf("InitTracing returned error (expected without collector): %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB73_InitTracing_CustomSamplingRate(t *testing.T) {
@@ -1508,7 +1503,6 @@ func TestCB73_InitTracing_CustomSamplingRate(t *testing.T) {
 	if err != nil {
 		t.Logf("InitTracing returned error: %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB73_InitTracing_InvalidSamplingRate(t *testing.T) {
@@ -1531,7 +1525,6 @@ func TestCB73_InitTracing_InvalidSamplingRate(t *testing.T) {
 		t.Logf("InitTracing returned error: %v", err)
 	}
 	// Should default to 0.1 when sampling rate is invalid
-	ShutdownTracing()
 }
 
 func TestCB73_InitTracing_HTTPSecureEndpoint(t *testing.T) {
@@ -1553,7 +1546,6 @@ func TestCB73_InitTracing_HTTPSecureEndpoint(t *testing.T) {
 	if err != nil {
 		t.Logf("InitTracing returned error: %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB73_InitTracing_HTTPInsecureEndpoint(t *testing.T) {
@@ -1575,7 +1567,6 @@ func TestCB73_InitTracing_HTTPInsecureEndpoint(t *testing.T) {
 	if err != nil {
 		t.Logf("InitTracing returned error: %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB73_InitTracing_AlreadyInitialized(t *testing.T) {
@@ -1598,7 +1589,6 @@ func TestCB73_InitTracing_AlreadyInitialized(t *testing.T) {
 	if err != nil {
 		t.Errorf("second InitTracing should not return error: %v", err)
 	}
-	ShutdownTracing()
 }
 
 // ==================== ShutdownTracing tests (80.0% -> ~100%) ====================

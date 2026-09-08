@@ -1465,7 +1465,6 @@ func TestCB101_InitTracing_HTTPExporterInsecure(t *testing.T) {
 	if err != nil {
 		t.Logf("InitTracing returned error (expected for no collector): %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB101_InitTracing_GRPCExporterInsecure(t *testing.T) {
@@ -1478,14 +1477,12 @@ func TestCB101_InitTracing_GRPCExporterInsecure(t *testing.T) {
 		os.Unsetenv("OTEL_ENABLED")
 		os.Unsetenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 		os.Unsetenv("OTEL_EXPORTER_OTLP_PROTOCOL")
-		ShutdownTracing()
 	}()
 
 	err := InitTracing()
 	if err != nil {
 		t.Logf("InitTracing returned error (expected for no collector): %v", err)
 	}
-	ShutdownTracing()
 }
 
 func TestCB101_InitTracing_GRPCExporterSecure(t *testing.T) {
@@ -1498,14 +1495,12 @@ func TestCB101_InitTracing_GRPCExporterSecure(t *testing.T) {
 		os.Unsetenv("OTEL_ENABLED")
 		os.Unsetenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 		os.Unsetenv("OTEL_EXPORTER_OTLP_PROTOCOL")
-		ShutdownTracing()
 	}()
 
 	err := InitTracing()
 	if err != nil {
 		t.Logf("InitTracing returned error (expected for no collector): %v", err)
 	}
-	ShutdownTracing()
 }
 
 // --- ShutdownTracing tests ---

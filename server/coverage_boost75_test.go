@@ -2654,7 +2654,6 @@ func TestCB75_InitTracing_GRPCExporterError(t *testing.T) {
 	tracingEnabled = false
 	tracer = nil
 	tracingMu = sync.Once{}
-	ShutdownTracing()
 }
 
 // --- InitTracing: HTTP exporter error ---
@@ -2688,7 +2687,6 @@ func TestCB75_InitTracing_HTTPExporterError(t *testing.T) {
 	tracingEnabled = false
 	tracer = nil
 	tracingMu = sync.Once{}
-	ShutdownTracing()
 }
 
 // --- InitTracing: custom sampling rate ---
@@ -2724,7 +2722,6 @@ func TestCB75_InitTracing_CustomSamplingRate(t *testing.T) {
 	tracingEnabled = false
 	tracer = nil
 	tracingMu = sync.Once{}
-	ShutdownTracing()
 }
 
 // --- ShutdownTracing: with shutdown error ---
