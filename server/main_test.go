@@ -5,20 +5,20 @@ import (
 	"testing"
 )
 
-// TestMain stops global rate limiter goroutines after all tests complete.
-// Without this, the cleanup goroutines started by NewRateLimiter in package
-// init leak and cause the test process to hang indefinitely.
+// TestMain stops all rate limiter goroutines after tests complete.
+// Without this, the cleanup goroutines started by NewRateLimiter and
+// NewTieredRateLimiter in both package init and test files leak and
+// cause the test process to hang.
 func TestMain(m *testing.M) {
 	code := m.Run()
 
-	// Stop all global rate limiters to unblock their cleanup goroutines.
-	messageRateLimiter.Stop()
-	userRateLimiter.Stop()
-	ipRateLimiter.Stop()
-	authIPLimiter.Stop()
-	if globalTieredLimiter != nil {
-		globalTieredLimiter.Stop()
+	// Stop ALL rate limiters ever created (globals + test instances).
+	allRateLimitersMu.Lock()
+	for _, stop := range allRateLimiters {
+		stop()
 	}
+	allRateLimiters = nil
+	allRateLimitersMu.Unlock()
 
 	// Shutdown any leaked tracing providers.
 	ShutdownTracing()

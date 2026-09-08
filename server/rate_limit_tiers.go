@@ -72,6 +72,9 @@ func NewTieredRateLimiter() *TieredRateLimiter {
 		limits: make(map[string]*userRateLimitState),
 		stopCh: make(chan struct{}),
 	}
+	allRateLimitersMu.Lock()
+	allRateLimiters = append(allRateLimiters, trl.Stop)
+	allRateLimitersMu.Unlock()
 	go trl.cleanup()
 	return trl
 }

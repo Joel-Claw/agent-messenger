@@ -1451,16 +1451,16 @@ func TestCB115_CleanStaleQueueMessages_DeletesOld(t *testing.T) {
 
 	initQueueDB(testDB)
 
-	// Insert an old message (2 hours ago)
+	// Insert an old message (2 hours ago) - use RFC3339 string like production persistQueue
 	_, err = testDB.Exec(`INSERT INTO offline_queue (recipient, data, queued_at) VALUES (?, ?, ?)`,
-		"user1", []byte("old"), time.Now().UTC().Add(-2*time.Hour))
+		"user1", []byte("old"), time.Now().UTC().Add(-2*time.Hour).Format(time.RFC3339))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Insert a recent message
 	_, err = testDB.Exec(`INSERT INTO offline_queue (recipient, data, queued_at) VALUES (?, ?, ?)`,
-		"user1", []byte("new"), time.Now().UTC())
+		"user1", []byte("new"), time.Now().UTC().Format(time.RFC3339))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -29,6 +29,12 @@ type rateCounter struct {
 	expires time.Time
 }
 
+// allRateLimiters tracks every RateLimiter created so TestMain can stop them all.
+var (
+	allRateLimitersMu sync.Mutex
+	allRateLimiters   []func() // stop functions for all rate limiters
+)
+
 // NewRateLimiter creates a rate limiter with the given limit per window
 func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
 	rl := &RateLimiter{
@@ -37,6 +43,9 @@ func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
 		window:   window,
 		stopCh:   make(chan struct{}),
 	}
+	allRateLimitersMu.Lock()
+	allRateLimiters = append(allRateLimiters, rl.Stop)
+	allRateLimitersMu.Unlock()
 	go rl.cleanup()
 	return rl
 }
