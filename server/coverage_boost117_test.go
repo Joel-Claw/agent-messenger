@@ -228,7 +228,6 @@ func TestCB117_LoadQueueFromDB_NilDB(t *testing.T) {
 	}
 }
 
-
 func TestCB117_LoadQueueFromDB_QueryError(t *testing.T) {
 	resetGlobals_CB117()
 	setupTestDB_CB117()
@@ -244,6 +243,45 @@ func TestCB117_LoadQueueFromDB_QueryError(t *testing.T) {
 	// Queue should be empty
 	if q.TotalDepth() != 0 {
 		t.Errorf("expected empty queue after query error, got %d", q.TotalDepth())
+	}
+}
+
+func TestCB117_LoadQueueFromDB_ScanError(t *testing.T) {
+	resetGlobals_CB117()
+
+	// Use a separate DB with a missing column to trigger a query error.
+	// SQLite is dynamically typed, so true scan errors are nearly impossible.
+	// A missing column in the SELECT is the reliable way to hit the error path.
+	dbPath := "/tmp/am_test_cb117_scan.db"
+	os.Remove(dbPath)
+	testDB, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testDB.Close()
+	defer os.Remove(dbPath)
+
+	_, err = testDB.Exec(`CREATE TABLE offline_queue (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		recipient TEXT,
+		sent_count INTEGER
+	)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = testDB.Exec("INSERT INTO offline_queue (recipient, sent_count) VALUES (?, 0)", "agent1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := newOfflineQueue(100, time.Hour)
+	// SELECT references 'data' and 'queued_at' columns which don't exist,
+	// so db.Query returns an error — exercising the error logging path.
+	loadQueueFromDB(testDB, q)
+
+	if q.TotalDepth() != 0 {
+		t.Errorf("expected empty queue, got depth %d", q.TotalDepth())
 	}
 }
 
@@ -381,29 +419,12 @@ func TestCB117_ValidateJWT_MalformedBase64(t *testing.T) {
 func TestCB117_ValidateJWT_NoClaims(t *testing.T) {
 	resetGlobals_CB117()
 
-	// Create a token with an empty claims object
-	// This is a valid JWT structure but with empty claims
-	// Header: {"alg":"HS256","typ":"JWT"}, Payload: {}, Signature: (signed)
-	// We can craft this by using jwt.ParseWithClaims with a minimal token
-	// Actually, a token with empty payload {} is valid JSON but won't have UserID
-	// Let's create a token signed with the right key but with no meaningful claims
-	// The simplest way is to use the jwt library directly
-	// But since we're testing ValidateJWT, we just need a token that parses but has no claims
+	// Create a token with empty claims (no user_id, no username, no exp)
+	// Using jwt.MapClaims{} produces a valid JWT structure with no meaningful claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{})
+	signed, _ := token.SignedString(jwtSecret)
 
-	// A token with payload "{}" — signed with the dev secret
-	// This should parse successfully but have empty claims fields
-	// Actually, jwt.ParseWithClaims will still return Claims as *Claims,
-	// just with zero values. The !token.Valid check may catch this if exp is missing.
-	// Let's use a token without exp — it should be invalid because token.Valid will be false
-	// when there's no exp (depending on the jwt library config)
-
-	// Create a minimal JWT: header.payload.sig where payload is "{}"
-	// This is a properly structured JWT with no claims
-	header := `{"alg":"HS256","typ":"JWT"}`
-	payload := `{}`
-	token := createRawJWT_CB117(header, payload)
-
-	claims, err := ValidateJWT(token)
+	claims, err := ValidateJWT(signed)
 	// With no exp, the jwt library may reject it or accept it depending on validation options
 	// The key thing is that claims should either be nil or have empty UserID
 	if err == nil && claims != nil {
@@ -413,18 +434,6 @@ func TestCB117_ValidateJWT_NoClaims(t *testing.T) {
 		}
 	}
 	// If it errored, that's also fine — the no-claims path is covered either way
-}
-
-// createRawJWT_CB117 creates a raw JWT string with the given header and payload
-// signed with the default jwtSecret.
-func createRawJWT_CB117(header, payload string) string {
-	// Use the jwt library to sign a token with custom claims
-	// We'll use the standard library approach: base64url(header) + "." + base64url(payload) + "." + signature
-	// But since we need to sign with HMAC-SHA256, we use the jwt library
-	// Actually the simplest approach: use jwt.NewWithClaims with empty RegisteredClaims
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{})
-	signed, _ := token.SignedString(jwtSecret)
-	return signed
 }
 
 // ==================== getConversationMessages tests ====================
@@ -460,25 +469,27 @@ func TestCB117_GetConversationMessages_WithCursor(t *testing.T) {
 	db.Exec("INSERT INTO conversations (id, user_id, agent_id, created_at) VALUES (?, ?, ?, ?)",
 		convID, "user1", "agent1", time.Now().UTC())
 
-	// Insert some messages with different timestamps (as RFC3339 strings to match production)
-	baseTime := time.Date(2026, 9, 9, 0, 0, 0, 0, time.UTC)
+	// Insert messages with explicit string timestamps to ensure correct comparison
+	baseTime := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 	for i := 0; i < 5; i++ {
 		msgID := generateID("msg")
-		timestamp := baseTime.Add(time.Duration(i) * time.Hour).UTC().Format(time.RFC3339)
+		ts := baseTime.Add(time.Duration(i) * time.Hour)
+		// Insert with string format matching what the query expects
 		db.Exec("INSERT INTO messages (id, conversation_id, sender_type, sender_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-			msgID, convID, "user", "user1", fmt.Sprintf("message %d", i), timestamp)
+			msgID, convID, "user", "user1", fmt.Sprintf("message %d", i), ts.Format(time.RFC3339Nano))
 	}
 
-	// Use cursor pagination: get messages before 03:00 (excludes 03:00 and 04:00)
-	beforeTime := baseTime.Add(3 * time.Hour).UTC().Format(time.RFC3339)
-	messages, err := getConversationMessages(convID, 10, beforeTime)
+	// Use cursor pagination: get messages before the 4th message's timestamp
+	// Messages are at 12:00, 13:00, 14:00, 15:00, 16:00
+	// before=15:00 should return messages at 12:00, 13:00, 14:00 (3 messages)
+	beforeStr := baseTime.Add(3 * time.Hour).Format(time.RFC3339Nano)
+	messages, err := getConversationMessages(convID, 10, beforeStr)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Should get the 3 older messages (00:00, 01:00, 02:00)
 	if len(messages) != 3 {
-		t.Errorf("expected 3 messages, got %d", len(messages))
+		t.Errorf("expected 3 messages before cursor, got %d", len(messages))
 	}
 
 	// Messages should be in chronological order (reversed from DESC)
@@ -630,8 +641,6 @@ func TestCB117_HandleAdminAgents_SuccessWithAgents(t *testing.T) {
 	}
 }
 
-// ==================== handleAdminAgents scan error test ====================
-
 func TestCB117_HandleAdminAgents_ScanError(t *testing.T) {
 	resetGlobals_CB117()
 	setupTestDB_CB117()
@@ -644,10 +653,8 @@ func TestCB117_HandleAdminAgents_ScanError(t *testing.T) {
 		}
 	}()
 
-	// Insert an agent with a NULL name to trigger a scan error
-	// The query expects 6 columns: id, name, model, personality, specialty, created_at
-	// Insert with NULL in a NOT NULL column won't work with constraints,
-	// so we drop and recreate the table with nullable columns and insert NULL
+	// Drop and recreate the agents table with nullable columns
+	// so we can insert NULL name to trigger a scan error
 	db.Exec("DROP TABLE agents")
 	db.Exec(`CREATE TABLE agents (
 		id TEXT PRIMARY KEY,
@@ -658,8 +665,7 @@ func TestCB117_HandleAdminAgents_ScanError(t *testing.T) {
 		created_at DATETIME
 	)`)
 
-	// Insert a row with NULL name — scan into string should work (empty string)
-	// Actually, scanning NULL into a string causes an error in database/sql
+	// Insert a row with NULL name — scanning NULL into a string causes an error
 	db.Exec("INSERT INTO agents (id, name, model, personality, specialty, created_at) VALUES (?, NULL, ?, ?, ?, ?)",
 		"agent-null", "model", "personality", "specialty", time.Now().UTC())
 
