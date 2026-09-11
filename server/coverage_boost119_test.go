@@ -27,7 +27,26 @@ import (
 // - handleUpload (85.7%): MkdirAll error, Create error, Copy error
 // - Various tags.go/reactions.go error paths
 
-func resetGlobals_CB119() {
+func resetGlobals_CB119(t *testing.T) {
+	t.Helper()
+	origDB := db
+	origHub := hub
+	origOfflineQueue := offlineQueue
+	origPushConfig := pushConfig
+	origAgentSecret := agentSecret
+	origAdminSecret := adminSecret
+	origJWTSecret := jwtSecret
+	origServerDBPath := serverDBPath
+	t.Cleanup(func() {
+		db = origDB
+		hub = origHub
+		offlineQueue = origOfflineQueue
+		pushConfig = origPushConfig
+		agentSecret = origAgentSecret
+		adminSecret = origAdminSecret
+		jwtSecret = origJWTSecret
+		serverDBPath = origServerDBPath
+	})
 	db = nil
 	hub = nil
 	offlineQueue = nil
@@ -69,7 +88,7 @@ func generateTestJWT_CB119(userID string) string {
 // Use SQLite triggers to make UPDATE fail for specific columns
 
 func TestCB119_RegisterAgentOnConnect_ModelUpdate_TriggerError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -96,7 +115,7 @@ func TestCB119_RegisterAgentOnConnect_ModelUpdate_TriggerError(t *testing.T) {
 }
 
 func TestCB119_RegisterAgentOnConnect_PersonalityUpdate_TriggerError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -118,7 +137,7 @@ func TestCB119_RegisterAgentOnConnect_PersonalityUpdate_TriggerError(t *testing.
 }
 
 func TestCB119_RegisterAgentOnConnect_SpecialtyUpdate_TriggerError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -140,7 +159,7 @@ func TestCB119_RegisterAgentOnConnect_SpecialtyUpdate_TriggerError(t *testing.T)
 }
 
 func TestCB119_RegisterAgentOnConnect_NameUpdate_TriggerError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -164,7 +183,7 @@ func TestCB119_RegisterAgentOnConnect_NameUpdate_TriggerError(t *testing.T) {
 // ==================== initAPNs: cert load error (invalid P12) ====================
 
 func TestCB119_InitAPNs_InvalidP12Cert(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	certPath := "/tmp/am_test_cb119_bad.p12"
 	// Write garbage that is not a valid P12 file
 	os.WriteFile(certPath, []byte("this is not a valid p12 file content"), 0644)
@@ -190,7 +209,7 @@ func TestCB119_InitAPNs_InvalidP12Cert(t *testing.T) {
 // ==================== initFCM: invalid credentials file ====================
 
 func TestCB119_InitFCM_InvalidCredentialsFile(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	credsPath := "/tmp/am_test_cb119_bad_fcm.json"
 	// Write garbage that is not valid Firebase credentials JSON
 	os.WriteFile(credsPath, []byte("this is not valid json"), 0644)
@@ -215,7 +234,7 @@ func TestCB119_InitFCM_InvalidCredentialsFile(t *testing.T) {
 // Use read-only DB to trigger CREATE TABLE IF NOT EXISTS errors for missing tables
 
 func TestCB119_InitSchema_ReactionsTableError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	dbPath := "/tmp/am_test_cb119_schema_reactions.db"
 	os.Remove(dbPath)
 
@@ -254,7 +273,7 @@ func TestCB119_InitSchema_ReactionsTableError(t *testing.T) {
 }
 
 func TestCB119_InitSchema_ConversationTagsTableError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	dbPath := "/tmp/am_test_cb119_schema_tags.db"
 	os.Remove(dbPath)
 
@@ -289,7 +308,7 @@ func TestCB119_InitSchema_ConversationTagsTableError(t *testing.T) {
 }
 
 func TestCB119_InitSchema_RateLimitTiersTableError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	dbPath := "/tmp/am_test_cb119_schema_rlt.db"
 	os.Remove(dbPath)
 
@@ -324,7 +343,7 @@ func TestCB119_InitSchema_RateLimitTiersTableError(t *testing.T) {
 }
 
 func TestCB119_InitSchema_NotificationPrefsTableError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	dbPath := "/tmp/am_test_cb119_schema_np.db"
 	os.Remove(dbPath)
 
@@ -359,7 +378,7 @@ func TestCB119_InitSchema_NotificationPrefsTableError(t *testing.T) {
 }
 
 func TestCB119_InitSchema_SchemaMigrationsTableError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	dbPath := "/tmp/am_test_cb119_schema_sm.db"
 	os.Remove(dbPath)
 
@@ -396,7 +415,7 @@ func TestCB119_InitSchema_SchemaMigrationsTableError(t *testing.T) {
 // ==================== routeChatMessage: storeMessage error ====================
 
 func TestCB119_RouteChatMessage_StoreMessageError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 
 	// Create a conversation
@@ -458,7 +477,7 @@ func TestCB119_RouteChatMessage_StoreMessageError(t *testing.T) {
 // ==================== handleUpload: error paths ====================
 
 func TestCB119_HandleUpload_MkdirAllError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -487,7 +506,7 @@ func TestCB119_HandleUpload_MkdirAllError(t *testing.T) {
 }
 
 func TestCB119_HandleUpload_CreateFileError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -513,7 +532,7 @@ func TestCB119_HandleUpload_CreateFileError(t *testing.T) {
 }
 
 func TestCB119_HandleUpload_CopyError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -541,7 +560,7 @@ func TestCB119_HandleUpload_CopyError(t *testing.T) {
 }
 
 func TestCB119_HandleUpload_DBInsertError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 
 	// Drop the attachments table to cause INSERT error
@@ -570,7 +589,7 @@ func TestCB119_HandleUpload_DBInsertError(t *testing.T) {
 }
 
 func TestCB119_HandleUpload_SuccessWithMessageID(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -620,7 +639,7 @@ func TestCB119_HandleUpload_SuccessWithMessageID(t *testing.T) {
 // ==================== tags.go: error paths ====================
 
 func TestCB119_AddConversationTag_DBQueryError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -634,7 +653,7 @@ func TestCB119_AddConversationTag_DBQueryError(t *testing.T) {
 }
 
 func TestCB119_AddConversationTag_InsertError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -651,7 +670,7 @@ func TestCB119_AddConversationTag_InsertError(t *testing.T) {
 }
 
 func TestCB119_RemoveConversationTag_DBQueryError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -665,7 +684,7 @@ func TestCB119_RemoveConversationTag_DBQueryError(t *testing.T) {
 }
 
 func TestCB119_RemoveConversationTag_DeleteError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -689,7 +708,7 @@ func TestCB119_RemoveConversationTag_DeleteError(t *testing.T) {
 }
 
 func TestCB119_GetConversationTags_DBQueryError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -702,7 +721,7 @@ func TestCB119_GetConversationTags_DBQueryError(t *testing.T) {
 }
 
 func TestCB119_GetConversationTags_ScanError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -726,7 +745,7 @@ func TestCB119_GetConversationTags_ScanError(t *testing.T) {
 // ==================== reactions.go: error paths ====================
 
 func TestCB119_AddReaction_ConvNilDBQueryError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -740,7 +759,7 @@ func TestCB119_AddReaction_ConvNilDBQueryError(t *testing.T) {
 }
 
 func TestCB119_AddReaction_InsertTriggerError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -769,7 +788,7 @@ func TestCB119_AddReaction_InsertTriggerError(t *testing.T) {
 }
 
 func TestCB119_GetMessageReactions_DBQueryError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -784,7 +803,7 @@ func TestCB119_GetMessageReactions_DBQueryError(t *testing.T) {
 // ==================== handleAddTag / handleRemoveTag / handleGetTags ====================
 
 func TestCB119_HandleAddTag_DBError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -812,7 +831,7 @@ func TestCB119_HandleAddTag_DBError(t *testing.T) {
 }
 
 func TestCB119_HandleRemoveTag_DBError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -840,7 +859,7 @@ func TestCB119_HandleRemoveTag_DBError(t *testing.T) {
 }
 
 func TestCB119_HandleGetTags_DBError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -869,7 +888,7 @@ func TestCB119_HandleGetTags_DBError(t *testing.T) {
 }
 
 func TestCB119_HandleAddTag_Success(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -894,7 +913,7 @@ func TestCB119_HandleAddTag_Success(t *testing.T) {
 }
 
 func TestCB119_HandleRemoveTag_Success(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -924,7 +943,7 @@ func TestCB119_HandleRemoveTag_Success(t *testing.T) {
 }
 
 func TestCB119_HandleGetTags_Success(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -966,7 +985,7 @@ func TestCB119_HandleGetTags_Success(t *testing.T) {
 // ==================== presence.go: error paths ====================
 
 func TestCB119_HandleGetPresence_QueryError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -987,7 +1006,7 @@ func TestCB119_HandleGetPresence_QueryError(t *testing.T) {
 // ==================== notif_prefs.go: error path ====================
 
 func TestCB119_HandleGetNotificationPrefs_DBError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -1008,7 +1027,7 @@ func TestCB119_HandleGetNotificationPrefs_DBError(t *testing.T) {
 // ==================== routing.go: additional paths ====================
 
 func TestCB119_RouteChatMessage_DirectStoreError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 
 	// Create a conversation
@@ -1055,7 +1074,7 @@ func TestCB119_RouteChatMessage_DirectStoreError(t *testing.T) {
 // ==================== loadQueueFromDB: scan error with incompatible schema ====================
 
 func TestCB119_LoadQueueFromDB_ScanError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	dbPath := "/tmp/am_test_cb119_queue_scan.db"
 	os.Remove(dbPath)
 	testDB, err := sql.Open("sqlite3", dbPath)
@@ -1115,7 +1134,7 @@ func TestCB119_LoadQueueFromDB_ScanError(t *testing.T) {
 // ==================== writePump: ping write error ====================
 
 func TestCB119_WritePump_PingError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	// Create a connection with a closed underlying net.Conn
 	// We need to create a real websocket connection, then close it
 	// This tests the writePump error path when WriteMessage fails
@@ -1172,7 +1191,7 @@ func TestCB119_WritePump_PingError(t *testing.T) {
 }
 
 func TestCB119_WritePump_ChannelClosed(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	// Test the !ok (channel closed) path in writePump
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		upgrader := websocket.Upgrader{
@@ -1222,7 +1241,7 @@ func TestCB119_WritePump_ChannelClosed(t *testing.T) {
 // ==================== writePump: write error path ====================
 
 func TestCB119_WritePump_WriteError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	// Test the WriteMessage error path (not ticker, not channel closed)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		upgrader := websocket.Upgrader{
@@ -1300,7 +1319,7 @@ func TestCB119_TieredRateLimiter_Cleanup_TickerPath(t *testing.T) {
 // ==================== messages_edit_delete: error paths ====================
 
 func TestCB119_HandleMessageEdit_DBQueryError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -1320,7 +1339,7 @@ func TestCB119_HandleMessageEdit_DBQueryError(t *testing.T) {
 }
 
 func TestCB119_HandleMessageDelete_DBQueryError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -1342,7 +1361,7 @@ func TestCB119_HandleMessageDelete_DBQueryError(t *testing.T) {
 // ==================== profile_handler.go: CPU profile error ====================
 
 func TestCB119_HandleCPUProfileStart_AlreadyActive(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -1374,7 +1393,7 @@ func TestCB119_HandleCPUProfileStart_AlreadyActive(t *testing.T) {
 // ==================== queue.go: error paths ====================
 
 func TestCB119_Queue_Drain_NoRecipient(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	q := newOfflineQueue(100, time.Hour)
 
 	// Enqueue a message for a recipient
@@ -1397,7 +1416,7 @@ func TestCB119_Queue_Drain_NoRecipient(t *testing.T) {
 // ==================== e2e.go: error paths ====================
 
 func TestCB119_HandleStoreEncryptedMessage_DBError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -1427,7 +1446,7 @@ func TestCB119_HandleStoreEncryptedMessage_DBError(t *testing.T) {
 }
 
 func TestCB119_HandleGetEncryptedMessages_DBError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -1456,7 +1475,7 @@ func TestCB119_HandleGetEncryptedMessages_DBError(t *testing.T) {
 // ==================== tracing.go: exporter error path ====================
 
 func TestCB119_InitTracing_ExporterError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 
 	// Set env vars to trigger tracing initialization with invalid endpoint
 	// Using "http" protocol with an invalid endpoint should cause exporter creation to fail
@@ -1486,7 +1505,7 @@ func TestCB119_InitTracing_ExporterError(t *testing.T) {
 // ==================== InitTracing: sampling rate parse error ====================
 
 func TestCB119_InitTracing_InvalidSamplingRate(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 
 	// Set env vars with invalid sampling rate
 	os.Setenv("OTEL_ENABLED", "true")
@@ -1512,7 +1531,7 @@ func TestCB119_InitTracing_InvalidSamplingRate(t *testing.T) {
 // ==================== Snapshot: comprehensive test ====================
 
 func TestCB119_Snapshot_WithOfflineQueueAndPresence(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	h := newHub()
 	go h.run()
 	defer h.Stop()
@@ -1568,7 +1587,7 @@ func TestCB119_Snapshot_WithOfflineQueueAndPresence(t *testing.T) {
 // ==================== handleListAgents: edge cases ====================
 
 func TestCB119_HandleListAgents_DBError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
@@ -1589,7 +1608,7 @@ func TestCB119_HandleListAgents_DBError(t *testing.T) {
 // ==================== handleListConversations: edge case ====================
 
 func TestCB119_HandleListConversations_ScanError(t *testing.T) {
-	resetGlobals_CB119()
+	resetGlobals_CB119(t)
 	setupTestDB_CB119()
 	defer db.Close()
 
