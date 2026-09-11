@@ -38,7 +38,7 @@ func generateTestToken_CB60(userID string) string {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 		},
 	}
-	token, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("agent-messenger-dev-secret-change-me"))
+	token, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(jwtSecret)
 	return token
 }
 
@@ -137,7 +137,7 @@ func TestCB60_ValidateJWT_ExpiredToken(t *testing.T) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-1 * time.Hour)),
 		},
 	}
-	token, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("agent-messenger-dev-secret-change-me"))
+	token, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(jwtSecret)
 
 	_, err := ValidateJWT(token)
 	if err == nil {
